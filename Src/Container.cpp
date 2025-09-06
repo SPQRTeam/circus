@@ -1,4 +1,4 @@
-#include "ContainerManager.h"
+#include "Container.h"
 
 #include <cassert>
 #include <climits>
@@ -20,6 +20,8 @@ https://docs.docker.com/reference/api/engine/version/v1.39/
 #define STOP_OK_RESPONSE 204
 #define DELETE_OK_RESPONSE 204
 
+namespace spqr {
+
 inline std::string create_container_endpoint(const std::string& name) {
     return "/containers/create?name=" + name;
 }
@@ -36,38 +38,32 @@ inline std::string remove_container_endpoint(const std::string& id) {
     return "/containers/" + id;
 }
 
-ContainerManager::ContainerManager(const std::string& sockPath) : sockPath(sockPath) {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+Container::Container(const std::string& name, const std::string& sockPath) : name(name), sockPath(sockPath), state(ContainerState::NONE) {
     curl_handle = curl_easy_init();
     if (!curl_handle)
         throw std::runtime_error("Failed to init curl handle");
 }
 
-ContainerManager::~ContainerManager() {
-    for (auto& [name, cInfo] : containersRegistry) {
-        try {
-            switch (cInfo.state) {
-                case ContainerState::RUNNING:
-                    stop(name);
-                    remove(name);
-                    break;
-                case ContainerState::IDLE:
-                    remove(name);
-                    break;
-                case ContainerState::REMOVED:
-                    break;
-            }
-        } catch (...) {
-        }
+Container::~Container() {
+    switch (state) {
+        case ContainerState::RUNNING:
+            stop(); remove();
+            break;
+        case ContainerState::IDLE:
+            remove();
+            break;
+        case ContainerState::REMOVED:
+            break;
+        case ContainerState::NONE:
+            break;
     }
 
     if (curl_handle)
         curl_easy_cleanup(curl_handle);
-    curl_global_cleanup();
 }
 
-void ContainerManager::create(const std::string& name, const std::string& image,
-                              const std::vector<std::string>& entrypoint) {
+void Container::create(const std::string& image, const std::vector<std::string>& entrypoint) {
     nlohmann::json payload;
     payload["Image"] = image;
     if (!entrypoint.empty())
@@ -84,55 +80,38 @@ void ContainerManager::create(const std::string& name, const std::string& image,
     if (!resp.contains("Id"))
         throw std::runtime_error("Docker create failed");
 
-    containersRegistry[name] = {.id = resp["Id"], .state = ContainerState::IDLE};
+    id = resp["Id"];
+    state = ContainerState::IDLE;
 }
 
-void ContainerManager::start(const std::string& name) {
-    auto it = containersRegistry.find(name);
-    if (it == containersRegistry.end())
-        throw std::runtime_error("Failed to start non-existing container " + name);
-
-    ContainerInfo& cInfo = it->second;
-
-    if (cInfo.state != ContainerState::IDLE)
+void Container::start() {
+    if (state != ContainerState::IDLE)
         throw std::runtime_error("Failed to start container " + name + " which is not IDLE.");
 
-    const std::string endpoint = start_container_endpoint(cInfo.id);
+    const std::string endpoint = start_container_endpoint(id);
     request(POST, endpoint, START_OK_RESPONSE);
-    cInfo.state = ContainerState::RUNNING;
+    state = ContainerState::RUNNING;
 }
 
-void ContainerManager::stop(const std::string& name) {
-    auto it = containersRegistry.find(name);
-    if (it == containersRegistry.end())
-        throw std::runtime_error("Failed to stop non-existing container " + name);
-
-    ContainerInfo& cInfo = it->second;
-
-    if (cInfo.state != ContainerState::RUNNING)
+void Container::stop() {
+    if (state != ContainerState::RUNNING)
         throw std::runtime_error("Failed to stop container " + name + " which is not RUNNING.");
 
-    const std::string endpoint = stop_container_endpoint(cInfo.id);
+    const std::string endpoint = stop_container_endpoint(id);
     request(POST, endpoint, STOP_OK_RESPONSE);
-    cInfo.state = ContainerState::IDLE;
+    state = ContainerState::IDLE;
 }
 
-void ContainerManager::remove(const std::string& name) {
-    auto it = containersRegistry.find(name);
-    if (it == containersRegistry.end())
-        throw std::runtime_error("Failed to remove non-existing container " + name);
-
-    ContainerInfo& cInfo = it->second;
-
-    if (cInfo.state != ContainerState::IDLE)
+void Container::remove() {
+    if (state != ContainerState::IDLE)
         throw std::runtime_error("Failed to remove container " + name + " which is not IDLE.");
 
-    const std::string endpoint = remove_container_endpoint(cInfo.id);
+    const std::string endpoint = remove_container_endpoint(id);
     request(DELETE, endpoint, DELETE_OK_RESPONSE);
-    cInfo.state = ContainerState::REMOVED;
+    state = ContainerState::REMOVED;
 }
 
-std::string ContainerManager::request(const std::string& method, const std::string& endpoint,
+std::string Container::request(const std::string& method, const std::string& endpoint,
                                       const long expected_response, const nlohmann::json* body) {
     curl_easy_reset(curl_handle);
     std::string url = "http://localhost" + endpoint;
@@ -175,4 +154,5 @@ std::string ContainerManager::request(const std::string& method, const std::stri
                                  + std::to_string(response_code) + ". " + response);
 
     return response;
+}
 }
