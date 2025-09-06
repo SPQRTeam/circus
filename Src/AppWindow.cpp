@@ -8,6 +8,8 @@
 #include "Constants.h"
 #include "MujocoContext.h"
 #include "SceneParser.h"
+#include "Robot.h"
+#include "Container.h"
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
@@ -52,11 +54,18 @@ void AppWindow::loadScene(const QString& xml) {
             viewportContainer = nullptr;
         }
 
+
         SceneParser parser(xml.toStdString());
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
+
+        for(const shared_ptr<Robot>& robot : RobotManager::instance().getRobots()){
+            robot->container = std::make_unique<Container>(robot->name+"_container");
+            robot->container->create("ubuntu:22.04", {});
+            robot->container->start();
+        }
 
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
@@ -71,5 +80,6 @@ void AppWindow::loadScene(const QString& xml) {
 AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
+    TeamManager::instance().clear();
 }
 }  // namespace spqr

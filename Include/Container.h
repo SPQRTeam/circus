@@ -9,7 +9,7 @@ namespace spqr {
 class Container {
    public:
     // TODO: is the path always correct for Unix systems??
-    explicit Container(const std::string& name, const std::string& sockPath = "/var/run/docker.sock");
+    Container(const std::string& name, const std::string& sockPath = "/var/run/docker.sock");
     ~Container();
 
     void create(const std::string& image,

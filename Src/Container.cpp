@@ -31,7 +31,7 @@ inline std::string start_container_endpoint(const std::string& id) {
 }
 
 inline std::string stop_container_endpoint(const std::string& id) {
-    return "/containers/" + id + "/stop";
+    return "/containers/" + id + "/stop?t=0"; // TODO: forcing a SIGKILL trigger to 0 seconds as workaround.
 }
 
 inline std::string remove_container_endpoint(const std::string& id) {
@@ -72,6 +72,9 @@ void Container::create(const std::string& image, const std::vector<std::string>&
     // Forcing networkMode to host is necessary to establish a communication between simulator and docker
     // container.
     payload["HostConfig"] = {{"NetworkMode", "host"}};
+
+    // TODO: Just a workaround to keep the container active
+    payload["Cmd"] = {"tail", "-f", "/dev/null"};
 
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);

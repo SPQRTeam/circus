@@ -1,6 +1,5 @@
 #pragma once
 #include <QApplication>
-#include "curl/curl.h"
 
 namespace spqr {
 
