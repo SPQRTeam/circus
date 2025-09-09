@@ -1,7 +1,8 @@
 # ============================= PROJECT SETUP =================================================
 cmake_minimum_required(VERSION 3.16)
 project(circus VERSION 0.1.0 LANGUAGES CXX)
-set(LIBRARY ${PROJECT_NAME})
+set(LIBRARY ${PROJECT_NAME}lib)
+set(EXECUTABLE ${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -176,15 +177,15 @@ target_link_libraries(${LIBRARY} PUBLIC ${_EXTRA_LIBS})
 
 # -------------------- Build the app
 if(MAIN_SRC)
-  add_executable(main ${MAIN_SRC})
-  target_link_libraries(main PRIVATE ${LIBRARY})
+  add_executable(${EXECUTABLE} ${MAIN_SRC})
+  target_link_libraries(${EXECUTABLE} PRIVATE ${LIBRARY})
 
-  install(TARGETS main
+  install(TARGETS ${EXECUTABLE}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     BUNDLE  DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 else()
-  message(WARNING "No main.cpp found in ${_src_dir}; skipping executable 'main'.")
+  message(WARNING "No main.cpp found in ${_src_dir}; skipping executable '${EXECUTABLE}'.")
 endif()
 
 # ==============================================================================================
