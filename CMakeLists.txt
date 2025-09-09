@@ -1,26 +1,30 @@
+# ============================= PROJECT SETUP =================================================
 cmake_minimum_required(VERSION 3.16)
-project(circus_simulator)
-
-# -------------------- Basics
-set(CMAKE_CXX_STANDARD 17)
+project(circus VERSION 0.1.0 LANGUAGES CXX)
+set(LIBRARY ${PROJECT_NAME})
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+include(FetchContent)
+
 # Qt meta-build helpers:
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+# =============================================================================================
 
-include(FetchContent)
+# ============================ BUILD OPTIONS ==================================================
+option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_PYTHON_BINDINGS "Build python bindings" ON)
+# =============================================================================================
 
-option(BUILD_PYTHON_BINDINGS "Build python bindings (nanobind)" ON)
 
-# -------------------- Core dependencies
+# ============================= Dependencies ==================================================
 find_package(Eigen3 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets)
-
 
 # Optional deps (linked only if found)
 find_package(nlohmann_json QUIET)
@@ -106,28 +110,19 @@ else()
   endif()
 endif()
 
-# -------------------- Project includes
-include_directories(${CMAKE_SOURCE_DIR}/Include)
+# ======================= CIRCUS LIBRARY ============================================================
 
 # -------------------- Collect sources and split into: core, main, bindings
-set(_src_dir "")
-if(EXISTS "${CMAKE_SOURCE_DIR}/Src")
-  set(_src_dir "${CMAKE_SOURCE_DIR}/Src")
-elseif(EXISTS "${CMAKE_SOURCE_DIR}/src")
-  set(_src_dir "${CMAKE_SOURCE_DIR}/src")
-else()
-  message(FATAL_ERROR "No 'Src' or 'src' directory found.")
-endif()
+set(_src_dir "${CMAKE_SOURCE_DIR}/Src")
+set(_include_dir "${CMAKE_SOURCE_DIR}/Include")
 
-# C/C++ sources
-file(GLOB_RECURSE ALL_CPP CONFIGURE_DEPENDS
-  "${_src_dir}/*.[cC]pp" "${_src_dir}/*.[cC]xx" "${_src_dir}/*.[cC]"
-)
+# Source files
+file(GLOB_RECURSE SOURCES ${_src_dir}/*.cpp)
 
 # Headers (include them so AUTOMOC sees Q_OBJECT)
-file(GLOB_RECURSE ALL_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
   "${_src_dir}/*.[hH]" "${_src_dir}/*.[hH]pp"
-  "${CMAKE_SOURCE_DIR}/Include/*.[hH]" "${CMAKE_SOURCE_DIR}/Include/*.[hH]pp"
+  "${_include_dir}/*.[hH]" "${_include_dir}/*.[hH]pp"
 )
 
 # Optional Qt UI and resource files (AUTOUIC/AUTORCC will process these)
@@ -145,13 +140,12 @@ if(EXISTS "${_src_dir}/Bindings.cpp")
   set(BINDINGS_SRC "${_src_dir}/Bindings.cpp")
 endif()
 
-# Core = everything minus main & bindings (+ headers/ui/qrc so automoc/uic/rcc run)
-set(CORE_SOURCES ${ALL_CPP} ${ALL_HEADERS} ${ALL_UIS} ${ALL_QRCS})
+
 if(MAIN_SRC)
-  list(REMOVE_ITEM CORE_SOURCES "${MAIN_SRC}")
+  list(REMOVE_ITEM SOURCES "${MAIN_SRC}")
 endif()
 if(BINDINGS_SRC)
-  list(REMOVE_ITEM CORE_SOURCES "${BINDINGS_SRC}")
+  list(REMOVE_ITEM SOURCES "${BINDINGS_SRC}")
 endif()
 
 
@@ -165,29 +159,82 @@ set(_EXTRA_LIBS
   Qt6::OpenGLWidgets
   OpenGL::GL
   ${_PUGI_TGT}
+  CURL::libcurl
+  nlohmann_json::nlohmann_json
 )
-if(TARGET nlohmann_json::nlohmann_json)
-  list(APPEND _EXTRA_LIBS nlohmann_json::nlohmann_json)
-endif()
-if(TARGET CURL::libcurl)
-  list(APPEND _EXTRA_LIBS CURL::libcurl)
-endif()
 
 # --- Build core library (ensure AUTOMOC is on for the target)
-add_library(circus_core STATIC ${CORE_SOURCES})
-set_target_properties(circus_core PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON)
-target_include_directories(circus_core PUBLIC "${CMAKE_SOURCE_DIR}/Include" "${_src_dir}")
-target_link_libraries(circus_core PUBLIC ${_EXTRA_LIBS})
+add_library(${LIBRARY} STATIC ${SOURCES})
+target_sources(${LIBRARY} PRIVATE ${HEADERS} ${ALL_UIS} ${ALL_QRCS}) # Just used for IDE discovering headers
+
+set_target_properties(${LIBRARY} PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON)
+target_include_directories(${LIBRARY}
+  PUBLIC
+  $<BUILD_INTERFACE:${_include_dir}>
+)
+target_link_libraries(${LIBRARY} PUBLIC ${_EXTRA_LIBS})
 
 # -------------------- Build the app
 if(MAIN_SRC)
   add_executable(main ${MAIN_SRC})
-  target_link_libraries(main PRIVATE circus_core)
+  target_link_libraries(main PRIVATE ${LIBRARY})
+
+  install(TARGETS main
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
 else()
   message(WARNING "No main.cpp found in ${_src_dir}; skipping executable 'main'.")
 endif()
 
-# -------------------- Python bindings via nanobind
+# ==============================================================================================
+
+
+# =============================== EXPORT =======================================================
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
+# 1. Install the library target and headers
+set_target_properties(${LIBRARY} PROPERTIES PUBLIC_HEADER "${HEADERS}")
+install(TARGETS ${LIBRARY}
+    EXPORT ${LIBRARY}Targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+)
+
+# 2. Generate the relocatable package config file in the build directory
+configure_package_config_file( # creates config file for find_package
+    "cmake/config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIBRARY}Config.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${LIBRARY}"
+    PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR
+)
+write_basic_package_version_file( # sets version of the package
+  "${CMAKE_CURRENT_BINARY_DIR}/${LIBRARY}ConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+
+# 3. Install the package config files and the export set
+install(
+    EXPORT ${LIBRARY}Targets
+    FILE ${LIBRARY}Targets.cmake
+    NAMESPACE spqr::
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${LIBRARY}"
+)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIBRARY}Config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIBRARY}ConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${LIBRARY}
+)
+
+# ==============================================================================================
+
+
+# ================================ Python bindings via nanobind =================================
 if(BUILD_PYTHON_BINDINGS AND BINDINGS_SRC)
   # Python (Interpreter + Development.Module)
   set(_PY_COMPS Interpreter Development.Module)
@@ -212,12 +259,11 @@ if(BUILD_PYTHON_BINDINGS AND BINDINGS_SRC)
   find_package(nanobind CONFIG REQUIRED)
 
   # Determine Python's site-packages (platlib)
-  if(NOT Python_SITEARCH)
-    execute_process(
-      COMMAND "${Python_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_path('platlib'))"
-      OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE Python_SITEARCH
-    )
-  endif()
+  execute_process(
+      COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('platlib'))"
+      OUTPUT_VARIABLE PYTHON_SITE_PACKAGES
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 
   # Auto-detect module name from NB_MODULE(...) in Bindings.cpp (e.g., 'circuspy')
   file(READ "${BINDINGS_SRC}" _NB_SRC)
@@ -230,19 +276,22 @@ if(BUILD_PYTHON_BINDINGS AND BINDINGS_SRC)
 
   # Build the nanobind module
   nanobind_add_module(${PY_MODULE_NAME} ${BINDINGS_SRC})
-  target_link_libraries(${PY_MODULE_NAME} PRIVATE circus_core)
+  target_link_libraries(${PY_MODULE_NAME} PRIVATE ${LIBRARY})
 
   # Install Python module into the environment's site-packages
-  install(TARGETS ${PY_MODULE_NAME}
-    LIBRARY DESTINATION "${Python_SITEARCH}"
+  install(
+      TARGETS ${PY_MODULE_NAME}
+      EXPORT ${PY_MODULE_NAME}Targets
+      LIBRARY DESTINATION ${PYTHON_SITE_PACKAGES}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${BINDIR}
   )
 endif()
 
-# -------------------- Install the app (so 'ninja install' exists for pixi)
-include(GNUInstallDirs)
-if(TARGET main)
-  install(TARGETS main
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    BUNDLE  DESTINATION ${CMAKE_INSTALL_BINDIR}
-  )
-endif()
+# ===============================================================================================
+
+
+# ============================== CLANGD =========================================================
+file(WRITE "${CMAKE_SOURCE_DIR}/.clangd"
+  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n")
+# ==============================================================================================
