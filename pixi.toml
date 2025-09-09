@@ -41,6 +41,7 @@ libmujoco = ">=3.3.2,<4"
 [package.target.osx-arm64.host-dependencies]
 
 [tasks]
+test = "python -c 'import circuspy; circuspy.test()'" 
 
 [activation]
 # Add DYLD_LIBRARY_PATH on macOS so the MuJoCo dylib is found when running binaries directly
