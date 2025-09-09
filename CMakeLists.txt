@@ -1,8 +1,8 @@
 # ============================= PROJECT SETUP =================================================
 cmake_minimum_required(VERSION 3.16)
 project(circus VERSION 0.1.0 LANGUAGES CXX)
-set(LIBRARY ${PROJECT_NAME}lib)
-set(EXECUTABLE ${PROJECT_NAME})
+set(LIBRARY ${PROJECT_NAME})
+set(EXECUTABLE ${PROJECT_NAME}-main)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
