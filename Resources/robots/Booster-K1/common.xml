@@ -2,7 +2,7 @@
   <asset>
     <mesh name="Booster-K1_Trunk" file="Booster-K1/Trunk.STL"/>
     <mesh name="Booster-K1_Head_1" file="Booster-K1/Head_1.STL"/>
-    <mesh name="Booster-K1_Head_2" file="Booster-K1/Head_2.STL"/>
+    <mesh name="Booster-K1_Head_2" file="Booster-K1/Head_2_ZED.STL"/>
     <mesh name="Booster-K1_Left_Arm_1" file="Booster-K1/Left_Arm_1.STL"/>
     <mesh name="Booster-K1_Left_Arm_2" file="Booster-K1/Left_Arm_2.STL"/>
     <mesh name="Booster-K1_Left_Arm_3" file="Booster-K1/Left_Arm_3.STL"/>

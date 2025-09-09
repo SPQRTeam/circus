@@ -26,8 +26,16 @@ MujocoContext::MujocoContext(const std::string& xmlString) {
 	data = mj_makeData(model);
 
 	mjv_defaultOption(&opt);
-	mjv_defaultCamera(&cam);
+	mjv_defaultCamera(&camField);
 	mjv_makeScene(model, &scene, 10000);
+
+	// Set camera to a good initial position to view the scene
+	camField.azimuth = 90;     // Side view
+	camField.elevation = -15;  // Slightly from above
+	camField.distance = 8;     // Good distance to see the field
+	camField.lookat[0] = 0;    // Center of field
+	camField.lookat[1] = 0;
+	camField.lookat[2] = 0.5;  // Slightly above ground
 }
 
 MujocoContext::~MujocoContext() {
@@ -48,7 +56,7 @@ MujocoContext& MujocoContext::operator=(MujocoContext&& other) noexcept {
 
 		model = other.model;
 		data = other.data;
-		cam = other.cam;
+		camField = other.camField;
 		opt = other.opt;
 		scene = other.scene;
 

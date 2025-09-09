@@ -13,6 +13,9 @@ struct Robot {
 	std::vector<int> bodyIds;  // all body ids belonging to this robot
 	std::vector<int> geomIds;  // all geom ids belonging to this robot
 
+	mjvCamera leftCam{};
+	mjvCamera rightCam{};
+
 	const mjtNum* worldPos(const mjData* d) const {
 		return d->xpos + 3 * rootBodyId;
 	}

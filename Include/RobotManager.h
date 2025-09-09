@@ -19,6 +19,9 @@ class RobotManager {
 	const Robot* get(int idx) const;
 	void highlightRobot(int bodyId, mjvScene* scene) const;
 	const int getBallBodyId() const;
+	int numRobots() const {
+		return robots.size();
+	}
 
   private:
 	std::vector<Robot> robots;     // size: from robotspecs

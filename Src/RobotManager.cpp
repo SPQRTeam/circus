@@ -18,6 +18,12 @@ RobotManager::RobotManager(const mjModel* m, const SceneInfo& sceneSpec) {
 			robot.index = robotIndex;
 			robot.info = robotInfo;
 			robot.rootBodyId = -1;  // will be set later
+
+			robot.leftCam.type = mjCAMERA_FIXED;
+			robot.leftCam.fixedcamid = mj_name2id(m, mjOBJ_CAMERA, (robot.info.name + "_left_cam").c_str());
+			robot.rightCam.type = mjCAMERA_FIXED;
+			robot.rightCam.fixedcamid = mj_name2id(m, mjOBJ_CAMERA, (robot.info.name + "_right_cam").c_str());
+
 			robots.push_back(robot);
 			robotIndex++;
 		}
@@ -72,8 +78,6 @@ int RobotManager::rootBodyIndex(int bodyId) const {
 	if (bodyId < 0 || bodyId >= bodyToRobot.size()) {
 		return -1;
 	}
-	if (bodyId == ballBodyId)
-		return ballBodyId;
 	int robotIndex = robotIndexByBody(bodyId);
 	if (robotIndex != -1) {
 		return get(robotIndex)->rootBodyId;
@@ -92,6 +96,7 @@ void RobotManager::highlightRobot(int bodyId, mjvScene* scene) const {
 	const Robot* robot = get(robotIndexByBody(bodyId));
 
 	if (!robot || !scene) {
+		std::cout << "NO ROBOT SELECTED" << std::endl;
 		return;
 	}
 
@@ -108,9 +113,4 @@ void RobotManager::highlightRobot(int bodyId, mjvScene* scene) const {
 		}
 	}
 }
-
-const int RobotManager::getBallBodyId() const {
-	return ballBodyId;
-}
-
 }  // namespace spqr
