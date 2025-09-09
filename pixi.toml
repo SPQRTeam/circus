@@ -3,7 +3,8 @@ channels = [
   "https://prefix.dev/pixi-build-backends",
   "https://prefix.dev/conda-forge",
 ]
-platforms = ["linux-64"]
+# add Apple Silicon
+platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
 [dependencies]
@@ -18,7 +19,8 @@ version = "0.1.0"
 backend = { name = "pixi-build-cmake", version = "0.3.*" }
 
 [package.build-dependencies]
-cmake = "4.1.*"
+# Use a real conda-forge CMake version (3.x), not "4.1.*"
+cmake = ">=3.27,<4"
 
 [package.host-dependencies]
 python = "3.12.*"
@@ -26,15 +28,19 @@ nanobind = "2.8.*"
 eigen = ">=3.4.0,<4"
 yaml-cpp = ">=0.8.0,<0.9"
 nlohmann_json = ">=3.12.0,<4"
-libcurl = ">=8.14.1,<9"
 pugixml = ">=1.15,<2"
 qt6-main = ">=6.9.2,<7"
-libmujoco = ">=3.3.2,<4"
-libgl-devel = ">=1.7.0,<2"
 
-[tasks]
-main = "python -c 'from circuspy import main; main();'"
-# TODO: Add classical C++ compilation task
+# MuJoCo is available as conda-forge "libmujoco" (and "mujoco-python" if you need Python API)
+libmujoco = ">=3.3.2,<4"
+
+# ---- Per-platform OpenGL bits
+#[package.host-dependencies.linux-64]
+#libgl-devel = ">=1.7.0,<2"
+
+# macOS uses system OpenGL; don't pull libgl-devel
+# (no extra GL dep needed on osx-arm64)
 
 [activation]
-env = { PATH = "$CONDA_PREFIX/bin:$PATH", LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib" }
+# Add DYLD_LIBRARY_PATH on macOS so the MuJoCo dylib is found when running binaries directly
+env = { DYLD_LIBRARY_PATH = "$DYLD_LIBRARY_PATH:$CONDA_PREFIX/lib", PATH = "$CONDA_PREFIX/bin:$PATH" }
