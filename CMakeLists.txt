@@ -1,6 +1,8 @@
 # ============================= PROJECT SETUP =================================================
 cmake_minimum_required(VERSION 3.16)
 project(circus VERSION 0.1.0 LANGUAGES CXX)
+add_compile_definitions(_LIBCPP_DISABLE_AVAILABILITY)
+
 set(LIBRARY ${PROJECT_NAME})
 set(EXECUTABLE ${PROJECT_NAME}-main)
 set(CMAKE_CXX_STANDARD 20)
