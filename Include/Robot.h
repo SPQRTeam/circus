@@ -1,37 +1,71 @@
 #pragma once
 
-#include <mujoco/mujoco.h>
-
-#include "SceneParser.h"
+#include <sys/types.h>
+#include <Eigen/Eigen>
+#include <string>
+#include <memory>
+#include "Container.h"
+#include <vector>
+#include <mutex>
+#include "Team.h"
 
 namespace spqr {
 
+struct Team; // Forward declaration
+
 struct Robot {
-	int index = -1;            // Index in the list of robots
-	RobotInfo info;            // Information from sceneParser
-	int rootBodyId;            // body if of the root (for mjData)
-	std::vector<int> bodyIds;  // all body ids belonging to this robot
-	std::vector<int> geomIds;  // all geom ids belonging to this robot
-
-	mjvCamera leftCam{};
-	mjvCamera rightCam{};
-
-	const mjtNum* worldPos(const mjData* d) const {
-		return d->xpos + 3 * rootBodyId;
-	}
-
-	bool ownsGeom(int geomId) const {
-		return std::find(geomIds.begin(), geomIds.end(), geomId) != geomIds.end();
-	}
-
-	bool ownsBody(int bodyId) const {
-		return std::find(bodyIds.begin(), bodyIds.end(), bodyId) != bodyIds.end();
-	}
-
-	bool ownsBody(const std::string& name) const {
-		std::string prefix = info.name + "_";
-		return name.compare(0, prefix.size(), prefix) == 0;
-	}
+    std::string name;
+    std::string type;
+    uint8_t number;
+    Eigen::Vector3d position;
+    Eigen::Vector3d orientation;  // Euler angles
+    std::unique_ptr<Container> container;
+    std::shared_ptr<Team> team;
 };
 
-}  // namespace spqr
+class RobotManager {
+public:
+    // Singleton class
+    static RobotManager& instance() {
+        static RobotManager mgr;
+        return mgr;
+    }
+
+    void registerRobot(std::shared_ptr<Robot> robot) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        robots_.push_back(std::move(robot));
+    }
+
+    std::vector<std::shared_ptr<Robot>> getRobots() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return robots_;
+    }
+
+    size_t count() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return robots_.size();
+    }
+
+    void clear() {
+        std::lock_guard lock(mutex_);
+        for(std::shared_ptr<Robot> r : robots_){
+            // Drop ownership first
+            r->container.reset();
+            r->team.reset();
+        }
+        robots_.clear();
+    }
+
+
+private:
+    RobotManager() = default;
+    ~RobotManager() = default;
+
+    RobotManager(const RobotManager&) = delete;
+    RobotManager& operator=(const RobotManager&) = delete;
+
+    mutable std::mutex mutex_;
+    std::vector<std::shared_ptr<Robot>> robots_;
+};
+
+}

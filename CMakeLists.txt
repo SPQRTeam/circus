@@ -17,7 +17,7 @@ add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 # ============================ BUILD OPTIONS ==================================================
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_PYTHON_BINDINGS "Build python bindings" ON)
-option(GENERATE_CLANGD "Generate .clangd in project root" OFF)
+option(GENERATE_CLANGD "Generate .clangd in project root" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions("DEBUG")

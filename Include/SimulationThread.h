@@ -7,16 +7,16 @@
 namespace spqr {
 
 class SimulationThread : public QThread {
-	Q_OBJECT
-  public:
-	SimulationThread(const mjModel* model, mjData* data);
-	void run() override;
-	void stop();
+    Q_OBJECT
+   public:
+    SimulationThread(const mjModel* model, mjData* data);
+    void run() override;
+    void stop();
 
-  private:
-	const mjModel* model_;
-	mjData* data_;
-	std::atomic<bool> running_;
+   private:
+    const mjModel* model_;
+    mjData* data_;
+    std::atomic<bool> running_;
 };
 
 }  // namespace spqr

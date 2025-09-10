@@ -17,11 +17,6 @@
             <joint name="Head_pitch" pos="0 0 0" axis="0 1 0" range="-0.35 1.22" actuatorfrcrange="-7 7"/>
             <geom class="visual" material="black" mesh="Booster-T1_H2"/>
             <geom size="0.08" pos="0.01 0 0.11" class="collision" name="head"/>
-
-            <site name="head_left_cam_site" pos="0.05 0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-            <camera name="left_cam" pos="0.05 0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
-            <site name="head_right_cam_site" pos="0.05 -0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-            <camera name="right_cam" pos="0.05 -0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
         </body>
         </body>
 

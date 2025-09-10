@@ -3,8 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-MUJOCO_LOG.TXT
-
 # User-specific files
 *.rsuser
 *.suo
@@ -90,6 +88,7 @@ StyleCopReport.xml
 *_h.h
 *.ilk
 *.meta
+*.obj
 *.idb
 *.iobj
 *.pch

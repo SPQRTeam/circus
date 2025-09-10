@@ -8,69 +8,78 @@
 #include "Constants.h"
 #include "MujocoContext.h"
 #include "SceneParser.h"
+#include "Robot.h"
+#include "Container.h"
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
-	resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
-	setWindowTitle(spqr::appName);
+    resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
+    setWindowTitle(spqr::appName);
 
-	QWidget* centralWidget = new QWidget;
-	mainLayout = new QVBoxLayout;
-	centralWidget->setLayout(mainLayout);
-	setCentralWidget(centralWidget);
-	viewportContainer = nullptr;
+    QWidget* centralWidget = new QWidget;
+    mainLayout = new QVBoxLayout;
+    centralWidget->setLayout(mainLayout);
+    setCentralWidget(centralWidget);
+    viewportContainer = nullptr;
 
-	QMenu* fileMenu = menuBar()->addMenu("&File");
-	QAction* openSceneAction = new QAction("&Open Scene", this);
-	fileMenu->addAction(openSceneAction);
-	connect(openSceneAction, &QAction::triggered, this, &AppWindow::openScene);
+    QMenu* fileMenu = menuBar()->addMenu("&File");
+    QAction* openSceneAction = new QAction("&Open Scene", this);
+    fileMenu->addAction(openSceneAction);
+    connect(openSceneAction, &QAction::triggered, this, &AppWindow::openScene);
 
-	if (argc > 1) {
-		QString fileArg = QString::fromLocal8Bit(argv[1]);
-		loadScene(fileArg);
-	}
+    if (argc > 1) {
+        QString fileArg = QString::fromLocal8Bit(argv[1]);
+        loadScene(fileArg);
+    }
 };
 
 void AppWindow::openScene() {
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "Resources/Scenes/",
-	                                                tr("YAML Files (*.yaml)"));
-	if (!fileName.isEmpty()) {
-		loadScene(fileName);
-	}
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "Resources/Scenes/",
+                                                    tr("YAML Files (*.yaml)"));
+    if (!fileName.isEmpty()) {
+        loadScene(fileName);
+    }
 }
 
 void AppWindow::loadScene(const QString& xml) {
-	try {
-		if (sim) {
-			sim->stop();
-			sim.reset();
-		}
+    try {
+        if (sim) {
+            sim->stop();
+            sim.reset();
+        }
 
-		if (viewportContainer) {
-			mainLayout->removeWidget(viewportContainer);
-			viewportContainer->deleteLater();
-			viewportContainer = nullptr;
-		}
+        if (viewportContainer) {
+            mainLayout->removeWidget(viewportContainer);
+            viewportContainer->deleteLater();
+            viewportContainer = nullptr;
+        }
 
-		SceneParser parser(xml.toStdString());
-		std::string xmlScene = parser.buildMuJoCoXml();
 
-		mujContext = std::make_unique<MujocoContext>(xmlScene);
-		robotManager = std::make_unique<RobotManager>(mujContext->model, parser.getSceneInfo());
-		viewport = std::make_unique<SimulationViewport>(*mujContext, *robotManager);
+        SceneParser parser(xml.toStdString());
+        std::string xmlScene = parser.buildMuJoCoXml();
 
-		viewportContainer = QWidget::createWindowContainer(viewport.get());
-		mainLayout->addWidget(viewportContainer);
+        mujContext = std::make_unique<MujocoContext>(xmlScene);
+        viewport = std::make_unique<SimulationViewport>(*mujContext);
 
-		sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
-		sim->start();
-	} catch (const std::exception& e) {
-		QMessageBox::critical(this, "Error loading scene", e.what());
-	}
+        for(const shared_ptr<Robot>& robot : RobotManager::instance().getRobots()){
+            robot->container = std::make_unique<Container>(robot->name+"_container");
+            robot->container->create("ubuntu:22.04", {});
+            robot->container->start();
+        }
+
+        viewportContainer = QWidget::createWindowContainer(viewport.get());
+        mainLayout->addWidget(viewportContainer);
+
+        sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
+        sim->start();
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Error loading scene", e.what());
+    }
 }
 
 AppWindow::~AppWindow() {
-	if (sim != nullptr && sim->isRunning())
-		sim->stop();
+    if (sim != nullptr && sim->isRunning())
+        sim->stop();
+    TeamManager::instance().clear();
 }
 }  // namespace spqr
