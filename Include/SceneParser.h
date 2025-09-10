@@ -23,10 +23,14 @@ struct SceneSpec {
     std::string field;
     std::vector<std::shared_ptr<Team>> teams;
 };
+
 class SceneParser {
    public:
     SceneParser(const string& yamlPath);
     string buildMuJoCoXml();
+    const SceneSpec& getSceneInfo() const {
+        return scene;
+    }
 
    private:
     void buildRobotCommon(const string& robotType, xml_node& mujoco);

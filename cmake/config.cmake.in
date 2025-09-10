@@ -1,0 +1,16 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(mujoco REQUIRED)
+find_dependency(pugixml REQUIRED) 
+find_dependency(Eigen3 REQUIRED)
+find_dependency(OpenGL REQUIRED)
+find_dependency(yaml-cpp REQUIRED)
+find_dependency(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets)
+find_dependency(CURL REQUIRED)
+find_dependency(nlohmann_json REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/circusTargets.cmake")
+add_library(circus::circus ALIAS spqr::circus)
+check_required_components(circus)

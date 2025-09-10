@@ -1,12 +1,12 @@
 #pragma once
 
+#include <sys/types.h>
 #include <Eigen/Eigen>
 #include <string>
 #include <memory>
 #include "Container.h"
 #include <vector>
 #include <mutex>
-#include <iostream>
 #include "Team.h"
 
 namespace spqr {
@@ -16,6 +16,7 @@ struct Team; // Forward declaration
 struct Robot {
     std::string name;
     std::string type;
+    uint8_t number;
     Eigen::Vector3d position;
     Eigen::Vector3d orientation;  // Euler angles
     std::unique_ptr<Container> container;

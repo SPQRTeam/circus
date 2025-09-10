@@ -3,6 +3,9 @@
 #include <mujoco/mujoco.h>
 
 #include <string>
+
+#include "SceneParser.h"
+
 namespace spqr {
 
 struct MujocoContext {

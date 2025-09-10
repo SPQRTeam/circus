@@ -6,25 +6,34 @@
 
 **circus** is a multi-platform humanoid robot soccer simulator built on top of MuJoCo. It supports mixed teams of robots, enabling realistic and flexible RoboCup simulations. Designed for research and development, circus provides accurate physics, advanced robot models, and seamless integration across operating systems.
 
-## Install Dependencies
+## Install
 
-```bash
-sudo apt update
-sudo apt install qt6-base-dev qt6-base-dev-tools libqt6widgets6 libqt6openglwidgets6
-sudo apt install libeigen3-dev
-sudo apt install libyaml-cpp-dev
-sudo apt install libcurl4-openssl-dev
-sudo apt install nlohmann-json3-dev
+This project uses pixi to declare and reproduce the build/runtime dependency environment. See [pixi.toml](pixi.toml) for the dependency list and build configuration, and see [CMakeLists.txt](CMakeLists.txt) for the CMake build setup.
+
+#### Overview
+- pixi manages the environment and dependencies defined in [pixi.toml](pixi.toml).
+- CMake is used to configure and build the native C++ targets defined in [CMakeLists.txt](CMakeLists.txt).
+- The main executable target is `main` (entrypoint: [Src/main.cpp](Src/main.cpp)) and is placed in the build directory.
+
+#### Prerequisites
+- pixi installed (install following pixi project documentation).
+
+### Build
+From the project root run:
+``` 
+pixi build [-v]
+```
+This instructs pixi to create the environment specified in [pixi.toml](pixi.toml) and install declared host/development dependencies.
+
+### Run
+The pixi manifest declares a task named `main` that runs the python entrypoint (see [pixi.toml](pixi.toml) tasks). Run
+```
+pixi run main
 ```
 
-## Build and Run Instructions
-You can build and run the simulator with the following commands:
-```bash
-cmake -B build -S . && cmake --build build -j$(nproc)
+### Links
+- pixi configuration: [pixi.toml](pixi.toml)
+- Build configuration: [CMakeLists.txt](CMakeLists.txt)
+- C++ entrypoint: [Src/main.cpp](Src/main.cpp)
 
-./build/main
-```
-or you can directly use the .sh file:
-```
-./build_and_run.sh
-```
+

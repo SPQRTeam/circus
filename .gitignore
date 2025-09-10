@@ -10,6 +10,8 @@
 *.userosscache
 *.sln.docstates
 *.env
+.clangd
+*.conda
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -420,3 +422,6 @@ FodyWeavers.xsd
 Build/
 build/
 .vscode/
+# pixi environments
+.pixi/*
+!.pixi/config.toml

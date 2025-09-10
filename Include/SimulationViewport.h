@@ -37,8 +37,25 @@ class SimulationViewport : public QOpenGLWindow {
     mjvScene* scene;
     mjrContext context;
     QTimer* timer;
+    mjvPerturb pert;
+
+    /**
+     * @brief Selects a body in the simulation based on relative x and y coordinates.
+     *
+     * This function determines which body in the simulation is located at the given
+     * relative screen coordinates (relx, rely). The coordinates are typically normalized
+     * between 0 and 1, representing the position within the viewport.
+     *
+     * @param relx The relative x-coordinate within the viewport (0.0 to 1.0).
+     * @param rely The relative y-coordinate within the viewport (0.0 to 1.0).
+     * @return The index of the selected body, or -1 if no body is selected.
+     */
+    int selectBody(float relx, float rely) const;
+    int findBodyRoot(int bodyId) const;
+    int selectedRobot = -1;
 
     int width = initialWindowWidth, height = initialWindowHeight;
+    int logicalWidth = initialWindowWidth, logicalHeight = initialWindowHeight;
 };
 
 }  // namespace spqr

@@ -1,14 +1,16 @@
 #include "SceneParser.h"
+#include "Team.h"
 
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/node/parse.h>
 #include <yaml-cpp/yaml.h>
 
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <sstream>
 #include <stack>
-#include "Team.h"
+#include <stdexcept>
 
 using namespace pugi;
 using namespace std;
@@ -47,9 +49,12 @@ SceneParser::SceneParser(const string& yamlPath) {
         for (const YAML::Node& robotNode : robotsNode) {
             if (!robotNode["type"])
                 throw runtime_error("Robot missing type field.");
+            if (!robotNode["number"])
+                throw runtime_error("Robot missing jersey number");
 
             shared_ptr<Robot> robot = std::make_shared<Robot>();
             robot->type = robotNode["type"].as<string>();
+            robot->number = robotNode["number"].as<uint8_t>();
             robotTypes.insert(robot->type);
 
             if (robotNode["name"])
