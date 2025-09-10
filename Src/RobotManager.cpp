@@ -78,6 +78,8 @@ int RobotManager::rootBodyIndex(int bodyId) const {
 	if (bodyId < 0 || bodyId >= bodyToRobot.size()) {
 		return -1;
 	}
+	if (bodyId == ballBodyId)
+		return ballBodyId;
 	int robotIndex = robotIndexByBody(bodyId);
 	if (robotIndex != -1) {
 		return get(robotIndex)->rootBodyId;
@@ -113,4 +115,9 @@ void RobotManager::highlightRobot(int bodyId, mjvScene* scene) const {
 		}
 	}
 }
+
+const int RobotManager::getBallBodyId() const {
+	return ballBodyId;
+}
+
 }  // namespace spqr
