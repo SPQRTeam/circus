@@ -36,10 +36,6 @@ void SimulationViewport::paintGL() {
 
     mjv_updateScene(model, data, opt, &pert, cam, mjCAT_ALL, scene);
 
-    if (selectedRobot >= 0) {
-        //robotManager.highlightRobot(selectedRobot, scene);
-    }
-
     mjrRect viewport = {0, 0, width, height};
     mjr_setBuffer(mjFB_WINDOW, &context);
     mjr_render(viewport, scene, &context);
@@ -58,7 +54,6 @@ void SimulationViewport::mousePressEvent(QMouseEvent* event) {
         float rely = 1.0 - event->position().y() / logicalHeight;  // Flip Y for MuJoCo
         int selectedBody = selectBody(relx, rely);
         selectedRobot = findBodyRoot(selectedBody);
-        //selectedRobot = robotManager.rootBodyIndex(selectedBody);
 
         if (selectedBody >= 0) {
             pert.select = selectedRobot;
