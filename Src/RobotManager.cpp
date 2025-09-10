@@ -98,7 +98,6 @@ void RobotManager::highlightRobot(int bodyId, mjvScene* scene) const {
 	const Robot* robot = get(robotIndexByBody(bodyId));
 
 	if (!robot || !scene) {
-		std::cout << "NO ROBOT SELECTED" << std::endl;
 		return;
 	}
 
