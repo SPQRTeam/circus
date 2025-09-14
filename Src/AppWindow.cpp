@@ -13,6 +13,10 @@
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
+
+    std::signal(SIGTERM, signalHandler);
+    std::signal(SIGINT, signalHandler);
+
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
     setWindowTitle(spqr::appName);
 
@@ -75,6 +79,14 @@ void AppWindow::loadScene(const QString& xml) {
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error loading scene", e.what());
     }
+}
+
+void AppWindow::signalHandler(int signal) {
+    
+    TeamManager::instance().clear();
+    
+    std::signal(signal, SIG_DFL);
+    std::raise(signal);
 }
 
 AppWindow::~AppWindow() {
