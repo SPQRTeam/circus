@@ -2,18 +2,19 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "Robot.h"
 
 namespace spqr {
 
 struct Robot;
-struct Team{
+struct Team {
     std::string name;
     std::vector<std::shared_ptr<Robot>> robots;
 };
 
 class TeamManager {
-public:
+   public:
     // Singleton class
     static TeamManager& instance() {
         static TeamManager mgr;
@@ -23,7 +24,7 @@ public:
     void registerTeam(std::shared_ptr<Team> team) {
         std::lock_guard<std::mutex> lock(mutex_);
 
-        for(const std::shared_ptr<Robot>& robot : team->robots)
+        for (const std::shared_ptr<Robot>& robot : team->robots)
             RobotManager::instance().registerRobot(robot);
 
         teams_.push_back(std::move(team));
@@ -43,13 +44,13 @@ public:
         std::lock_guard lock(mutex_);
         RobotManager::instance().clear();
 
-        for(const std::shared_ptr<Team>& team : teams_)
+        for (const std::shared_ptr<Team>& team : teams_)
             team->robots.clear();
-        
+
         teams_.clear();
     }
 
-private:
+   private:
     TeamManager() = default;
     ~TeamManager() = default;
 
@@ -60,4 +61,4 @@ private:
     std::vector<std::shared_ptr<Team>> teams_;
 };
 
-}
+}  // namespace spqr

@@ -1,17 +1,19 @@
 #pragma once
 
 #include <sys/types.h>
+
 #include <Eigen/Eigen>
-#include <string>
 #include <memory>
-#include "Container.h"
-#include <vector>
 #include <mutex>
+#include <string>
+#include <vector>
+
+#include "Container.h"
 #include "Team.h"
 
 namespace spqr {
 
-struct Team; // Forward declaration
+struct Team;  // Forward declaration
 
 struct Robot {
     std::string name;
@@ -24,7 +26,7 @@ struct Robot {
 };
 
 class RobotManager {
-public:
+   public:
     // Singleton class
     static RobotManager& instance() {
         static RobotManager mgr;
@@ -48,7 +50,7 @@ public:
 
     void clear() {
         std::lock_guard lock(mutex_);
-        for(std::shared_ptr<Robot> r : robots_){
+        for (std::shared_ptr<Robot> r : robots_) {
             // Drop ownership first
             r->container.reset();
             r->team.reset();
@@ -56,8 +58,7 @@ public:
         robots_.clear();
     }
 
-
-private:
+   private:
     RobotManager() = default;
     ~RobotManager() = default;
 
@@ -68,4 +69,4 @@ private:
     std::vector<std::shared_ptr<Robot>> robots_;
 };
 
-}
+}  // namespace spqr

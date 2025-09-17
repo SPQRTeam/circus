@@ -7,8 +7,9 @@
 #include <pugixml.hpp>
 #include <string>
 #include <unordered_set>
-#include "Team.h"
+
 #include "Robot.h"
+#include "Team.h"
 
 using namespace pugi;
 using namespace std;

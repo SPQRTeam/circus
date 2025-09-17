@@ -3,8 +3,8 @@
 
 #include <QMainWindow>
 #include <QVBoxLayout>
-#include <memory>
 #include <csignal>
+#include <memory>
 
 #include "MujocoContext.h"
 #include "SimulationThread.h"

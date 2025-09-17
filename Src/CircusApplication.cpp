@@ -1,6 +1,7 @@
 #include "CircusApplication.h"
 
 #include <QSurfaceFormat>
+
 #include "curl/curl.h"
 
 namespace spqr {
@@ -18,7 +19,7 @@ CircusApplication::CircusApplication(int& argc, char** argv) : QApplication(argc
     curl_global_init(CURL_GLOBAL_DEFAULT);
 }
 
-CircusApplication::~CircusApplication(){
+CircusApplication::~CircusApplication() {
     curl_global_cleanup();
 }
 }  // namespace spqr

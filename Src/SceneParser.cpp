@@ -1,5 +1,4 @@
 #include "SceneParser.h"
-#include "Team.h"
 
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/node/parse.h>
@@ -11,6 +10,8 @@
 #include <sstream>
 #include <stack>
 #include <stdexcept>
+
+#include "Team.h"
 
 using namespace pugi;
 using namespace std;
@@ -191,8 +192,8 @@ void SceneParser::prefixSubtree(xml_node& root, const string& robotName) {
     }
 }
 
-void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator,
-                                     xml_node& sensor) {
+void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody,
+                                     xml_node& actuator, xml_node& sensor) {
     filesystem::path instancePath
         = filesystem::path(PROJECT_ROOT) / "Resources" / "robots" / robotSpec->type / "instance.xml";
 

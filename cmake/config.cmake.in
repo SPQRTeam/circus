@@ -3,7 +3,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(mujoco REQUIRED)
-find_dependency(pugixml REQUIRED) 
+find_dependency(pugixml REQUIRED)
 find_dependency(Eigen3 REQUIRED)
 find_dependency(OpenGL REQUIRED)
 find_dependency(yaml-cpp REQUIRED)
