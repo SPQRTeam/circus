@@ -6,13 +6,16 @@
 #include <memory>
 
 #include "Constants.h"
-#include "MujocoContext.h"
-#include "SceneParser.h"
-#include "Robot.h"
 #include "Container.h"
+#include "MujocoContext.h"
+#include "Robot.h"
+#include "SceneParser.h"
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
+    std::signal(SIGTERM, signalHandler);
+    std::signal(SIGINT, signalHandler);
+
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
     setWindowTitle(spqr::appName);
 
@@ -54,15 +57,14 @@ void AppWindow::loadScene(const QString& xml) {
             viewportContainer = nullptr;
         }
 
-
         SceneParser parser(xml.toStdString());
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
-        for(const shared_ptr<Robot>& robot : RobotManager::instance().getRobots()){
-            robot->container = std::make_unique<Container>(robot->name+"_container");
+        for (const shared_ptr<Robot>& robot : RobotManager::instance().getRobots()) {
+            robot->container = std::make_unique<Container>(robot->name + "_container");
             robot->container->create("ubuntu:22.04", {});
             robot->container->start();
         }
@@ -75,6 +77,13 @@ void AppWindow::loadScene(const QString& xml) {
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error loading scene", e.what());
     }
+}
+
+void AppWindow::signalHandler(int signal) {
+    TeamManager::instance().clear();
+
+    std::signal(signal, SIG_DFL);
+    std::raise(signal);
 }
 
 AppWindow::~AppWindow() {

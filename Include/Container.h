@@ -12,8 +12,7 @@ class Container {
     Container(const std::string& name, const std::string& sockPath = "/var/run/docker.sock");
     ~Container();
 
-    void create(const std::string& image,
-                const std::vector<std::string>& entrypoint = {});
+    void create(const std::string& image, const std::vector<std::string>& entrypoint = {});
 
     void start();
     void stop();
@@ -32,4 +31,4 @@ class Container {
     std::string sockPath;
     CURL* curl_handle;
 };
-}
+}  // namespace spqr

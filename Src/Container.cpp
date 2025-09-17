@@ -31,15 +31,15 @@ inline std::string start_container_endpoint(const std::string& id) {
 }
 
 inline std::string stop_container_endpoint(const std::string& id) {
-    return "/containers/" + id + "/stop?t=0"; // TODO: forcing a SIGKILL trigger to 0 seconds as workaround.
+    return "/containers/" + id + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround.
 }
 
 inline std::string remove_container_endpoint(const std::string& id) {
     return "/containers/" + id;
 }
 
-
-Container::Container(const std::string& name, const std::string& sockPath) : name(name), sockPath(sockPath), state(ContainerState::NONE) {
+Container::Container(const std::string& name, const std::string& sockPath)
+    : name(name), sockPath(sockPath), state(ContainerState::NONE) {
     curl_handle = curl_easy_init();
     if (!curl_handle)
         throw std::runtime_error("Failed to init curl handle");
@@ -48,7 +48,8 @@ Container::Container(const std::string& name, const std::string& sockPath) : nam
 Container::~Container() {
     switch (state) {
         case ContainerState::RUNNING:
-            stop(); remove();
+            stop();
+            remove();
             break;
         case ContainerState::IDLE:
             remove();
@@ -115,7 +116,7 @@ void Container::remove() {
 }
 
 std::string Container::request(const std::string& method, const std::string& endpoint,
-                                      const long expected_response, const nlohmann::json* body) {
+                               const long expected_response, const nlohmann::json* body) {
     curl_easy_reset(curl_handle);
     std::string url = "http://localhost" + endpoint;
 
@@ -158,4 +159,4 @@ std::string Container::request(const std::string& method, const std::string& end
 
     return response;
 }
-}
+}  // namespace spqr

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QVBoxLayout>
+#include <csignal>
 #include <memory>
 
 #include "MujocoContext.h"
@@ -18,6 +19,8 @@ class AppWindow : public QMainWindow {
    private:
     void loadScene(const QString& xml);
     void openScene();
+
+    static void signalHandler(int signal);
 
     QVBoxLayout* mainLayout;
     QWidget* viewportContainer;
