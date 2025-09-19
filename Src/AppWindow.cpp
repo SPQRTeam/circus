@@ -10,6 +10,9 @@
 #include "MujocoContext.h"
 #include "Robot.h"
 #include "SceneParser.h"
+#include "Robot.h"
+#include "Container.h"
+
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
@@ -74,6 +77,9 @@ void AppWindow::loadScene(const QString& xml) {
 
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
         sim->start();
+
+        DebugDrawings::init(&(mujContext->scene));
+
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error loading scene", e.what());
     }

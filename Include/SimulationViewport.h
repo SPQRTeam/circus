@@ -9,6 +9,7 @@
 
 #include "Constants.h"
 #include "MujocoContext.h"
+#include "DebugDrawings.h"
 
 namespace spqr {
 

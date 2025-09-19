@@ -7,7 +7,7 @@
 
 namespace spqr {
 
-struct Team {
+struct Team{
     std::string name;
     std::vector<std::shared_ptr<Robot>> robots;
 };

@@ -9,6 +9,9 @@
 #include <vector>
 
 #include "Container.h"
+#include <vector>
+#include <mutex>
+
 namespace spqr {
 
 struct Team;  // Forward declaration

@@ -9,6 +9,8 @@
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
+#include "DebugDrawings.h"
+
 namespace spqr {
 
 class AppWindow : public QMainWindow {
@@ -28,6 +30,8 @@ class AppWindow : public QMainWindow {
     std::unique_ptr<MujocoContext> mujContext;
     std::unique_ptr<SimulationViewport> viewport;
     std::unique_ptr<SimulationThread> sim;
+
+    DebugDrawings* debugDrawings;
 };
 
 }  // namespace spqr
