@@ -9,8 +9,6 @@
 #include <vector>
 
 #include "Container.h"
-#include <vector>
-#include <mutex>
 
 namespace spqr {
 

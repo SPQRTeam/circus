@@ -8,8 +8,8 @@
 #include <QWheelEvent>
 
 #include "Constants.h"
-#include "MujocoContext.h"
 #include "DebugDrawings.h"
+#include "MujocoContext.h"
 
 namespace spqr {
 

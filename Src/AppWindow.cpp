@@ -10,8 +10,6 @@
 #include "MujocoContext.h"
 #include "Robot.h"
 #include "SceneParser.h"
-#include "Robot.h"
-#include "Container.h"
 
 namespace spqr {
 

@@ -6,10 +6,10 @@
 #include <csignal>
 #include <memory>
 
+#include "DebugDrawings.h"
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
-#include "DebugDrawings.h"
 
 namespace spqr {
 

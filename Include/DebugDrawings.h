@@ -1,18 +1,15 @@
 #pragma once
 
 #include <mujoco/mujoco.h>
+
 #include <algorithm>
 
-namespace spqr
-{
+namespace spqr {
 
-class DebugDrawings
-{
-
-public:
-
+class DebugDrawings {
+   public:
     static void drawAllPrimitives();
-    static void init(mjvScene* s) noexcept; 
+    static void init(mjvScene* s) noexcept;
     static void drawDebugDrawings();
 
     // ---------------- regular geom types (mjtGeom)
@@ -42,7 +39,8 @@ public:
      * @param length: half length of the cylinder
      * @param color: RGBA color of the geom
      */
-    static void drawCylinder(int idLocal, const double center[3], const double radius, const double length, const float color[4]);
+    static void drawCylinder(int idLocal, const double center[3], const double radius, const double length,
+                             const float color[4]);
 
     // ---------------- rendering-only geom types (mjtGeom)
 
@@ -54,7 +52,8 @@ public:
      * @param thickness: thickness of the arrow
      * @param color: RGBA color of the geom
      */
-    static void drawArrow(int idLocal, const double start[3], const double end[3], const double thickness, const float color[4]);
+    static void drawArrow(int idLocal, const double start[3], const double end[3], const double thickness,
+                          const float color[4]);
 
     /**
      * @brief drawLine: initialize a mjGEOM_LINE in mujoco
@@ -64,13 +63,14 @@ public:
      * @param thickness: thickness of the line
      * @param color: RGBA color of the geom
      */
-    static void drawLine(int idLocal, const double start[3], const double end[3], const double thickness, const float color[4]);
+    static void drawLine(int idLocal, const double start[3], const double end[3], const double thickness,
+                         const float color[4]);
 
-private:
-
-    inline static mjvScene* ptrDebugDrawingsScene;  // pointer to the mujoco scene where to draw the debug drawings
-    inline static std::vector<mjvGeom> geomsVector; // vector that stores the debug drawings to be drawn
-    inline static std::vector<int> idsVector;   // vector that stores the ids of the debug drawings to be drawn
+   private:
+    inline static mjvScene* ptrDebugDrawingsScene;   // pointer to the mujoco scene where to draw the debug
+                                                     // drawings
+    inline static std::vector<mjvGeom> geomsVector;  // vector that stores the debug drawings to be drawn
+    inline static std::vector<int> idsVector;  // vector that stores the ids of the debug drawings to be drawn
 
     /**
      * @brief drawRegularGeom: draw a regular geometric primitive
@@ -79,7 +79,8 @@ private:
      * @param pos: position of the geometric primitive
      * @param color: RGBA color of the geometric primitive
      */
-    static void drawRegularGeom(mjtGeom type, const double size[3], const double pos[3], const float color[4]);
+    static void drawRegularGeom(mjtGeom type, const double size[3], const double pos[3],
+                                const float color[4]);
 
     /**
      * @brief drawRenderOnlyGeom: draw a rendering-only geometric primitive
@@ -90,7 +91,8 @@ private:
      * @param width: width of the geometric primitive
      * @param color: RGBA color of the geometric primitive
      */
-    static void drawRenderOnlyGeom(mjtGeom type, const double size[3], const double start[3], const double end[3], const double width, const float color[4]);
+    static void drawRenderOnlyGeom(mjtGeom type, const double size[3], const double start[3],
+                                   const double end[3], const double width, const float color[4]);
 
     /**
      * @brief move the idLocal draw
@@ -99,4 +101,4 @@ private:
     static bool moveGeom(int idLocal, const double start[3], const double end[3]);
 };
 
-} // namespace spqr
+}  // namespace spqr
