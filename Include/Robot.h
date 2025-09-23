@@ -1,7 +1,8 @@
 #pragma once
 
-#include <sys/types.h>
 #include <mujoco/mujoco.h>
+#include <sys/types.h>
+
 #include <Eigen/Eigen>
 #include <memory>
 #include <mutex>
@@ -23,7 +24,7 @@ struct Robot {
     std::shared_ptr<Team> team;
 
     mjvCamera leftCam{};
-	mjvCamera rightCam{};
+    mjvCamera rightCam{};
 };
 
 class RobotManager {
@@ -36,8 +37,6 @@ class RobotManager {
 
     void registerRobot(std::shared_ptr<Robot> robot) {
         std::lock_guard<std::mutex> lock(mutex_);
-        
-
 
         robots_.push_back(std::move(robot));
     }

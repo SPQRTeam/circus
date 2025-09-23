@@ -3,6 +3,7 @@
 #include <mujoco/mjvisualize.h>
 #include <qnamespace.h>
 #include <qpoint.h>
+
 #include "Team.h"
 namespace spqr {
 
@@ -41,35 +42,34 @@ void SimulationViewport::paintGL() {
     mjr_setBuffer(mjFB_WINDOW, &context);
     mjr_render(viewport, scene, &context);
 
-
-	// PLOT ROBOT CAMERAS
-	int pipWidth = int(0.15 * width);
-	int pipHeight = int(pipWidth * 9.0 / 16.0);  // 16:9 aspect ratio
-	pipHeight = std::min(pipHeight, height / 2);
+    // PLOT ROBOT CAMERAS
+    int pipWidth = int(0.15 * width);
+    int pipHeight = int(pipWidth * 9.0 / 16.0);  // 16:9 aspect ratio
+    pipHeight = std::min(pipHeight, height / 2);
 
     TeamManager& teamManager = TeamManager::instance();
     std::vector<std::shared_ptr<Team>> teams = teamManager.getTeams();
     Team* firstTeam = teams.size() > 0 ? teams[0].get() : nullptr;
 
+    for (int i = 0; i < firstTeam->robots.size(); i++) {
+        const Robot* robot = firstTeam->robots[i].get();
 
-	for (int i = 0; i < firstTeam->robots.size(); i++) {
-		const Robot* robot = firstTeam->robots[i].get();
+        mjrRect pip{};
 
-		mjrRect pip{};
+        // left camera
+        pip = {width - pipWidth, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
+        mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->leftCam), mjCAT_ALL, scene);
+        mjr_render(pip, scene, &context);
 
-		// left camera
-		pip = {width - pipWidth, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
-		mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->leftCam), mjCAT_ALL, scene);
-		mjr_render(pip, scene, &context);
+        // right camera
+        pip = {width - 2 * pipWidth - 10, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
+        mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->rightCam), mjCAT_ALL,
+                        scene);
+        mjr_render(pip, scene, &context);
+    }
 
-		// right camera
-		pip = {width - 2 * pipWidth - 10, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
-		mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->rightCam), mjCAT_ALL, scene);
-		mjr_render(pip, scene, &context);
-	}
-
-	// fixes the drag and drop of the field camera
-	mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
+    // fixes the drag and drop of the field camera
+    mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
 }
 
 void SimulationViewport::wheelEvent(QWheelEvent* event) {
