@@ -36,12 +36,11 @@ void SimulationViewport::paintGL() {
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    mjv_updateScene(model, data, opt, &pert, cam, mjCAT_ALL, scene);
-
     mjrRect viewport = {0, 0, width, height};
     mjr_setBuffer(mjFB_WINDOW, &context);
     mjr_render(viewport, scene, &context);
 
+    // TODO -> spostarlo nel menu
     // PLOT ROBOT CAMERAS
     int pipWidth = int(0.15 * width);
     int pipHeight = int(pipWidth * 9.0 / 16.0);  // 16:9 aspect ratio
