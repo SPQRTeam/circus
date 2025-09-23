@@ -3,4 +3,4 @@
 
 class Camera : public Sensor {
     
-}
+};

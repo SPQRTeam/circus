@@ -3,23 +3,28 @@
 #include "Sensor.h"
 #include <unordered_map>
 #include <string>
-#include <mujoco/mjmodel.h>
-#include <mujoco/mjtnum.h>
 #include <mujoco/mujoco.h>
 
 namespace spqr{
 
-enum JointValue {
+enum class JointValue {
     ANKLE_PITCH_LEFT,
 };
 
 
-class Joints : Sensor{
+class Joints : public Sensor{
 public:
     Joints(mjModel* mujModel, mjData* mujData, std::unordered_map<JointValue, std::string> map): mujModel(mujModel), mujData(mujData){
         for(auto& [jv, joint_name] : map){
             int jointId = mj_name2id(mujModel, mjOBJ_JOINT, joint_name.c_str());
             joint_ids[jv] = jointId;
+
+            for (int act_id = 0; act_id < mujModel->nu; act_id++) {
+                if (mujModel->actuator_trntype[act_id] == mjOBJ_JOINT &&
+                    mujModel->actuator_trnid[2*act_id] == jointId) {
+                    actuator_ids[jv] = act_id;
+                }
+            }
         }
     }
 
@@ -28,27 +33,36 @@ public:
             position[joint] = mujData->qpos[mujModel->jnt_qposadr[joint_id]]; // TODO: assuming size = 1
             velocity[joint] = mujData->qvel[mujModel->jnt_dofadr[joint_id]]; 
             acceleration[joint] = mujData->qacc[mujModel->jnt_dofadr[joint_id]];   
-            torque[joint] = mujData->ctrl[joint_id]; 
+            torque[joint] = mujData->qfrc_actuator[mujModel->jnt_dofadr[joint_id]];
         }
     };
 
-    void set_position(std::unordered_map<JointValue, mjtNum> values){
-        // Setto dentro mujoco facendo check aggiuntivi
+    void set_position(const std::unordered_map<JointValue, mjtNum>& values){
+        for (const auto& [joint, val] : values) {
+            auto it = joint_ids.find(joint);
+            if (it == joint_ids.end()) continue;
+            int joint_id = it->second;
+            int adr = mujModel->jnt_qposadr[joint_id];
+            mujData->qpos[adr] = val; // TODO: assuming size=1
+        }
+        mj_forward(mujModel, mujData);
     }
 
-    void set_torque(std::unordered_map<JointValue, mjtNum> values){
-        // Setto dentro mujoco facendo check aggiuntivi
+    void set_torque(const std::unordered_map<JointValue, mjtNum>& values){
+        for (const auto& [joint, val] : values) {
+            auto it = actuator_ids.find(joint);
+            if (it == actuator_ids.end()) continue;
+            int act_id = it->second;
+            mujData->ctrl[act_id] = val;
+        }
     }
 
 private:
     mjModel* mujModel;
     mjData* mujData;
 
-    std::unordered_map<JointValue, int> joint_ids;
+    std::unordered_map<JointValue, int> joint_ids, actuator_ids;
 
-    std::unordered_map<JointValue, mjtNum> position;
-    std::unordered_map<JointValue, mjtNum> velocity;
-    std::unordered_map<JointValue, mjtNum> acceleration;
-    std::unordered_map<JointValue, mjtNum> torque;
+    std::unordered_map<JointValue, mjtNum> position, velocity, acceleration, torque;
 };
 }
