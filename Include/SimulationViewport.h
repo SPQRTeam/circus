@@ -10,6 +10,8 @@
 #include "Constants.h"
 #include "MujocoContext.h"
 
+#include "Team.h"
+
 namespace spqr {
 
 class SimulationViewport : public QOpenGLWindow {
