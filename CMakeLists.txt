@@ -7,9 +7,11 @@ set(PROJECT circus)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
+  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n")
 add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 # =============================================================================================
 
@@ -140,15 +142,4 @@ install(
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${BINDIR}
 )
-# ===============================================================================================
-
-
-# ============================== CLANGD =========================================================
-if(GENERATE_CLANGD)
-  file(GLOB BUILD_ROOT_LIST RELATIVE "${CMAKE_SOURCE_DIR}" ".pixi/build/work/circus*/work/build")
-  list(GET BUILD_ROOT_LIST 0 BUILD_ROOT_REL)
-  cmake_path(APPEND BUILD_ROOT ${CMAKE_SOURCE_DIR} ${BUILD_ROOT_REL})
-  file(WRITE "${CMAKE_SOURCE_DIR}/.clangd"
-    "CompileFlags:\n  CompilationDatabase: ${BUILD_ROOT}\n")
-endif()
 # ===============================================================================================
