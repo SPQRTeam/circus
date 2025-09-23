@@ -14,6 +14,7 @@ namespace spqr {
 
 struct Team;  // Forward declaration
 
+//TODO: deve essere class 
 struct Robot {
     std::string name;
     std::string type;
