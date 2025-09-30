@@ -211,6 +211,12 @@ class RobotManager {
         serverThread_ = std::thread(&RobotManager::_serverInternal, this, port);
     }
 
+    void stopCommunicationServer() {
+        serverRunning_ = false;
+        if (serverThread_.joinable())
+            serverThread_.join();
+    }
+
    private:
     RobotManager() = default;
     ~RobotManager() = default;
@@ -268,13 +274,17 @@ class RobotManager {
             std::string robotName = msg.substr(0, sep);
             std::string payload = msg.substr(sep + 1);
 
+            std::unique_lock lock(mutex_);
+
             for(std::shared_ptr<Robot> r : robots_){
                 if(r->name == robotName){
                     r->handleMessage(payload);
                     break;
                 }
             }
+            lock.release();
         }
+        close(client_fd);
     }
 
     std::atomic<bool> serverRunning_ = false;
