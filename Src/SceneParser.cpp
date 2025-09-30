@@ -6,13 +6,14 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <stack>
 #include <stdexcept>
 
+#include "Robot.h"
 #include "Team.h"
-
 using namespace pugi;
 using namespace std;
 namespace spqr {
@@ -53,8 +54,10 @@ SceneParser::SceneParser(const string& yamlPath) {
             if (!robotNode["number"])
                 throw runtime_error("Robot missing jersey number");
 
-            shared_ptr<Robot> robot = std::make_shared<Robot>();
-            robot->type = robotNode["type"].as<string>();
+            string robotType = robotNode["type"].as<string>();  // complete name <Brand>-<Model>
+
+            shared_ptr<Robot> robot = RobotManager::instance().create(robotType);
+            robot->type = robotType;
             robot->number = robotNode["number"].as<uint8_t>();
             robotTypes.insert(robot->type);
 

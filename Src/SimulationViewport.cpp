@@ -56,18 +56,16 @@ void SimulationViewport::paintGL() {
         mjrRect pip{};
 
         // left camera
-        pip = {width - pipWidth, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
-        mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->leftCam), mjCAT_ALL, scene);
-        mjr_render(pip, scene, &context);
-
-        // right camera
-        pip = {width - 2 * pipWidth - 10, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
-        mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->rightCam), mjCAT_ALL,
-                        scene);
-        mjr_render(pip, scene, &context);
+        // pip = {width - pipWidth, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
+        // mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->leftCam), mjCAT_ALL,
+        // scene); mjr_render(pip, scene, &context);
+        // // right camera
+        // pip = {width - 2 * pipWidth - 10, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
+        // mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->rightCam), mjCAT_ALL,
+        //                 scene);
+        // mjr_render(pip, scene, &context);
     }
 
-    // fixes the drag and drop of the field camera
     mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
 }
 

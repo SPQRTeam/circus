@@ -9,7 +9,7 @@ namespace spqr {
 struct MujocoContext {
     mjModel* model = nullptr;
     mjData* data = nullptr;
-    mjvCamera cam{};
+    mjvCamera cam{};  // TODO: rimuovere
     mjvOption opt{};
     mjvScene scene{};
 

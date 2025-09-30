@@ -63,18 +63,8 @@ void AppWindow::loadScene(const QString& xml) {
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
-        for (const shared_ptr<Robot>& robot : RobotManager::instance().getRobots()) {
-            robot->container = std::make_unique<Container>(robot->name + "_container");
-            robot->container->create("ubuntu:22.04", {});
-            robot->container->start();
-
-            robot->leftCam.type = mjCAMERA_FIXED;
-            robot->leftCam.fixedcamid
-                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_left_cam").c_str());
-            robot->rightCam.type = mjCAMERA_FIXED;
-            robot->rightCam.fixedcamid
-                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_right_cam").c_str());
-        }
+        RobotManager::instance().startContainers("ubuntu:22.04");
+        RobotManager::instance().bindMujoco(mujContext.get());
 
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
