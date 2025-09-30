@@ -3,8 +3,6 @@
 #include <mujoco/mujoco.h>
 
 #include <Eigen/Eigen>
-#include <string>
-#include <unordered_map>
 
 #include "Sensor.h"
 
