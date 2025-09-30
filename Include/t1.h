@@ -9,19 +9,20 @@
 
 namespace spqr{
 
-class K1 : spqr::Robot{
+class T1 : spqr::Robot{
 public:
-    K1(mjModel* mujModel, mjData* mujData) : joint_map{
+    T1(mjModel* mujModel, mjData* mujData) : joint_map{
         {JointValue::HEAD_YAW, "AAHead_yaw"},
         {JointValue::HEAD_PITCH, "Head_pitch"},
-        {JointValue::SHOULDER_LEFT_PITCH, "ALeft_Shoulder_Pitch"},
+        {JointValue::SHOULDER_LEFT_PITCH, "Left_Shoulder_Pitch"},
         {JointValue::SHOULDER_LEFT_ROLL, "Left_Shoulder_Roll"},
         {JointValue::ELBOW_LEFT_PITCH, "Left_Elbow_Pitch"},
         {JointValue::ELBOW_LEFT_YAW, "Left_Elbow_Yaw"},
-        {JointValue::SHOULDER_RIGHT_PITCH, "ARight_Shoulder_Pitch"},
+        {JointValue::SHOULDER_RIGHT_PITCH, "Right_Shoulder_Pitch"},
         {JointValue::SHOULDER_RIGHT_ROLL, "Right_Shoulder_Roll"},
         {JointValue::ELBOW_RIGHT_PITCH, "Right_Elbow_Pitch"},
         {JointValue::ELBOW_RIGHT_YAW, "Right_Elbow_Yaw"},
+        {JointValue::WAIST, "Waist"},
         {JointValue::HIP_LEFT_PITCH, "Left_Hip_Pitch"},
         {JointValue::HIP_LEFT_ROLL, "Left_Hip_Roll"},
         {JointValue::HIP_LEFT_YAW, "Left_Hip_Yaw"},
