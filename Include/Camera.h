@@ -1,6 +1,4 @@
 #pragma once
 #include "Sensor.h"
 
-class Camera : public Sensor {
-    
-};
+class Camera : public Sensor {};

@@ -1,6 +1,6 @@
 #pragma once
-class Sensor{
+class Sensor {
     virtual void update();
-    //virtual void serialize();
-    //virtual void visualize();
+    // virtual void serialize();
+    // virtual void visualize();
 };
