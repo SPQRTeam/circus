@@ -6,6 +6,7 @@
 #include "Sensor.h"
 #include "Camera.h"
 #include "Joint.h"
+#include "Imu.h"
 
 namespace spqr{
 
@@ -36,7 +37,8 @@ public:
         {JointValue::ANKLE_RIGHT_PITCH, "Right_Ankle_Pitch"},
         {JointValue::ANKLE_RIGHT_ROLL, "Right_Ankle_Roll"}
       },
-      joints(mujModel, mujData, joint_map)
+      joints(mujModel, mujData, joint_map),
+      imu(mujModel, mujData, "orientation", "angular-velocity")
 
     {
     }
@@ -45,6 +47,7 @@ private:
     std::unordered_map<JointValue, std::string> joint_map;
 
     std::array<Camera, 2> cameras;
+    Imu imu;
     Joints joints;   
 
 };
