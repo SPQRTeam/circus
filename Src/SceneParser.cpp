@@ -55,32 +55,24 @@ SceneParser::SceneParser(const string& yamlPath) {
                 throw runtime_error("Robot missing jersey number");
 
             string robotType = robotNode["type"].as<string>();  // complete name <Brand>-<Model>
-
-            shared_ptr<Robot> robot = RobotManager::instance().create(robotType);
-            robot->type = robotType;
-            robot->number = robotNode["number"].as<uint8_t>();
-            robotTypes.insert(robot->type);
-
-            if (robotNode["name"])
-                robot->name = robotNode["name"].as<string>();
-            else
-                robot->name = teamName + "_" + robot->type + "_" + to_string(typeIndex++);
+            uint8_t robotNumber = robotNode["number"].as<uint8_t>();
+            string robotName = robotNode["name"] ? robotNode["name"].as<string>() : teamName + "_" + robotType + "_" + to_string(typeIndex++);
+            Vector3d pos = Vector3d::Zero();
+            Vector3d ori = Vector3d::Zero();
 
             if (robotNode["position"]) {
                 for (int i = 0; i < 3; ++i)
-                    robot->position[i] = robotNode["position"][i].as<double>();
-            } else {
-                robot->position.setZero();
-            }
+                    pos[i] = robotNode["position"][i].as<double>();
+            } 
 
             if (robotNode["orientation"]) {
                 for (int i = 0; i < 3; ++i)
-                    robot->orientation[i] = robotNode["orientation"][i].as<double>();
-            } else {
-                robot->orientation.setZero();
+                    ori[i] = robotNode["orientation"][i].as<double>();
             }
-            robot->team = teamSpec;
 
+            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamSpec);
+
+            robotTypes.insert(robotType);
             teamSpec->robots.push_back(std::move(robot));
         }
 

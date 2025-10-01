@@ -31,7 +31,7 @@ inline std::string start_container_endpoint(const std::string& id) {
 }
 
 inline std::string stop_container_endpoint(const std::string& id) {
-    return "/containers/" + id + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround.
+    return "/containers/" + id + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround. If the application is well behaved, this shouldn't be necessary
 }
 
 inline std::string remove_container_endpoint(const std::string& id) {

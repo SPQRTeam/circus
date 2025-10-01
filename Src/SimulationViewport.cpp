@@ -39,33 +39,6 @@ void SimulationViewport::paintGL() {
     mjrRect viewport = {0, 0, width, height};
     mjr_setBuffer(mjFB_WINDOW, &context);
     mjr_render(viewport, scene, &context);
-
-    // TODO -> spostarlo nel menu
-    // PLOT ROBOT CAMERAS
-    int pipWidth = int(0.15 * width);
-    int pipHeight = int(pipWidth * 9.0 / 16.0);  // 16:9 aspect ratio
-    pipHeight = std::min(pipHeight, height / 2);
-
-    TeamManager& teamManager = TeamManager::instance();
-    std::vector<std::shared_ptr<Team>> teams = teamManager.getTeams();
-    Team* firstTeam = teams.size() > 0 ? teams[0].get() : nullptr;
-
-    for (int i = 0; i < firstTeam->robots.size(); i++) {
-        const Robot* robot = firstTeam->robots[i].get();
-
-        mjrRect pip{};
-
-        // left camera
-        // pip = {width - pipWidth, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
-        // mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->leftCam), mjCAT_ALL,
-        // scene); mjr_render(pip, scene, &context);
-        // // right camera
-        // pip = {width - 2 * pipWidth - 10, height - pipHeight - i * (pipHeight + 10), pipWidth, pipHeight};
-        // mjv_updateScene(model, data, opt, nullptr, const_cast<mjvCamera*>(&robot->rightCam), mjCAT_ALL,
-        //                 scene);
-        // mjr_render(pip, scene, &context);
-    }
-
     mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
 }
 

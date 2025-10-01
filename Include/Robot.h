@@ -26,7 +26,7 @@ struct Team;  // Forward declaration
 
 class Robot {
    public:
-    Robot() = default;
+    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position, const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team) : name(name), type(type), number(number), position(position), orientation(orientation), team(team){};
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -42,31 +42,40 @@ class Robot {
 };
 
 class T1 : public Robot {
-   public:
-    T1()
-        : joint_map{{JointValue::HEAD_YAW, "AAHead_yaw"},
-                    {JointValue::HEAD_PITCH, "Head_pitch"},
-                    {JointValue::SHOULDER_LEFT_PITCH, "Left_Shoulder_Pitch"},
-                    {JointValue::SHOULDER_LEFT_ROLL, "Left_Shoulder_Roll"},
-                    {JointValue::ELBOW_LEFT_PITCH, "Left_Elbow_Pitch"},
-                    {JointValue::ELBOW_LEFT_YAW, "Left_Elbow_Yaw"},
-                    {JointValue::SHOULDER_RIGHT_PITCH, "Right_Shoulder_Pitch"},
-                    {JointValue::SHOULDER_RIGHT_ROLL, "Right_Shoulder_Roll"},
-                    {JointValue::ELBOW_RIGHT_PITCH, "Right_Elbow_Pitch"},
-                    {JointValue::ELBOW_RIGHT_YAW, "Right_Elbow_Yaw"},
-                    {JointValue::WAIST, "Waist"},
-                    {JointValue::HIP_LEFT_PITCH, "Left_Hip_Pitch"},
-                    {JointValue::HIP_LEFT_ROLL, "Left_Hip_Roll"},
-                    {JointValue::HIP_LEFT_YAW, "Left_Hip_Yaw"},
-                    {JointValue::KNEE_LEFT_PITCH, "Left_Knee_Pitch"},
-                    {JointValue::ANKLE_LEFT_PITCH, "Left_Ankle_Pitch"},
-                    {JointValue::ANKLE_LEFT_ROLL, "Left_Ankle_Roll"},
-                    {JointValue::HIP_RIGHT_PITCH, "Right_Hip_Pitch"},
-                    {JointValue::HIP_RIGHT_ROLL, "Right_Hip_Roll"},
-                    {JointValue::HIP_RIGHT_YAW, "Right_Hip_Yaw"},
-                    {JointValue::KNEE_RIGHT_PITCH, "Right_Knee_Pitch"},
-                    {JointValue::ANKLE_RIGHT_PITCH, "Right_Ankle_Pitch"},
-                    {JointValue::ANKLE_RIGHT_ROLL, "Right_Ankle_Roll"}} {}
+public:
+    std::array<Camera*, 2> cameras = {};
+    Imu* imu;
+    Joints* joints = nullptr;
+    T1(const std::string& name,
+       const std::string& type,
+       uint8_t number,
+       const Eigen::Vector3d& position,
+       const Eigen::Vector3d& orientation,
+        const std::shared_ptr<Team>& team)
+        : Robot(name, type, number, position, orientation, team),
+        joint_map{{JointValue::HEAD_YAW, name+"_AAHead_yaw"},
+                    {JointValue::HEAD_PITCH, name+"_Head_pitch"},
+                    {JointValue::SHOULDER_LEFT_PITCH, name+"_Left_Shoulder_Pitch"},
+                    {JointValue::SHOULDER_LEFT_ROLL, name+"_Left_Shoulder_Roll"},
+                    {JointValue::ELBOW_LEFT_PITCH, name+"_Left_Elbow_Pitch"},
+                    {JointValue::ELBOW_LEFT_YAW, name+"_Left_Elbow_Yaw"},
+                    {JointValue::SHOULDER_RIGHT_PITCH, name+"_Right_Shoulder_Pitch"},
+                    {JointValue::SHOULDER_RIGHT_ROLL, name+"_Right_Shoulder_Roll"},
+                    {JointValue::ELBOW_RIGHT_PITCH, name+"_Right_Elbow_Pitch"},
+                    {JointValue::ELBOW_RIGHT_YAW, name+"_Right_Elbow_Yaw"},
+                    {JointValue::WAIST, name+"_Waist"},
+                    {JointValue::HIP_LEFT_PITCH, name+"_Left_Hip_Pitch"},
+                    {JointValue::HIP_LEFT_ROLL, name+"_Left_Hip_Roll"},
+                    {JointValue::HIP_LEFT_YAW, name+"_Left_Hip_Yaw"},
+                    {JointValue::KNEE_LEFT_PITCH, name+"_Left_Knee_Pitch"},
+                    {JointValue::ANKLE_LEFT_PITCH, name+"_Left_Ankle_Pitch"},
+                    {JointValue::ANKLE_LEFT_ROLL, name+"_Left_Ankle_Roll"},
+                    {JointValue::HIP_RIGHT_PITCH, name+"_Right_Hip_Pitch"},
+                    {JointValue::HIP_RIGHT_ROLL, name+"_Right_Hip_Roll"},
+                    {JointValue::HIP_RIGHT_YAW, name+"_Right_Hip_Yaw"},
+                    {JointValue::KNEE_RIGHT_PITCH, name+"_Right_Knee_Pitch"},
+                    {JointValue::ANKLE_RIGHT_PITCH, name+"_Right_Ankle_Pitch"},
+                    {JointValue::ANKLE_RIGHT_ROLL, name+"_Right_Ankle_Roll"}} {}
 
     void bindMujoco(MujocoContext* mujCtx) override {
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
@@ -80,47 +89,55 @@ class T1 : public Robot {
     }
 
     void update() override {
+        /*
         cameras[0]->update();
         cameras[1]->update();
+        */
         joints->update();
         imu->update();
     }
 
     ~T1(){};
 
-   private:
+private:
     std::unordered_map<JointValue, std::string> joint_map;
-
-    std::array<Camera*, 2> cameras = {};
-    Imu* imu;
-    Joints* joints = nullptr;
 };
 
 class K1 : public Robot {
-   public:
-    K1()
-        : joint_map{{JointValue::HEAD_YAW, "AAHead_yaw"},
-                    {JointValue::HEAD_PITCH, "Head_pitch"},
-                    {JointValue::SHOULDER_LEFT_PITCH, "ALeft_Shoulder_Pitch"},
-                    {JointValue::SHOULDER_LEFT_ROLL, "Left_Shoulder_Roll"},
-                    {JointValue::ELBOW_LEFT_PITCH, "Left_Elbow_Pitch"},
-                    {JointValue::ELBOW_LEFT_YAW, "Left_Elbow_Yaw"},
-                    {JointValue::SHOULDER_RIGHT_PITCH, "ARight_Shoulder_Pitch"},
-                    {JointValue::SHOULDER_RIGHT_ROLL, "Right_Shoulder_Roll"},
-                    {JointValue::ELBOW_RIGHT_PITCH, "Right_Elbow_Pitch"},
-                    {JointValue::ELBOW_RIGHT_YAW, "Right_Elbow_Yaw"},
-                    {JointValue::HIP_LEFT_PITCH, "Left_Hip_Pitch"},
-                    {JointValue::HIP_LEFT_ROLL, "Left_Hip_Roll"},
-                    {JointValue::HIP_LEFT_YAW, "Left_Hip_Yaw"},
-                    {JointValue::KNEE_LEFT_PITCH, "Left_Knee_Pitch"},
-                    {JointValue::ANKLE_LEFT_PITCH, "Left_Ankle_Pitch"},
-                    {JointValue::ANKLE_LEFT_ROLL, "Left_Ankle_Roll"},
-                    {JointValue::HIP_RIGHT_PITCH, "Right_Hip_Pitch"},
-                    {JointValue::HIP_RIGHT_ROLL, "Right_Hip_Roll"},
-                    {JointValue::HIP_RIGHT_YAW, "Right_Hip_Yaw"},
-                    {JointValue::KNEE_RIGHT_PITCH, "Right_Knee_Pitch"},
-                    {JointValue::ANKLE_RIGHT_PITCH, "Right_Ankle_Pitch"},
-                    {JointValue::ANKLE_RIGHT_ROLL, "Right_Ankle_Roll"}} {}
+public:
+    std::array<Camera*, 2> cameras = {};
+    Imu* imu;
+    Joints* joints = nullptr;
+
+    K1(const std::string& name,
+       const std::string& type,
+       uint8_t number,
+       const Eigen::Vector3d& position,
+       const Eigen::Vector3d& orientation,
+       const std::shared_ptr<Team>& team)
+        : Robot(name, type, number, position, orientation, team),
+        joint_map{{JointValue::HEAD_YAW, name+"_AAHead_yaw"},
+                    {JointValue::HEAD_PITCH, name+"_Head_pitch"},
+                    {JointValue::SHOULDER_LEFT_PITCH, name+"_ALeft_Shoulder_Pitch"},
+                    {JointValue::SHOULDER_LEFT_ROLL, name+"_Left_Shoulder_Roll"},
+                    {JointValue::ELBOW_LEFT_PITCH, name+"_Left_Elbow_Pitch"},
+                    {JointValue::ELBOW_LEFT_YAW, name+"_Left_Elbow_Yaw"},
+                    {JointValue::SHOULDER_RIGHT_ROLL, name+"_Right_Shoulder_Roll"},
+                    {JointValue::SHOULDER_RIGHT_PITCH, name+"_ARight_Shoulder_Pitch"},
+                    {JointValue::ELBOW_RIGHT_PITCH, name+"_Right_Elbow_Pitch"},
+                    {JointValue::ELBOW_RIGHT_YAW, name+"_Right_Elbow_Yaw"},
+                    {JointValue::HIP_LEFT_PITCH, name+"_Left_Hip_Pitch"},
+                    {JointValue::HIP_LEFT_ROLL, name+"_Left_Hip_Roll"},
+                    {JointValue::HIP_LEFT_YAW, name+"_Left_Hip_Yaw"},
+                    {JointValue::KNEE_LEFT_PITCH, name+"_Left_Knee_Pitch"},
+                    {JointValue::ANKLE_LEFT_PITCH, name+"_Left_Ankle_Pitch"},
+                    {JointValue::ANKLE_LEFT_ROLL, name+"_Left_Ankle_Roll"},
+                    {JointValue::HIP_RIGHT_PITCH, name+"_Right_Hip_Pitch"},
+                    {JointValue::HIP_RIGHT_ROLL, name+"_Right_Hip_Roll"},
+                    {JointValue::HIP_RIGHT_YAW, name+"_Right_Hip_Yaw"},
+                    {JointValue::KNEE_RIGHT_PITCH, name+"_Right_Knee_Pitch"},
+                    {JointValue::ANKLE_RIGHT_PITCH, name+"_Right_Ankle_Pitch"},
+                    {JointValue::ANKLE_RIGHT_ROLL, name+"_Right_Ankle_Roll"}} {}
 
     void bindMujoco(MujocoContext* mujCtx) override {
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
@@ -135,20 +152,19 @@ class K1 : public Robot {
     }
 
     void update() override {
+        /*
         cameras[0]->update();
         cameras[1]->update();
+        */
         joints->update();
         imu->update();
     }
 
     ~K1(){};
 
-   private:
+private:
     std::unordered_map<JointValue, std::string> joint_map;
 
-    std::array<Camera*, 2> cameras = {};
-    Imu* imu;
-    Joints* joints = nullptr;
 };
 
 class RobotManager {
@@ -175,6 +191,13 @@ class RobotManager {
         return robots_.size();
     }
 
+    void update() {
+        std::lock_guard lock(mutex_);
+        for (std::shared_ptr<Robot> r : robots_) {
+            r->update();
+        }
+    }
+
     void clear() {
         std::lock_guard lock(mutex_);
         for (std::shared_ptr<Robot> r : robots_) {
@@ -190,10 +213,15 @@ class RobotManager {
             r->bindMujoco(mujContext);
     }
 
-    std::shared_ptr<Robot> create(const std::string& robotType) {
-        auto it = robotFactory.find(robotType);
+    std::shared_ptr<Robot> create(const std::string& name,
+                              const std::string& type,
+                              uint8_t number,
+                              const Eigen::Vector3d& pos,
+                              const Eigen::Vector3d& ori, 
+                              const std::shared_ptr<Team> team) {
+        auto it = robotFactory.find(type);
         if (it != robotFactory.end())
-            return it->second();
+            return it->second(name, type, number, pos, ori, team);
         return nullptr;
     }
 
@@ -292,10 +320,22 @@ class RobotManager {
 
     mutable std::mutex mutex_;
     std::vector<std::shared_ptr<Robot>> robots_;
+
+    using RobotCreator = std::function<std::shared_ptr<Robot>(
+                         const std::string&, const std::string&, uint8_t,
+                         const Eigen::Vector3d&, const Eigen::Vector3d&,
+                         const std::shared_ptr<Team>&)>;
     
-    std::unordered_map<std::string, std::function<std::shared_ptr<Robot>()>> robotFactory
-        = {{"Booster-K1", [] { return std::make_shared<K1>(); }},
-           {"Booster-T1", [] { return std::make_shared<T1>(); }}};
+    std::unordered_map<std::string, RobotCreator> robotFactory = {
+        {"Booster-K1", [](auto&& name, auto&& type, uint8_t number,
+                      auto&& pos, auto&& ori, auto&& team) {
+         return std::make_shared<K1>(name, type, number, pos, ori, team);
+        }},
+        {"Booster-T1", [](auto&& name, auto&& type, uint8_t number,
+                        auto&& pos, auto&& ori, auto&& team) {
+            return std::make_shared<T1>(name, type, number, pos, ori, team);
+        }}        
+    };
 };
 
 }  // namespace spqr
