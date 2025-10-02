@@ -2,6 +2,7 @@
 
 #include <mujoco/mujoco.h>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -87,7 +88,8 @@ class Joints : public Sensor {
             if (it == actuator_ids.end())
                 continue;
             int act_id = it->second;
-            mujData->ctrl[act_id] = val;
+            mujData->ctrl[act_id] = std::clamp(val, mujModel->actuator_ctrlrange[2 * act_id],
+                                               mujModel->actuator_ctrlrange[2 * act_id + 1]);
         }
     }
 
