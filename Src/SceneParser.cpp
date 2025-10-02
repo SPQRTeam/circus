@@ -56,21 +56,23 @@ SceneParser::SceneParser(const string& yamlPath) {
 
             string robotType = robotNode["type"].as<string>();  // complete name <Brand>-<Model>
             uint8_t robotNumber = robotNode["number"].as<uint8_t>();
-            string robotName = robotNode["name"] ? robotNode["name"].as<string>() : teamName + "_" + robotType + "_" + to_string(typeIndex++);
+            string robotName = robotNode["name"] ? robotNode["name"].as<string>() :
+                                                   teamName + "_" + robotType + "_" + to_string(typeIndex++);
             Vector3d pos = Vector3d::Zero();
             Vector3d ori = Vector3d::Zero();
 
             if (robotNode["position"]) {
                 for (int i = 0; i < 3; ++i)
                     pos[i] = robotNode["position"][i].as<double>();
-            } 
+            }
 
             if (robotNode["orientation"]) {
                 for (int i = 0; i < 3; ++i)
                     ori[i] = robotNode["orientation"][i].as<double>();
             }
 
-            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamSpec);
+            shared_ptr<Robot> robot
+                = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamSpec);
 
             robotTypes.insert(robotType);
             teamSpec->robots.push_back(std::move(robot));

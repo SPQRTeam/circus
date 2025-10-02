@@ -1,17 +1,17 @@
 #pragma once
 
 #include <mujoco/mujoco.h>
+#include <netinet/in.h>
 #include <sys/types.h>
 
 #include <Eigen/Eigen>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <ostream>
-#include <thread>
 #include <string>
+#include <thread>
 #include <vector>
-#include <iostream>
-#include <netinet/in.h>
 
 #include "Camera.h"
 #include "Container.h"
@@ -26,7 +26,9 @@ struct Team;  // Forward declaration
 
 class Robot {
    public:
-    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position, const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team) : name(name), type(type), number(number), position(position), orientation(orientation), team(team){};
+    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
+          const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
+        : name(name), type(type), number(number), position(position), orientation(orientation), team(team){};
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -42,40 +44,36 @@ class Robot {
 };
 
 class T1 : public Robot {
-public:
+   public:
     std::array<Camera*, 2> cameras = {};
     Imu* imu;
     Joints* joints = nullptr;
-    T1(const std::string& name,
-       const std::string& type,
-       uint8_t number,
-       const Eigen::Vector3d& position,
-       const Eigen::Vector3d& orientation,
-        const std::shared_ptr<Team>& team)
+    T1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
+       const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
         : Robot(name, type, number, position, orientation, team),
-        joint_map{{JointValue::HEAD_YAW, name+"_AAHead_yaw"},
-                    {JointValue::HEAD_PITCH, name+"_Head_pitch"},
-                    {JointValue::SHOULDER_LEFT_PITCH, name+"_Left_Shoulder_Pitch"},
-                    {JointValue::SHOULDER_LEFT_ROLL, name+"_Left_Shoulder_Roll"},
-                    {JointValue::ELBOW_LEFT_PITCH, name+"_Left_Elbow_Pitch"},
-                    {JointValue::ELBOW_LEFT_YAW, name+"_Left_Elbow_Yaw"},
-                    {JointValue::SHOULDER_RIGHT_PITCH, name+"_Right_Shoulder_Pitch"},
-                    {JointValue::SHOULDER_RIGHT_ROLL, name+"_Right_Shoulder_Roll"},
-                    {JointValue::ELBOW_RIGHT_PITCH, name+"_Right_Elbow_Pitch"},
-                    {JointValue::ELBOW_RIGHT_YAW, name+"_Right_Elbow_Yaw"},
-                    {JointValue::WAIST, name+"_Waist"},
-                    {JointValue::HIP_LEFT_PITCH, name+"_Left_Hip_Pitch"},
-                    {JointValue::HIP_LEFT_ROLL, name+"_Left_Hip_Roll"},
-                    {JointValue::HIP_LEFT_YAW, name+"_Left_Hip_Yaw"},
-                    {JointValue::KNEE_LEFT_PITCH, name+"_Left_Knee_Pitch"},
-                    {JointValue::ANKLE_LEFT_PITCH, name+"_Left_Ankle_Pitch"},
-                    {JointValue::ANKLE_LEFT_ROLL, name+"_Left_Ankle_Roll"},
-                    {JointValue::HIP_RIGHT_PITCH, name+"_Right_Hip_Pitch"},
-                    {JointValue::HIP_RIGHT_ROLL, name+"_Right_Hip_Roll"},
-                    {JointValue::HIP_RIGHT_YAW, name+"_Right_Hip_Yaw"},
-                    {JointValue::KNEE_RIGHT_PITCH, name+"_Right_Knee_Pitch"},
-                    {JointValue::ANKLE_RIGHT_PITCH, name+"_Right_Ankle_Pitch"},
-                    {JointValue::ANKLE_RIGHT_ROLL, name+"_Right_Ankle_Roll"}} {}
+          joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
+                    {JointValue::HEAD_PITCH, name + "_Head_pitch"},
+                    {JointValue::SHOULDER_LEFT_PITCH, name + "_Left_Shoulder_Pitch"},
+                    {JointValue::SHOULDER_LEFT_ROLL, name + "_Left_Shoulder_Roll"},
+                    {JointValue::ELBOW_LEFT_PITCH, name + "_Left_Elbow_Pitch"},
+                    {JointValue::ELBOW_LEFT_YAW, name + "_Left_Elbow_Yaw"},
+                    {JointValue::SHOULDER_RIGHT_PITCH, name + "_Right_Shoulder_Pitch"},
+                    {JointValue::SHOULDER_RIGHT_ROLL, name + "_Right_Shoulder_Roll"},
+                    {JointValue::ELBOW_RIGHT_PITCH, name + "_Right_Elbow_Pitch"},
+                    {JointValue::ELBOW_RIGHT_YAW, name + "_Right_Elbow_Yaw"},
+                    {JointValue::WAIST, name + "_Waist"},
+                    {JointValue::HIP_LEFT_PITCH, name + "_Left_Hip_Pitch"},
+                    {JointValue::HIP_LEFT_ROLL, name + "_Left_Hip_Roll"},
+                    {JointValue::HIP_LEFT_YAW, name + "_Left_Hip_Yaw"},
+                    {JointValue::KNEE_LEFT_PITCH, name + "_Left_Knee_Pitch"},
+                    {JointValue::ANKLE_LEFT_PITCH, name + "_Left_Ankle_Pitch"},
+                    {JointValue::ANKLE_LEFT_ROLL, name + "_Left_Ankle_Roll"},
+                    {JointValue::HIP_RIGHT_PITCH, name + "_Right_Hip_Pitch"},
+                    {JointValue::HIP_RIGHT_ROLL, name + "_Right_Hip_Roll"},
+                    {JointValue::HIP_RIGHT_YAW, name + "_Right_Hip_Yaw"},
+                    {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
+                    {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
+                    {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
     void bindMujoco(MujocoContext* mujCtx) override {
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
@@ -99,45 +97,41 @@ public:
 
     ~T1(){};
 
-private:
+   private:
     std::unordered_map<JointValue, std::string> joint_map;
 };
 
 class K1 : public Robot {
-public:
+   public:
     std::array<Camera*, 2> cameras = {};
     Imu* imu;
     Joints* joints = nullptr;
 
-    K1(const std::string& name,
-       const std::string& type,
-       uint8_t number,
-       const Eigen::Vector3d& position,
-       const Eigen::Vector3d& orientation,
-       const std::shared_ptr<Team>& team)
+    K1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
+       const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
         : Robot(name, type, number, position, orientation, team),
-        joint_map{{JointValue::HEAD_YAW, name+"_AAHead_yaw"},
-                    {JointValue::HEAD_PITCH, name+"_Head_pitch"},
-                    {JointValue::SHOULDER_LEFT_PITCH, name+"_ALeft_Shoulder_Pitch"},
-                    {JointValue::SHOULDER_LEFT_ROLL, name+"_Left_Shoulder_Roll"},
-                    {JointValue::ELBOW_LEFT_PITCH, name+"_Left_Elbow_Pitch"},
-                    {JointValue::ELBOW_LEFT_YAW, name+"_Left_Elbow_Yaw"},
-                    {JointValue::SHOULDER_RIGHT_ROLL, name+"_Right_Shoulder_Roll"},
-                    {JointValue::SHOULDER_RIGHT_PITCH, name+"_ARight_Shoulder_Pitch"},
-                    {JointValue::ELBOW_RIGHT_PITCH, name+"_Right_Elbow_Pitch"},
-                    {JointValue::ELBOW_RIGHT_YAW, name+"_Right_Elbow_Yaw"},
-                    {JointValue::HIP_LEFT_PITCH, name+"_Left_Hip_Pitch"},
-                    {JointValue::HIP_LEFT_ROLL, name+"_Left_Hip_Roll"},
-                    {JointValue::HIP_LEFT_YAW, name+"_Left_Hip_Yaw"},
-                    {JointValue::KNEE_LEFT_PITCH, name+"_Left_Knee_Pitch"},
-                    {JointValue::ANKLE_LEFT_PITCH, name+"_Left_Ankle_Pitch"},
-                    {JointValue::ANKLE_LEFT_ROLL, name+"_Left_Ankle_Roll"},
-                    {JointValue::HIP_RIGHT_PITCH, name+"_Right_Hip_Pitch"},
-                    {JointValue::HIP_RIGHT_ROLL, name+"_Right_Hip_Roll"},
-                    {JointValue::HIP_RIGHT_YAW, name+"_Right_Hip_Yaw"},
-                    {JointValue::KNEE_RIGHT_PITCH, name+"_Right_Knee_Pitch"},
-                    {JointValue::ANKLE_RIGHT_PITCH, name+"_Right_Ankle_Pitch"},
-                    {JointValue::ANKLE_RIGHT_ROLL, name+"_Right_Ankle_Roll"}} {}
+          joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
+                    {JointValue::HEAD_PITCH, name + "_Head_pitch"},
+                    {JointValue::SHOULDER_LEFT_PITCH, name + "_ALeft_Shoulder_Pitch"},
+                    {JointValue::SHOULDER_LEFT_ROLL, name + "_Left_Shoulder_Roll"},
+                    {JointValue::ELBOW_LEFT_PITCH, name + "_Left_Elbow_Pitch"},
+                    {JointValue::ELBOW_LEFT_YAW, name + "_Left_Elbow_Yaw"},
+                    {JointValue::SHOULDER_RIGHT_ROLL, name + "_Right_Shoulder_Roll"},
+                    {JointValue::SHOULDER_RIGHT_PITCH, name + "_ARight_Shoulder_Pitch"},
+                    {JointValue::ELBOW_RIGHT_PITCH, name + "_Right_Elbow_Pitch"},
+                    {JointValue::ELBOW_RIGHT_YAW, name + "_Right_Elbow_Yaw"},
+                    {JointValue::HIP_LEFT_PITCH, name + "_Left_Hip_Pitch"},
+                    {JointValue::HIP_LEFT_ROLL, name + "_Left_Hip_Roll"},
+                    {JointValue::HIP_LEFT_YAW, name + "_Left_Hip_Yaw"},
+                    {JointValue::KNEE_LEFT_PITCH, name + "_Left_Knee_Pitch"},
+                    {JointValue::ANKLE_LEFT_PITCH, name + "_Left_Ankle_Pitch"},
+                    {JointValue::ANKLE_LEFT_ROLL, name + "_Left_Ankle_Roll"},
+                    {JointValue::HIP_RIGHT_PITCH, name + "_Right_Hip_Pitch"},
+                    {JointValue::HIP_RIGHT_ROLL, name + "_Right_Hip_Roll"},
+                    {JointValue::HIP_RIGHT_YAW, name + "_Right_Hip_Yaw"},
+                    {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
+                    {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
+                    {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
     void bindMujoco(MujocoContext* mujCtx) override {
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
@@ -162,9 +156,8 @@ public:
 
     ~K1(){};
 
-private:
+   private:
     std::unordered_map<JointValue, std::string> joint_map;
-
 };
 
 class RobotManager {
@@ -213,12 +206,9 @@ class RobotManager {
             r->bindMujoco(mujContext);
     }
 
-    std::shared_ptr<Robot> create(const std::string& name,
-                              const std::string& type,
-                              uint8_t number,
-                              const Eigen::Vector3d& pos,
-                              const Eigen::Vector3d& ori, 
-                              const std::shared_ptr<Team> team) {
+    std::shared_ptr<Robot> create(const std::string& name, const std::string& type, uint8_t number,
+                                  const Eigen::Vector3d& pos, const Eigen::Vector3d& ori,
+                                  const std::shared_ptr<Team> team) {
         auto it = robotFactory.find(type);
         if (it != robotFactory.end())
             return it->second(name, type, number, pos, ori, team);
@@ -233,8 +223,9 @@ class RobotManager {
         }
     }
 
-    void startCommunicationServer(int port){
-        if (serverRunning_) throw std::runtime_error("Server already running");
+    void startCommunicationServer(int port) {
+        if (serverRunning_)
+            throw std::runtime_error("Server already running");
         serverRunning_ = true;
         serverThread_ = std::thread(&RobotManager::_serverInternal, this, port);
     }
@@ -252,15 +243,18 @@ class RobotManager {
     RobotManager(const RobotManager&) = delete;
     RobotManager& operator=(const RobotManager&) = delete;
 
-    void _serverInternal(int port){
+    void _serverInternal(int port) {
         int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (server_fd < 0) throw std::runtime_error("Failed to create socket");
+        if (server_fd < 0)
+            throw std::runtime_error("Failed to create socket");
 
         auto close_socket = [&]() { close(server_fd); };
-        struct SocketGuard { 
-            int fd; 
-            decltype(close_socket)& f; 
-            ~SocketGuard(){ f(); } 
+        struct SocketGuard {
+            int fd;
+            decltype(close_socket)& f;
+            ~SocketGuard() {
+                f();
+            }
         } guard{server_fd, close_socket};
 
         int opt = 1;
@@ -282,30 +276,34 @@ class RobotManager {
 
         while (serverRunning_) {
             int client_fd = accept(server_fd, nullptr, nullptr);
-            if (client_fd < 0) continue;
+            if (client_fd < 0)
+                continue;
 
             std::thread(&RobotManager::handleServerClient_, this, client_fd).detach();
         }
     }
 
-    void handleServerClient_(int client_fd){
+    void handleServerClient_(int client_fd) {
         char buffer[MAX_MSG_SIZE];
 
         while (true) {
             int n = read(client_fd, buffer, sizeof(buffer) - 1);
-            if (n <= 0) break; // Peer disconnected 
+            if (n <= 0)
+                break;  // Peer disconnected
             buffer[n] = '\0';
             std::string msg(buffer);
             auto sep = msg.find(':');
-            // Invalid message, should we handle this explicitely? If so, we should use a RAAI guard for the client_fd
-            if (sep == std::string::npos) continue;  
+            // Invalid message, should we handle this explicitely? If so, we should use a RAAI guard for the
+            // client_fd
+            if (sep == std::string::npos)
+                continue;
             std::string robotName = msg.substr(0, sep);
             std::string payload = msg.substr(sep + 1);
 
             std::unique_lock lock(mutex_);
 
-            for(std::shared_ptr<Robot> r : robots_){
-                if(r->name == robotName){
+            for (std::shared_ptr<Robot> r : robots_) {
+                if (r->name == robotName) {
                     r->handleMessage(payload);
                     break;
                 }
@@ -321,21 +319,16 @@ class RobotManager {
     mutable std::mutex mutex_;
     std::vector<std::shared_ptr<Robot>> robots_;
 
-    using RobotCreator = std::function<std::shared_ptr<Robot>(
-                         const std::string&, const std::string&, uint8_t,
-                         const Eigen::Vector3d&, const Eigen::Vector3d&,
-                         const std::shared_ptr<Team>&)>;
-    
+    using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t,
+                                                              const Eigen::Vector3d&, const Eigen::Vector3d&,
+                                                              const std::shared_ptr<Team>&)>;
+
     std::unordered_map<std::string, RobotCreator> robotFactory = {
-        {"Booster-K1", [](auto&& name, auto&& type, uint8_t number,
-                      auto&& pos, auto&& ori, auto&& team) {
-         return std::make_shared<K1>(name, type, number, pos, ori, team);
-        }},
-        {"Booster-T1", [](auto&& name, auto&& type, uint8_t number,
-                        auto&& pos, auto&& ori, auto&& team) {
-            return std::make_shared<T1>(name, type, number, pos, ori, team);
-        }}        
-    };
+        {"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori,
+                          auto&& team) { return std::make_shared<K1>(name, type, number, pos, ori, team); }},
+        {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& team) {
+             return std::make_shared<T1>(name, type, number, pos, ori, team);
+         }}};
 };
 
 }  // namespace spqr

@@ -2,8 +2,8 @@
 
 #include <mujoco/mujoco.h>
 
-#include <string>
 #include <iostream>
+#include <string>
 #include <unordered_map>
 
 #include "Sensor.h"
@@ -42,7 +42,7 @@ class Joints : public Sensor {
         : mujModel(mujModel), mujData(mujData) {
         for (auto& [jv, joint_name] : map) {
             int jointId = mj_name2id(mujModel, mjOBJ_JOINT, joint_name.c_str());
-            if(jointId == -1)
+            if (jointId == -1)
                 throw std::runtime_error("Joint not found: " + joint_name);
 
             joint_ids[jv] = jointId;
@@ -80,9 +80,10 @@ class Joints : public Sensor {
     void set_torque(const std::unordered_map<JointValue, mjtNum>& values) {
         for (const auto& [joint, val] : values) {
             auto it = actuator_ids.find(joint);
-            //for (const auto& [j, act_id] : actuator_ids) {
-            //    std::cout << "[ "<< static_cast<int>(joint) << " ]"<< static_cast<int>(j) << " -> " << act_id << "\n";
-            //}
+            // for (const auto& [j, act_id] : actuator_ids) {
+            //     std::cout << "[ "<< static_cast<int>(joint) << " ]"<< static_cast<int>(j) << " -> " <<
+            //     act_id << "\n";
+            // }
             if (it == actuator_ids.end())
                 continue;
             int act_id = it->second;

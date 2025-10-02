@@ -1,6 +1,7 @@
 #include "SimulationThread.h"
-#include "Robot.h"
+
 #include "Joint.h"
+#include "Robot.h"
 
 namespace spqr {
 
@@ -8,7 +9,7 @@ SimulationThread::SimulationThread(const mjModel* model, mjData* data)
     : model_(model), data_(data), running_(true) {}
 
 void SimulationThread::run() {
-    double sim_dt = 0.002;     // TODO: config
+    double sim_dt = 0.002;  // TODO: config
 
     if (model_) {
         sim_dt = model_->opt.timestep;
@@ -22,14 +23,13 @@ void SimulationThread::run() {
     double torque = 5.0;
     auto last_flip = clock::now();
 
-    while (running_){
-
+    while (running_) {
         // DEBUG!!!!
-        K1* rk = (K1*) RobotManager::instance().getRobots()[0].get();
-        T1* tk = (T1*) RobotManager::instance().getRobots()[1].get();
+        K1* rk = (K1*)RobotManager::instance().getRobots()[0].get();
+        T1* tk = (T1*)RobotManager::instance().getRobots()[1].get();
 
         if (std::chrono::duration<double>(clock::now() - last_flip).count() >= 2.0) {
-            torque = -torque;           // flip sign
+            torque = -torque;  // flip sign
             last_flip = clock::now();
         }
 
@@ -41,7 +41,8 @@ void SimulationThread::run() {
         next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
         std::this_thread::sleep_until(next_step_time);
 
-        if (clock::now() > next_step_time) next_step_time = clock::now();
+        if (clock::now() > next_step_time)
+            next_step_time = clock::now();
     }
 }
 
