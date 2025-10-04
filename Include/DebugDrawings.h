@@ -4,7 +4,7 @@
 
 #include <map>
 #include <algorithm>
-#include <iostream>
+#include <QColor>
 
 namespace spqr {
 class DebugDrawings {
@@ -21,7 +21,7 @@ class DebugDrawings {
      * @param radius: radius of the circle
      * @param color: RGBA color of the geom
      */
-    static void drawCircle(mjString idLocal, const double center[3], const double radius, const float color[4]);
+    static void drawCircle(mjString idLocal, const double center[3], const double radius, QColor color);
 
     /**
      * @brief drawSphere: initialize a mjGEOM_SPHERE in mujoco
@@ -30,7 +30,7 @@ class DebugDrawings {
      * @param radius: radius of the sphere
      * @param color: RGBA color of the geom
      */
-    static void drawSphere(mjString idLocal, const double center[3], const double radius, const float color[4]);
+    static void drawSphere(mjString idLocal, const double center[3], const double radius, QColor color);
 
     /**
      * @brief drawCylinder: initialize a mjGEOM_SPHERE in mujoco
@@ -41,7 +41,7 @@ class DebugDrawings {
      * @param color: RGBA color of the geom
      */
     static void drawCylinder(mjString idLocal, const double center[3], const double radius, const double length,
-                             const float color[4]);
+                             QColor color);
 
     // ---------------- rendering-only geom types (mjtGeom)
 
@@ -54,7 +54,7 @@ class DebugDrawings {
      * @param color: RGBA color of the geom
      */
     static void drawArrow(mjString idLocal, const double start[3], const double end[3], const double thickness,
-                          const float color[4]);
+                          QColor color);
 
     /**
      * @brief drawLine: initialize a mjGEOM_LINE in mujoco
@@ -65,7 +65,7 @@ class DebugDrawings {
      * @param color: RGBA color of the geom
      */
     static void drawLine(mjString idLocal, const double start[3], const double end[3], const double thickness,
-                         const float color[4]);
+                         QColor color);
 
    private:
     enum class drawGeomType {
@@ -95,7 +95,7 @@ class DebugDrawings {
      * @param color: RGBA color of the geometric primitive
      */
     static void drawRegularGeom(mjString idLocal, mjtGeom type, drawGeomType geomType, const double size[3], const double pos[3],
-                                const float color[4]);
+                                QColor color);
 
     /**
      * @brief drawRenderOnlyGeom: draw a rendering-only geometric primitive
@@ -107,7 +107,7 @@ class DebugDrawings {
      * @param color: RGBA color of the geometric primitive
      */
     static void drawRenderOnlyGeom(mjString idLocal, mjtGeom type, drawGeomType geomType, const double size[3], const double start[3],
-                                   const double end[3], const double width, const float color[4]);
+                                   const double end[3], const double width, QColor color);
 
     
     /**
@@ -119,8 +119,8 @@ class DebugDrawings {
     /**
      * @brief move the idLocal draw
      */
-    static void moveGeom(mjvGeom* geom, const double center[3]);
-    static void moveGeom(mjvGeom* geom, const double start[3], const double end[3]);
+    static void moveGeom(mjvGeom* geom, const double center[3], QColor color);
+    static void moveGeom(mjvGeom* geom, const double start[3], const double end[3], QColor color);
 };
 
 }  // namespace spqr
