@@ -16,6 +16,7 @@ namespace spqr {
 AppWindow::AppWindow(int& argc, char** argv) {
     std::signal(SIGTERM, signalHandler);
     std::signal(SIGINT, signalHandler);
+    std::signal(SIGSEGV, signalHandler);
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
     setWindowTitle(spqr::appName);
@@ -35,6 +36,7 @@ AppWindow::AppWindow(int& argc, char** argv) {
         QString fileArg = QString::fromLocal8Bit(argv[1]);
         loadScene(fileArg);
     }
+    DebugDrawings::init(&mujContext->scene);
 };
 
 void AppWindow::openScene() {
