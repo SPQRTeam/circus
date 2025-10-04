@@ -2,9 +2,9 @@
 
 #include <mujoco/mujoco.h>
 
-#include <map>
-#include <algorithm>
 #include <QColor>
+#include <algorithm>
+#include <map>
 
 namespace spqr {
 class DebugDrawings {
@@ -40,8 +40,8 @@ class DebugDrawings {
      * @param length: half length of the cylinder
      * @param color: RGBA color of the geom
      */
-    static void drawCylinder(mjString idLocal, const double center[3], const double radius, const double length,
-                             QColor color);
+    static void drawCylinder(mjString idLocal, const double center[3], const double radius,
+                             const double length, QColor color);
 
     // ---------------- rendering-only geom types (mjtGeom)
 
@@ -53,8 +53,8 @@ class DebugDrawings {
      * @param thickness: thickness of the arrow
      * @param color: RGBA color of the geom
      */
-    static void drawArrow(mjString idLocal, const double start[3], const double end[3], const double thickness,
-                          QColor color);
+    static void drawArrow(mjString idLocal, const double start[3], const double end[3],
+                          const double thickness, QColor color);
 
     /**
      * @brief drawLine: initialize a mjGEOM_LINE in mujoco
@@ -69,23 +69,25 @@ class DebugDrawings {
 
    private:
     enum class drawGeomType {
-            Sphere,       
-            Cylinder,     
-            Circle,       
-            Arrow, 
-            Line,
+        Sphere,
+        Cylinder,
+        Circle,
+        Arrow,
+        Line,
     };
 
-    struct GeomData{
+    struct GeomData {
         mjvGeom geom;
         drawGeomType drawType;
     };
 
-    inline static mjvScene* ptrDebugDrawingsScene;   // pointer to the mujoco scene where to draw the debug drawings
-    inline static std::map<mjString, GeomData> mapIdGeom; 
+    inline static mjvScene* ptrDebugDrawingsScene;  // pointer to the mujoco scene where to draw the debug
+                                                    // drawings
+    inline static std::map<mjString, GeomData> mapIdGeom;
 
-    //inline static std::vector<mjvGeom> geomsVector;  // vector that stores the debug drawings to be drawn
-    //inline static std::vector<int> idsVector;  // vector that stores the ids of the debug drawings to be drawn
+    // inline static std::vector<mjvGeom> geomsVector;  // vector that stores the debug drawings to be drawn
+    // inline static std::vector<int> idsVector;  // vector that stores the ids of the debug drawings to be
+    // drawn
 
     /**
      * @brief drawRegularGeom: draw a regular geometric primitive
@@ -94,8 +96,8 @@ class DebugDrawings {
      * @param pos: position of the geometric primitive
      * @param color: RGBA color of the geometric primitive
      */
-    static void drawRegularGeom(mjString idLocal, mjtGeom type, drawGeomType geomType, const double size[3], const double pos[3],
-                                QColor color);
+    static void drawRegularGeom(mjString idLocal, mjtGeom type, drawGeomType geomType, const double size[3],
+                                const double pos[3], QColor color);
 
     /**
      * @brief drawRenderOnlyGeom: draw a rendering-only geometric primitive
@@ -106,14 +108,14 @@ class DebugDrawings {
      * @param width: width of the geometric primitive
      * @param color: RGBA color of the geometric primitive
      */
-    static void drawRenderOnlyGeom(mjString idLocal, mjtGeom type, drawGeomType geomType, const double size[3], const double start[3],
-                                   const double end[3], const double width, QColor color);
+    static void drawRenderOnlyGeom(mjString idLocal, mjtGeom type, drawGeomType geomType,
+                                   const double size[3], const double start[3], const double end[3],
+                                   const double width, QColor color);
 
-    
     /**
      * @brief check is the mjv_Geom already exist
      */
-    
+
     static mjvGeom* isGeomExist(mjString idLocal, drawGeomType type);
 
     /**
