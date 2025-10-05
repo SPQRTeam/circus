@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "Container.h"
+
 namespace spqr {
 
 struct Team;  // Forward declaration

@@ -42,9 +42,9 @@ find_package(nlohmann_json REQUIRED)
 
 # ============================ CIRCUS LIBRARY ==================================================
 set(CMAKE_AUTOMOC ON)
-file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/Src/*.cpp)
+file(GLOB SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/Src/*.cpp)
 list(REMOVE_ITEM SOURCES ${CMAKE_SOURCE_DIR}/Src/Bindings.cpp)
-file(GLOB_RECURSE HEADERS ${CMAKE_SOURCE_DIR}/Include/*.h)
+file(GLOB HEADERS CONFIGURE_DEPENDS  ${CMAKE_SOURCE_DIR}/Include/*.h)
 add_library(${LIBRARY} STATIC ${SOURCES})
 target_sources(${LIBRARY} PRIVATE ${HEADERS}) # Just used for IDE discovering headers
 
