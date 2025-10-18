@@ -2,6 +2,8 @@
 
 #include <QSurfaceFormat>
 
+#include "curl/curl.h"
+
 namespace spqr {
 CircusApplication::CircusApplication(int& argc, char** argv) : QApplication(argc, argv) {
     QSurfaceFormat format;
@@ -14,5 +16,10 @@ CircusApplication::CircusApplication(int& argc, char** argv) : QApplication(argc
     format.setRenderableType(QSurfaceFormat::RenderableType::OpenGL);
     format.setProfile(QSurfaceFormat::CompatibilityProfile);
     QSurfaceFormat::setDefaultFormat(format);
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+}
+
+CircusApplication::~CircusApplication() {
+    curl_global_cleanup();
 }
 }  // namespace spqr

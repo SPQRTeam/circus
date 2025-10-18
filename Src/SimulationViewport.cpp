@@ -4,17 +4,15 @@
 #include <qnamespace.h>
 #include <qpoint.h>
 
-#include "RobotManager.h"
-
+#include "Team.h"
 namespace spqr {
 
-SimulationViewport::SimulationViewport(MujocoContext& mujContext, const RobotManager& robotManager)
+SimulationViewport::SimulationViewport(MujocoContext& mujContext)
     : model(mujContext.model),
       data(mujContext.data),
       cam(&mujContext.cam),
       opt(&mujContext.opt),
-      scene(&mujContext.scene),
-      robotManager(robotManager) {
+      scene(&mujContext.scene) {
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&SimulationViewport::update));
     timer->start(16);
@@ -38,15 +36,10 @@ void SimulationViewport::paintGL() {
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    mjv_updateScene(model, data, opt, &pert, cam, mjCAT_ALL, scene);
-
-    if (selectedRobot >= 0) {
-        robotManager.highlightRobot(selectedRobot, scene);
-    }
-
     mjrRect viewport = {0, 0, width, height};
     mjr_setBuffer(mjFB_WINDOW, &context);
     mjr_render(viewport, scene, &context);
+    mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
 }
 
 void SimulationViewport::wheelEvent(QWheelEvent* event) {
@@ -61,7 +54,7 @@ void SimulationViewport::mousePressEvent(QMouseEvent* event) {
         float relx = event->position().x() / logicalWidth;
         float rely = 1.0 - event->position().y() / logicalHeight;  // Flip Y for MuJoCo
         int selectedBody = selectBody(relx, rely);
-        selectedRobot = robotManager.rootBodyIndex(selectedBody);
+        selectedRobot = findBodyRoot(selectedBody);
 
         if (selectedBody >= 0) {
             pert.select = selectedRobot;
@@ -120,6 +113,13 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
     }
 
     lastMousePosition = event->position();
+}
+
+int SimulationViewport::findBodyRoot(int bodyId) const {
+    int root = bodyId;
+    while (model->body_parentid[root] != 0)
+        root = model->body_parentid[root];
+    return root;
 }
 
 int SimulationViewport::selectBody(float relx, float rely) const {

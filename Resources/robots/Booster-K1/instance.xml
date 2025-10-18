@@ -28,6 +28,11 @@
                     <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
                         material="black" mesh="Booster-K1_Head_2" />
                     <geom type="mesh" material="black" mesh="Booster-K1_Head_2" />
+
+                    <site name="head_left_cam_site" pos="0.05 0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
+                    <camera name="left_cam" pos="0.05 0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
+                    <site name="head_right_cam_site" pos="0.05 -0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
+                    <camera name="right_cam" pos="0.05 -0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
                 </body>
             </body>
             <body name="Left_Arm_1" pos="0 0.077 0.1845">
@@ -235,28 +240,28 @@
         </body>
     </worldbody>
     <actuator>
-        <motor name="AAHead_yaw" joint="AAHead_yaw" forcerange="-7.0 7.0" />
-        <motor name="Head_pitch" joint="Head_pitch" forcerange="-7.0 7.0" />
-        <motor name="ALeft_Shoulder_Pitch" joint="ALeft_Shoulder_Pitch" forcerange="-10.0 10.0" />
-        <motor name="Left_Shoulder_Roll" joint="Left_Shoulder_Roll" forcerange="-10.0 10.0" />
-        <motor name="Left_Elbow_Pitch" joint="Left_Elbow_Pitch" forcerange="-10.0 10.0" />
-        <motor name="Left_Elbow_Yaw" joint="Left_Elbow_Yaw" forcerange="-10.0 10.0" />
-        <motor name="ARight_Shoulder_Pitch" joint="ARight_Shoulder_Pitch" forcerange="-10.0 10.0" />
-        <motor name="Right_Shoulder_Roll" joint="Right_Shoulder_Roll" forcerange="-10.0 10.0" />
-        <motor name="Right_Elbow_Pitch" joint="Right_Elbow_Pitch" forcerange="-10.0 10.0" />
-        <motor name="Right_Elbow_Yaw" joint="Right_Elbow_Yaw" forcerange="-10.0 10.0" />
-        <motor name="Left_Hip_Pitch" joint="Left_Hip_Pitch" forcerange="-45.0 45.0" />
-        <motor name="Left_Hip_Roll" joint="Left_Hip_Roll" forcerange="-30.0 30.0" />
-        <motor name="Left_Hip_Yaw" joint="Left_Hip_Yaw" forcerange="-30.0 30.0" />
-        <motor name="Left_Knee_Pitch" joint="Left_Knee_Pitch" forcerange="-45.0 45.0" />
-        <motor name="Left_Ankle_Pitch" joint="Left_Ankle_Pitch" forcerange="-20.0 20.0" />
-        <motor name="Left_Ankle_Roll" joint="Left_Ankle_Roll" forcerange="-20.0 20.0" />
-        <motor name="Right_Hip_Pitch" joint="Right_Hip_Pitch" forcerange="-45.0 45.0" />
-        <motor name="Right_Hip_Roll" joint="Right_Hip_Roll" forcerange="-30.0 30.0" />
-        <motor name="Right_Hip_Yaw" joint="Right_Hip_Yaw" forcerange="-30.0 30.0" />
-        <motor name="Right_Knee_Pitch" joint="Right_Knee_Pitch" forcerange="-45.0 45.0" />
-        <motor name="Right_Ankle_Pitch" joint="Right_Ankle_Pitch" forcerange="-20.0 20.0" />
-        <motor name="Right_Ankle_Roll" joint="Right_Ankle_Roll" forcerange="-20.0 20.0" />
+        <motor name="AAHead_yaw" joint="AAHead_yaw" ctrllimited="true" ctrlrange="-7.0 7.0" gear="1" />
+        <motor name="Head_pitch" joint="Head_pitch" ctrllimited="true" ctrlrange="-7.0 7.0" gear="1" />
+        <motor name="ALeft_Shoulder_Pitch" joint="ALeft_Shoulder_Pitch" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="Left_Shoulder_Roll" joint="Left_Shoulder_Roll" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="Left_Elbow_Pitch" joint="Left_Elbow_Pitch" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="Left_Elbow_Yaw" joint="Left_Elbow_Yaw" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="ARight_Shoulder_Pitch" joint="ARight_Shoulder_Pitch" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="Right_Shoulder_Roll" joint="Right_Shoulder_Roll" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="Right_Elbow_Pitch" joint="Right_Elbow_Pitch" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="Right_Elbow_Yaw" joint="Right_Elbow_Yaw" ctrllimited="true" ctrlrange="-10.0 10.0" gear="1" />
+        <motor name="Left_Hip_Pitch" joint="Left_Hip_Pitch" ctrllimited="true" ctrlrange="-45.0 45.0" gear="1" />
+        <motor name="Left_Hip_Roll" joint="Left_Hip_Roll" ctrllimited="true" ctrlrange="-30.0 30.0" gear="1" />
+        <motor name="Left_Hip_Yaw" joint="Left_Hip_Yaw" ctrllimited="true" ctrlrange="-30.0 30.0" gear="1" />
+        <motor name="Left_Knee_Pitch" joint="Left_Knee_Pitch" ctrllimited="true" ctrlrange="-45.0 45.0" gear="1" />
+        <motor name="Left_Ankle_Pitch" joint="Left_Ankle_Pitch" ctrllimited="true" ctrlrange="-20.0 20.0" gear="1" />
+        <motor name="Left_Ankle_Roll" joint="Left_Ankle_Roll" ctrllimited="true" ctrlrange="-20.0 20.0" gear="1" />
+        <motor name="Right_Hip_Pitch" joint="Right_Hip_Pitch" ctrllimited="true" ctrlrange="-45.0 45.0" gear="1" />
+        <motor name="Right_Hip_Roll" joint="Right_Hip_Roll" ctrllimited="true" ctrlrange="-30.0 30.0" gear="1" />
+        <motor name="Right_Hip_Yaw" joint="Right_Hip_Yaw" ctrllimited="true" ctrlrange="-30.0 30.0" gear="1" />
+        <motor name="Right_Knee_Pitch" joint="Right_Knee_Pitch" ctrllimited="true" ctrlrange="-45.0 45.0" gear="1" />
+        <motor name="Right_Ankle_Pitch" joint="Right_Ankle_Pitch" ctrllimited="true" ctrlrange="-20.0 20.0" gear="1" />
+        <motor name="Right_Ankle_Roll" joint="Right_Ankle_Roll" ctrllimited="true" ctrlrange="-20.0 20.0" gear="1" />
     </actuator>
     <sensor>
         <framequat name="orientation" objtype="site" noise="0.001" objname="imu" />

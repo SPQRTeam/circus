@@ -4,11 +4,16 @@
 #include <yaml-cpp/node/parse.h>
 #include <yaml-cpp/yaml.h>
 
+#include <cstdint>
 #include <filesystem>
+#include <iostream>
+#include <memory>
 #include <sstream>
 #include <stack>
 #include <stdexcept>
 
+#include "Robot.h"
+#include "Team.h"
 using namespace pugi;
 using namespace std;
 namespace spqr {
@@ -39,8 +44,8 @@ SceneParser::SceneParser(const string& yamlPath) {
         if (!robotsNode.IsSequence())
             throw runtime_error("Each team must be a sequence of robots.");
 
-        TeamInfo teamSpec;
-        teamSpec.name = teamName;
+        shared_ptr<Team> teamSpec = std::make_shared<Team>();
+        teamSpec->name = teamName;
 
         uint8_t typeIndex = 0;
         for (const YAML::Node& robotNode : robotsNode) {
@@ -49,35 +54,32 @@ SceneParser::SceneParser(const string& yamlPath) {
             if (!robotNode["number"])
                 throw runtime_error("Robot missing jersey number");
 
-            RobotInfo robot;
-            robot.team = teamName;
-            robot.type = robotNode["type"].as<string>();
-            robot.number = robotNode["number"].as<int>();
-            robotTypes.insert(robot.type);
-
-            if (robotNode["name"])
-                robot.name = robotNode["name"].as<string>();
-            else
-                robot.name = teamName + "_" + robot.type + "_" + to_string(typeIndex++);
+            string robotType = robotNode["type"].as<string>();  // complete name <Brand>-<Model>
+            uint8_t robotNumber = robotNode["number"].as<uint8_t>();
+            string robotName = robotNode["name"] ? robotNode["name"].as<string>() :
+                                                   teamName + "_" + robotType + "_" + to_string(typeIndex++);
+            Vector3d pos = Vector3d::Zero();
+            Vector3d ori = Vector3d::Zero();
 
             if (robotNode["position"]) {
                 for (int i = 0; i < 3; ++i)
-                    robot.position[i] = robotNode["position"][i].as<double>();
-            } else {
-                robot.position.setZero();
+                    pos[i] = robotNode["position"][i].as<double>();
             }
 
             if (robotNode["orientation"]) {
                 for (int i = 0; i < 3; ++i)
-                    robot.orientation[i] = robotNode["orientation"][i].as<double>();
-            } else {
-                robot.orientation.setZero();
+                    ori[i] = robotNode["orientation"][i].as<double>();
             }
 
-            teamSpec.robots.push_back(std::move(robot));
+            shared_ptr<Robot> robot
+                = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamSpec);
+
+            robotTypes.insert(robotType);
+            teamSpec->robots.push_back(std::move(robot));
         }
 
-        scene.teams.push_back(std::move(teamSpec));
+        scene.teams.push_back(teamSpec);
+        TeamManager::instance().registerTeam(teamSpec);
     }
 }
 
@@ -136,8 +138,8 @@ string SceneParser::buildMuJoCoXml() {
     light.append_attribute("pos") = "0 0 100";
     light.append_attribute("dir") = "0 0 -1";
 
-    for (const TeamInfo& team : scene.teams) {
-        for (const RobotInfo& robot : team.robots) {
+    for (const shared_ptr<Team>& team : scene.teams) {
+        for (const shared_ptr<Robot>& robot : team->robots) {
             // TODO use team name to setup jerseys
             buildRobotInstance(robot, worldbody, actuator, sensor);
         }
@@ -187,10 +189,10 @@ void SceneParser::prefixSubtree(xml_node& root, const string& robotName) {
     }
 }
 
-void SceneParser::buildRobotInstance(const RobotInfo& robotInfo, xml_node& worldbody, xml_node& actuator,
-                                     xml_node& sensor) {
+void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody,
+                                     xml_node& actuator, xml_node& sensor) {
     filesystem::path instancePath
-        = filesystem::path(PROJECT_ROOT) / "Resources" / "robots" / robotInfo.type / "instance.xml";
+        = filesystem::path(PROJECT_ROOT) / "Resources" / "robots" / robotSpec->type / "instance.xml";
 
     if (!filesystem::exists(instancePath)) {
         throw runtime_error("Robot instance file does not exist: " + instancePath.string());
@@ -222,7 +224,7 @@ void SceneParser::buildRobotInstance(const RobotInfo& robotInfo, xml_node& world
     xml_node robotNode = *worldbodyModel.begin();
 
     std::ostringstream posStream;
-    posStream << robotInfo.position.x() << " " << robotInfo.position.y() << " " << robotInfo.position.z();
+    posStream << robotSpec->position.x() << " " << robotSpec->position.y() << " " << robotSpec->position.z();
     xml_attribute posAttr = robotNode.attribute("pos");
     if (posAttr) {
         posAttr.set_value(posStream.str().c_str());
@@ -231,8 +233,8 @@ void SceneParser::buildRobotInstance(const RobotInfo& robotInfo, xml_node& world
     }
 
     std::ostringstream oriStream;
-    oriStream << robotInfo.orientation.x() << " " << robotInfo.orientation.y() << " "
-              << robotInfo.orientation.z();
+    oriStream << robotSpec->orientation.x() << " " << robotSpec->orientation.y() << " "
+              << robotSpec->orientation.z();
     xml_attribute eulerAttr = robotNode.attribute("euler");
     if (eulerAttr) {
         eulerAttr.set_value(oriStream.str().c_str());
@@ -240,9 +242,9 @@ void SceneParser::buildRobotInstance(const RobotInfo& robotInfo, xml_node& world
         robotNode.append_attribute("euler") = oriStream.str().c_str();
     }
 
-    prefixSubtree(worldbodyModel, robotInfo.name);
-    prefixSubtree(sensorModel, robotInfo.name);
-    prefixSubtree(actuatorModel, robotInfo.name);
+    prefixSubtree(worldbodyModel, robotSpec->name);
+    prefixSubtree(sensorModel, robotSpec->name);
+    prefixSubtree(actuatorModel, robotSpec->name);
 
     for (xml_node child : worldbodyModel.children()) {
         worldbody.append_copy(child);
