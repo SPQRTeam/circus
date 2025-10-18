@@ -3,6 +3,7 @@
 #include <mujoco/mujoco.h>
 #include <netinet/in.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include <Eigen/Eigen>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <unistd.h>
 
 #include "Camera.h"
 #include "Container.h"
