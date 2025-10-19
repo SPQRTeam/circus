@@ -4,37 +4,12 @@
 
 #include <Eigen/Eigen>
 #include <random>
-#include <iostream>
 #include <string>
 
-#include <fstream>
-
+#include "Logger.h"
 #include "Sensor.h"
 
 namespace spqr {
-
-class DataCapture {
-    public:
-    std::ofstream logFile;
-
-    DataCapture(const std::string& filename) {
-        logFile.open(filename);
-        logFile << "q0,qx,qy,qz,"
-                << "wx,wy,wz\n";
-    }
-
-    void update(Eigen::Vector4d orientation, Eigen::Vector3d angularVelocity) {
-        logFile << orientation[0] << "," << orientation[1] << "," 
-                << orientation[2] << "," << orientation[3] << ","
-                << angularVelocity[0] << "," << angularVelocity[1] << ","
-                << angularVelocity[2] << "\n";
-    }
-
-    ~DataCapture() {
-        logFile.close();
-    }
-};
-
 class Imu : public Sensor {
    public:
     Imu(mjModel* mujModel, mjData* mujData, const char* orientationName, const char* gyroName)
@@ -58,7 +33,9 @@ class Imu : public Sensor {
         gyroAdr = mujModel->sensor_adr[gyroId];
         gyroDim = mujModel->sensor_dim[gyroId];
 
-        capture = new DataCapture(std::to_string(robotNumber));
+        std::string csvHeader = "q0,qx,qy,qz,wx,wy,wz";
+        capture = new Logger(std::to_string(robotNumber), csvHeader);
+        captureNoise = new Logger(std::to_string(robotNumber) + "_noise", csvHeader);
     }
 
     void update() {
@@ -66,7 +43,12 @@ class Imu : public Sensor {
         angularVelocity = Eigen::Map<const Eigen::Vector3d>(mujData->sensordata + gyroAdr, gyroDim);
         
         if(capture) {
-            capture->update(orientation, angularVelocity);
+            capture->log(orientation[0], orientation[1], orientation[2], 
+                    angularVelocity[0], angularVelocity[1], angularVelocity[2]);
+
+            addNoise(orientation, angularVelocity);
+            captureNoise->log(orientation[0], orientation[1], orientation[2], 
+                    angularVelocity[0], angularVelocity[1], angularVelocity[2]);
         }
     };
 
@@ -81,6 +63,23 @@ class Imu : public Sensor {
     int orientationId, orientationAdr, orientationDim;
     int gyroId, gyroAdr, gyroDim;
 
-    DataCapture* capture;
+    Logger* capture;
+    Logger* captureNoise;
+
+    void addNoise(Eigen::Vector4d& orientation, Eigen::Vector3d& angularVelocity,
+              double orientationNoiseStd = 0.1, double angularVelNoiseStd = 0.01)
+    {
+        static std::default_random_engine generator(std::random_device{}());
+        std::normal_distribution<double> orientationNoise(0.0, orientationNoiseStd);
+        std::normal_distribution<double> angularVelNoise(0.0, angularVelNoiseStd);
+
+        for (int i = 0; i < 4; ++i)
+            orientation(i) += orientationNoise(generator);
+
+        orientation.normalize();
+
+        for (int i = 0; i < 3; ++i)
+            angularVelocity(i) += angularVelNoise(generator);
+    }
 };
 }  // namespace spqr
