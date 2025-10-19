@@ -25,21 +25,23 @@ void SimulationThread::run() {
 
     while (running_) {
         // DEBUG!!!!
-        K1* rk = (K1*)RobotManager::instance().getRobots()[0].get();
-        T1* tk = (T1*)RobotManager::instance().getRobots()[1].get();
+        // K1* rk = (K1*)RobotManager::instance().getRobots()[0].get();
+        // T1* tk = (T1*)RobotManager::instance().getRobots()[1].get();
 
         if (std::chrono::duration<double>(clock::now() - last_flip).count() >= 2.0) {
             torque = -torque;  // flip sign
             last_flip = clock::now();
         }
 
-        rk->joints->set_torque({{JointValue::SHOULDER_LEFT_ROLL, torque}});
-        tk->joints->set_torque({{JointValue::SHOULDER_LEFT_ROLL, torque}});
+        // rk->joints->set_torque({{JointValue::SHOULDER_LEFT_ROLL, torque}});
+        // tk->joints->set_torque({{JointValue::SHOULDER_LEFT_ROLL, torque}});
         // END DEBUG!!!!
 
         mj_step(model_, data_);
         next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
         std::this_thread::sleep_until(next_step_time);
+
+        RobotManager::instance().getRobots()[0].get()->update();
 
         if (clock::now() > next_step_time)
             next_step_time = clock::now();
