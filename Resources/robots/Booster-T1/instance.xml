@@ -196,6 +196,6 @@
   </actuator>
     <sensor>
         <framequat name="orientation" objtype="site" noise="0.001" objname="imu" />
-        <gyro name="angular-velocity" site="imu" noise="0.005" />
+        <gyro name="angular-velocity" site="imu" noise="0.2" />
     </sensor>
 </mujoco>

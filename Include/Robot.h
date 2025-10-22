@@ -79,7 +79,7 @@ class T1 : public Robot {
 
     void bindMujoco(MujocoContext* mujCtx) override {
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
-        imu = new Imu(mujCtx->model, mujCtx->data, "orientation", "angular-velocity", number);
+        imu = new Imu(mujCtx->model, mujCtx->data, "orientation", (name + "_angular-velocity").c_str(), number);
         cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
