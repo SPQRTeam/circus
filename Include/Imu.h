@@ -24,7 +24,7 @@ class Imu : public Sensor {
     }
 
     Imu(mjModel* mujModel, mjData* mujData, const char* orientationName, const char* gyroName, const uint8_t robotNumber)
-        : mujModel(mujModel), mujData(mujData) {
+        : mujModel(mujModel), mujData(mujData), gen(std::random_device{}()) {
         orientationId = mj_name2id(mujModel, mjOBJ_SENSOR, orientationName);
         orientationAdr = mujModel->sensor_adr[orientationId];
         orientationDim = mujModel->sensor_dim[orientationId];
@@ -39,6 +39,15 @@ class Imu : public Sensor {
         std::string csvHeader = "q0,qx,qy,qz,wx,wy,wz";
         capture = new Logger(std::to_string(robotNumber), csvHeader);
         captureNoise = new Logger(std::to_string(robotNumber) + "_noise", csvHeader);
+
+        gyroBias.setZero();
+
+        double dt_ = 0.002; // TODO: get from config when SimulationThread changes
+
+        gyroNoiseStd = 0.03 / std::sqrt(dt_);
+        gyroBiasWalkStd = 5 * std::sqrt(dt_);
+        
+        normalDist = std::normal_distribution<double>(0., gyroNoiseStd);
     }
 
     void update() {
@@ -66,19 +75,27 @@ class Imu : public Sensor {
     int orientationId, orientationAdr, orientationDim;
     int gyroId, gyroAdr, gyroDim;
 
-    double orientationNoiseStd, gyroNoiseStd;
+    double orientationNoiseStd;
 
     Logger* capture;
     Logger* captureNoise;
 
-    void addNoise(Eigen::Vector4d& orientation, Eigen::Vector3d& angularVelocity,
-            double gyroscopeRandomWalk = 1, double gyroscopeNoiseDensity = 5) {
-        static std::default_random_engine generator(std::random_device{}());
-        std::normal_distribution<double> gyroscopeBiasDist(0., gyroNoiseStd);
-        std::normal_distribution<double> gyroscopeNoiseDist(0., gyroNoiseStd);
-        for (int i = 0; i < 4; ++i)
-            angularVelocity(i) += gyroscopeRandomWalk * gyroscopeBiasDist(generator)
-                                + gyroscopeNoiseDensity * gyroscopeNoiseDist(generator);
+    double gyroNoiseStd;       // rad/s discrete
+    double gyroBiasWalkStd;    // rad/s discrete (random walk step)
+
+    Eigen::Vector3d gyroBias;  // bias state
+    std::default_random_engine gen;
+    std::normal_distribution<double> normalDist;
+
+    void addNoise(Eigen::Vector4d& orientation, Eigen::Vector3d& angularVelocity)
+    {
+        // update bias for random walk component
+        for (int i = 0; i < 3; ++i)
+            gyroBias(i) += gyroBiasWalkStd * normalDist(gen);
+
+        // add normal noise + random wal bias
+        for (int i = 0; i < 3; ++i)
+            angularVelocity(i) += gyroBias(i) + gyroNoiseStd * normalDist(gen);
     }
 };
 }  // namespace spqr
