@@ -9,8 +9,6 @@ preview = ["pixi-build"]
 [dependencies]
 circus = { path = "." }
 python = "3.12.*"
-msgpack-cxx = ">=7.0.0,<8"
-
 
 [package]
 name = "circus"
@@ -33,10 +31,13 @@ pugixml = ">=1.15,<2"
 qt6-main = ">=6.9.2,<7"
 libmujoco = ">=3.3.2,<4"
 libgl-devel = ">=1.7.0,<2"
+msgpack-cxx = ">=7.0.0,<8"
+libboost-devel = ">=1.88.0,<2"
+
 
 [tasks]
 main = "python -c 'from circuspy import main; main();'"
 # TODO: Add classical C++ compilation task
 
 [activation]
-env = { PATH = "$CONDA_PREFIX/bin:$PATH", LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib" }
+env = { PATH = "$CONDA_PREFIX/bin:$PATH", LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib"}

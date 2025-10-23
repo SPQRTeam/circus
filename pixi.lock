@@ -219,8 +219,10 @@ packages:
   - qt6-main >=6.9.3,<6.10.0a0
   - libmujoco >=3.3.2,<3.3.3.0a0
   - libgl >=1.7.0,<2.0a0
+  - msgpack-cxx >=7.0.0,<8.0a0
+  - libboost >=1.88.0,<1.89.0a0
   input:
-    hash: a0ac4bb9054a5c99020f4b7ce055129b0e271900588ed3a4dad052ac419f7471
+    hash: 2f2da10c0036036b8231b6dea29953e1b78d7aef1ac13ebb503fdf69f4abc2d5
     globs: []
 - conda: https://prefix.dev/conda-forge/linux-64/cyrus-sasl-2.1.28-hd9c7081_0.conda
   sha256: ee09ad7610c12c7008262d713416d0b58bf365bc38584dce48950025850bdf3f

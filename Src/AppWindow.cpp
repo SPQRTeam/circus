@@ -15,6 +15,7 @@ namespace spqr {
 AppWindow::AppWindow(int& argc, char** argv) {
     std::signal(SIGTERM, signalHandler);
     std::signal(SIGINT, signalHandler);
+    std::signal(SIGSEGV, signalHandler);
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
     setWindowTitle(spqr::appName);

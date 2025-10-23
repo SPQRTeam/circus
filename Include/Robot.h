@@ -12,6 +12,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <msgpack.hpp>
 
 #include "Camera.h"
 #include "Container.h"
@@ -221,6 +222,7 @@ class RobotManager {
             r->container->create(image, {});
             r->container->start();
         }
+        startCommunicationServer(5555);
     }
 
     void startCommunicationServer(int port) {
@@ -273,7 +275,9 @@ class RobotManager {
             throw std::runtime_error("Listen failed");
 
         std::cout << "TCP server listening on port " << port << std::endl;
-
+        for(std::shared_ptr<Robot> r : robots_){
+            std::cout << "Welcome   " << r->name << std::endl;
+        }
         while (serverRunning_) {
             int client_fd = accept(server_fd, nullptr, nullptr);
             if (client_fd < 0)
@@ -288,27 +292,41 @@ class RobotManager {
 
         while (true) {
             int n = read(client_fd, buffer, sizeof(buffer) - 1);
-            if (n <= 0)
-                break;  // Peer disconnected
-            buffer[n] = '\0';
-            std::string msg(buffer);
-            auto sep = msg.find(':');
-            // Invalid message, should we handle this explicitely? If so, we should use a RAAI guard for the
-            // client_fd
-            if (sep == std::string::npos)
-                continue;
-            std::string robotName = msg.substr(0, sep);
-            std::string payload = msg.substr(sep + 1);
+            // Connection closed or error
+            if (n <= 0) break; 
+
+            // Unpack received message
+            msgpack::object_handle oh = msgpack::unpack(buffer, n);
+
+            // Extract message content
+            msgpack::object obj = oh.get();
+            // Print deserialized message
+            // std::cout << "Deserialized message: " << obj << std::endl;
+
+            // Invalid message, should we handle this explicitely? If so, we should use a RAAI guard for the client_fd
+            // Convert message to starting structure
+            std::vector<std::string> msg_vec;
+            obj.convert(msg_vec);
+            std::string robotName = msg_vec[0];
+            std::string payload = msg_vec[1];
 
             std::unique_lock lock(mutex_);
 
             for (std::shared_ptr<Robot> r : robots_) {
                 if (r->name == robotName) {
                     r->handleMessage(payload);
+
+                    // TODO: send back correct response
+                    // Potrebbe aver senso che sia una funzione del robot stesso (come handleMessage)
+                    std::cout << "Sending back\n";
+                    // const char* response = "ROS: received\n";
+                    const float response = 1.f;
+                    write(client_fd, &response, sizeof(response));
                     break;
                 }
             }
             lock.release();
+            mutex_.unlock();
         }
         close(client_fd);
     }
