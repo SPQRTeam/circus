@@ -7,12 +7,12 @@
 #include <Eigen/Eigen>
 #include <iostream>
 #include <memory>
+#include <msgpack.hpp>
 #include <mutex>
 #include <ostream>
 #include <string>
 #include <thread>
 #include <vector>
-#include <msgpack.hpp>
 
 #include "Camera.h"
 #include "Container.h"
@@ -275,7 +275,7 @@ class RobotManager {
             throw std::runtime_error("Listen failed");
 
         std::cout << "TCP server listening on port " << port << std::endl;
-        for(std::shared_ptr<Robot> r : robots_){
+        for (std::shared_ptr<Robot> r : robots_) {
             std::cout << "Welcome   " << r->name << std::endl;
         }
         while (serverRunning_) {
@@ -293,7 +293,8 @@ class RobotManager {
         while (true) {
             int n = read(client_fd, buffer, sizeof(buffer) - 1);
             // Connection closed or error
-            if (n <= 0) break; 
+            if (n <= 0)
+                break;
 
             // Unpack received message
             msgpack::object_handle oh = msgpack::unpack(buffer, n);
@@ -303,8 +304,8 @@ class RobotManager {
             // Print deserialized message
             // std::cout << "Deserialized message: " << obj << std::endl;
 
-            // Invalid message, should we handle this explicitely? If so, we should use a RAAI guard for the client_fd
-            // Convert message to starting structure
+            // Invalid message, should we handle this explicitely? If so, we should use a RAAI guard for the
+            // client_fd Convert message to starting structure
             std::vector<std::string> msg_vec;
             obj.convert(msg_vec);
             std::string robotName = msg_vec[0];
