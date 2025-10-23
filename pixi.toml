@@ -9,6 +9,8 @@ preview = ["pixi-build"]
 [dependencies]
 circus = { path = "." }
 python = "3.12.*"
+msgpack-cxx = ">=7.0.0,<8"
+
 
 [package]
 name = "circus"
