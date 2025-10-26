@@ -20,7 +20,7 @@ This project uses pixi to declare and reproduce the build/runtime dependency env
 
 ### Build
 From the project root run:
-``` 
+```
 pixi build [-v]
 ```
 This instructs pixi to create the environment specified in [pixi.toml](pixi.toml) and install declared host/development dependencies.
@@ -35,5 +35,3 @@ pixi run main
 - pixi configuration: [pixi.toml](pixi.toml)
 - Build configuration: [CMakeLists.txt](CMakeLists.txt)
 - C++ entrypoint: [Src/main.cpp](Src/main.cpp)
-
-

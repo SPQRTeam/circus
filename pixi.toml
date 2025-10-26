@@ -3,7 +3,6 @@ channels = [
   "https://prefix.dev/pixi-build-backends",
   "https://prefix.dev/conda-forge",
 ]
-# add Apple Silicon
 platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
@@ -16,7 +15,7 @@ name = "circus"
 version = "0.1.0"
 
 [package.build]
-backend = { name = "pixi-build-cmake", version = "0.3.*" }
+backend = { name = "pixi-build-cmake", version = "==0.3.4" }
 
 [package.build-dependencies]
 cmake = ">=3.27,<4"
@@ -32,11 +31,8 @@ libcurl = ">=8.14.1,<9"
 qt6-main = ">=6.9.2,<7"
 libmujoco = ">=3.3.2,<4"
 
-# ---- Per-platform OpenGL bits
-# [package.target.linux-64.host-dependencies]
-# libgl-devel = ">=1.7.0,<2"
-# macOS uses system OpenGL; don't pull libgl-devel
-# (no extra GL dep needed on osx-arm64)
+[package.target.linux-64.host-dependencies]
+libgl-devel = ">=1.7.0,<2"
 
 [package.target.osx-arm64.host-dependencies]
 

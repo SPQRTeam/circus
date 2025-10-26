@@ -6,11 +6,17 @@
 #include <memory>
 
 #include "Constants.h"
+#include "Container.h"
 #include "MujocoContext.h"
+#include "Robot.h"
 #include "SceneParser.h"
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
+    std::signal(SIGTERM, signalHandler);
+    std::signal(SIGINT, signalHandler);
+    std::signal(SIGSEGV, signalHandler);
+
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
     setWindowTitle(spqr::appName);
 
@@ -56,8 +62,20 @@ void AppWindow::loadScene(const QString& xml) {
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
-        robotManager = std::make_unique<RobotManager>(mujContext->model, parser.getSceneInfo());
-        viewport = std::make_unique<SimulationViewport>(*mujContext, *robotManager);
+        viewport = std::make_unique<SimulationViewport>(*mujContext);
+
+        for (const shared_ptr<Robot>& robot : RobotManager::instance().getRobots()) {
+            robot->container = std::make_unique<Container>(robot->name + "_container");
+            robot->container->create("ubuntu:22.04", {});
+            robot->container->start();
+
+            robot->leftCam.type = mjCAMERA_FIXED;
+            robot->leftCam.fixedcamid
+                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_left_cam").c_str());
+            robot->rightCam.type = mjCAMERA_FIXED;
+            robot->rightCam.fixedcamid
+                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_right_cam").c_str());
+        }
 
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
@@ -69,8 +87,16 @@ void AppWindow::loadScene(const QString& xml) {
     }
 }
 
+void AppWindow::signalHandler(int signal) {
+    TeamManager::instance().clear();
+
+    std::signal(signal, SIG_DFL);
+    std::raise(signal);
+}
+
 AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
+    TeamManager::instance().clear();
 }
 }  // namespace spqr

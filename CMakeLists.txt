@@ -7,8 +7,11 @@ set(LIBRARY ${PROJECT_NAME})
 set(EXECUTABLE ${PROJECT_NAME}-main)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
+  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n")
 add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 include(FetchContent)
 
@@ -292,9 +295,3 @@ if(BUILD_PYTHON_BINDINGS AND BINDINGS_SRC)
 endif()
 
 # ===============================================================================================
-
-
-# ============================== CLANGD =========================================================
-file(WRITE "${CMAKE_SOURCE_DIR}/.clangd"
-  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n")
-# ==============================================================================================

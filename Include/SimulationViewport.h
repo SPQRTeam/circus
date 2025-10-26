@@ -9,12 +9,11 @@
 
 #include "Constants.h"
 #include "MujocoContext.h"
-
 namespace spqr {
 
 class SimulationViewport : public QOpenGLWindow {
    public:
-    SimulationViewport(MujocoContext& mujContext, const RobotManager& robotManager);
+    SimulationViewport(MujocoContext& mujContext);
 
    protected:
     void initializeGL() override;
@@ -38,7 +37,6 @@ class SimulationViewport : public QOpenGLWindow {
     mjrContext context;
     QTimer* timer;
     mjvPerturb pert;
-    const RobotManager& robotManager;
 
     /**
      * @brief Selects a body in the simulation based on relative x and y coordinates.
@@ -52,6 +50,7 @@ class SimulationViewport : public QOpenGLWindow {
      * @return The index of the selected body, or -1 if no body is selected.
      */
     int selectBody(float relx, float rely) const;
+    int findBodyRoot(int bodyId) const;
     int selectedRobot = -1;
 
     int width = initialWindowWidth, height = initialWindowHeight;

@@ -4,9 +4,6 @@
 
 #include <string>
 
-#include "RobotManager.h"
-#include "SceneParser.h"
-
 namespace spqr {
 
 struct MujocoContext {

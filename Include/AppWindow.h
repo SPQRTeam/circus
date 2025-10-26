@@ -3,10 +3,10 @@
 
 #include <QMainWindow>
 #include <QVBoxLayout>
+#include <csignal>
 #include <memory>
 
 #include "MujocoContext.h"
-#include "RobotManager.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
 namespace spqr {
@@ -20,12 +20,13 @@ class AppWindow : public QMainWindow {
     void loadScene(const QString& xml);
     void openScene();
 
+    static void signalHandler(int signal);
+
     QVBoxLayout* mainLayout;
     QWidget* viewportContainer;
 
     std::unique_ptr<MujocoContext> mujContext;
     std::unique_ptr<SimulationViewport> viewport;
-    std::unique_ptr<RobotManager> robotManager;
     std::unique_ptr<SimulationThread> sim;
 };
 
