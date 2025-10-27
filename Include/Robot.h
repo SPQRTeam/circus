@@ -33,7 +33,7 @@ class Robot {
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
-    virtual void handleMessage(const std::string& payload) = 0;
+    virtual void handleMessage(const std::vector<double>& payload_efforts) = 0;
 
     std::string name;
     std::string type;
@@ -83,8 +83,11 @@ class T1 : public Robot {
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
 
-    void handleMessage(const std::string& payload) override {
-        std::cout << "Robot " << name << " received: " << payload << std::endl;
+    void handleMessage(const std::vector<double>& payload_efforts) override {
+        std::cout << "Robot  received following efforts: \n";
+        for(size_t i = 0; i < payload_efforts.size(); ++i){
+            std::cout << "     " << i << " -> " << payload_efforts[i] << std::endl;
+        }
     }
 
     void update() override {
@@ -142,8 +145,11 @@ class K1 : public Robot {
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
 
-    void handleMessage(const std::string& payload) override {
-        std::cout << "Robot " << name << " received: " << payload << std::endl;
+    void handleMessage(const std::vector<double>& payload_efforts) override {
+        std::cout << "Robot  received following efforts: \n";
+        for(size_t i = 0; i < payload_efforts.size(); ++i){
+            std::cout << "     " << i << " -> " << payload_efforts[i] << std::endl;
+        }
     }
 
     void update() override {
@@ -304,18 +310,21 @@ class RobotManager {
             // Print deserialized message
             // std::cout << "Deserialized message: " << obj << std::endl;
 
-            // Invalid message, should we handle this explicitely? If so, we should use a RAAI guard for the
-            // client_fd Convert message to starting structure
-            std::vector<std::string> msg_vec;
-            obj.convert(msg_vec);
-            std::string robotName = msg_vec[0];
-            std::string payload = msg_vec[1];
+            // Invalid message, should we handle this explicitely? 
+            // If so, we should use a RAAI guard for the client_fd 
+            
+            // Convert message to starting structure
+            std::tuple<std::string, std::vector<double>> message_tuple;
+            obj.convert(message_tuple);
+            std::string robotName;
+            std::vector<double> efforts;
+            std::tie(robotName, efforts) = message_tuple;
 
             std::unique_lock lock(mutex_);
 
             for (std::shared_ptr<Robot> r : robots_) {
                 if (r->name == robotName) {
-                    r->handleMessage(payload);
+                    r->handleMessage(efforts);
 
                     // TODO: send back correct response
                     // Potrebbe aver senso che sia una funzione del robot stesso (come handleMessage)
