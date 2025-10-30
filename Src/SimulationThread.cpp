@@ -19,25 +19,10 @@ void SimulationThread::run() {
 
     using clock = std::chrono::steady_clock;
     auto next_step_time = clock::now();
-
-    double torque = 5.0;
-    auto last_flip = clock::now();
-
     while (running_) {
-        // DEBUG!!!!
-        K1* rk = (K1*)RobotManager::instance().getRobots()[0].get();
-        T1* tk = (T1*)RobotManager::instance().getRobots()[1].get();
-
-        if (std::chrono::duration<double>(clock::now() - last_flip).count() >= 2.0) {
-            torque = -torque;  // flip sign
-            last_flip = clock::now();
-        }
-
-        rk->joints->set_torque({{JointValue::SHOULDER_LEFT_ROLL, torque}});
-        tk->joints->set_torque({{JointValue::SHOULDER_LEFT_ROLL, torque}});
-        // END DEBUG!!!!
-
         mj_step(model_, data_);
+        RobotManager::instance().update();
+
         next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
         std::this_thread::sleep_until(next_step_time);
 

@@ -17,6 +17,10 @@ class Camera : public Sensor {
                         &mujContext->scene);
     };
 
+    msgpack::object serialize(msgpack::zone& z){
+        throw std::runtime_error("not implemented");
+    }
+
    private:
     MujocoContext* mujContext;
 

@@ -8,8 +8,10 @@
 #include <iostream>
 #include <memory>
 #include <msgpack.hpp>
+#include <msgpack/v3/object_fwd_decl.hpp>
 #include <mutex>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -33,7 +35,8 @@ class Robot {
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
-    virtual void handleMessage(const std::vector<double>& payload_efforts) = 0;
+    virtual void receiveMessage(const std::map<std::string, msgpack::object>& message) = 0;
+    virtual std::map<std::string, msgpack::object> sendMessage() = 0;
 
     std::string name;
     std::string type;
@@ -47,7 +50,7 @@ class Robot {
 class T1 : public Robot {
    public:
     std::array<Camera*, 2> cameras = {};
-    Imu* imu;
+    Imu* imu = nullptr;
     Joints* joints = nullptr;
     T1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
        const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
@@ -83,11 +86,39 @@ class T1 : public Robot {
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
 
-    void handleMessage(const std::vector<double>& payload_efforts) override {
-        std::cout << "Robot  received following efforts: \n";
-        for(size_t i = 0; i < payload_efforts.size(); ++i){
-            std::cout << "     " << i << " -> " << payload_efforts[i] << std::endl;
+    void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
+        auto it = message.find("joint_torques");
+        if (it == message.end()) {
+            throw std::runtime_error("Error: 'joint_torques' key not found in message");
+            return;
         }
+
+        std::vector<double> joint_torques = it->second.as<std::vector<double>>();
+
+        if (joint_torques.size() != joint_map.size()) {
+            throw std::runtime_error("Error: joint_torques size (" + 
+                                    std::to_string(joint_torques.size()) + 
+                                    ") doesn't match number of joints (" + 
+                                    std::to_string(joint_map.size()) + ")");
+        }
+        
+        std::unordered_map<JointValue, mjtNum> torque_map;
+        size_t i = 0;
+        for (const auto& [joint_value, joint_name] : joint_map) {
+            torque_map[joint_value] = joint_torques[i++];
+        }
+        
+        joints->set_torque(torque_map);
+    }
+
+    std::map<std::string, msgpack::object> sendMessage() override {
+        msgpack::zone z;
+
+        std::map<std::string, msgpack::object> msg;
+        msg["robot_name"] = msgpack::object(name, z);
+        msg["imu"] = imu->serialize(z);
+        
+        return msg;
     }
 
     void update() override {
@@ -102,7 +133,7 @@ class T1 : public Robot {
     ~T1(){};
 
    private:
-    std::unordered_map<JointValue, std::string> joint_map;
+    std::map<JointValue, std::string> joint_map;
 };
 
 class K1 : public Robot {
@@ -145,11 +176,19 @@ class K1 : public Robot {
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
 
-    void handleMessage(const std::vector<double>& payload_efforts) override {
-        std::cout << "Robot  received following efforts: \n";
-        for(size_t i = 0; i < payload_efforts.size(); ++i){
-            std::cout << "     " << i << " -> " << payload_efforts[i] << std::endl;
+    void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
+        std::cout << "Hi I'm " << name << " message received: {";
+        bool first = true;
+        for (const auto& [key, val] : message) {
+            if (!first) std::cout << ", ";
+            std::cout << key << ": " << val;
+            first = false;
         }
+        std::cout << "}" << std::endl;
+    }
+
+    std::map<std::string, msgpack::object> sendMessage() override {
+         return {};
     }
 
     void update() override {
@@ -164,7 +203,7 @@ class K1 : public Robot {
     ~K1(){};
 
    private:
-    std::unordered_map<JointValue, std::string> joint_map;
+    std::map<JointValue, std::string> joint_map;
 };
 
 class RobotManager {
@@ -298,40 +337,47 @@ class RobotManager {
 
         while (true) {
             int n = read(client_fd, buffer, sizeof(buffer) - 1);
-            // Connection closed or error
             if (n <= 0)
                 break;
 
-            // Unpack received message
             msgpack::object_handle oh = msgpack::unpack(buffer, n);
-
-            // Extract message content
             msgpack::object obj = oh.get();
-            // Print deserialized message
-            // std::cout << "Deserialized message: " << obj << std::endl;
 
-            // Invalid message, should we handle this explicitely? 
-            // If so, we should use a RAAI guard for the client_fd 
+            if (obj.type != msgpack::type::MAP || obj.via.map.size == 0) {
+                close(client_fd);
+                throw std::runtime_error("Invalid message: expected non-empty map");
+            }
+
+            std::map<std::string, msgpack::object> data_map = obj.as<std::map<std::string, msgpack::object>>();
+            auto it = data_map.find("robot_name");
+            if (it == data_map.end()) {
+                close(client_fd);
+                throw std::runtime_error("Invalid message: 'robot_name' key not found");
+            }
+
+            if (it->second.type != msgpack::type::STR) {
+                close(client_fd);
+                throw std::runtime_error("Invalid message: 'robot_name' value is not a string");
+            }
+
+            std::string messageRecipient = it->second.as<std::string>();
             
-            // Convert message to starting structure
-            std::tuple<std::string, std::vector<double>> message_tuple;
-            obj.convert(message_tuple);
-            std::string robotName;
-            std::vector<double> efforts;
-            std::tie(robotName, efforts) = message_tuple;
-
             std::unique_lock lock(mutex_);
 
             for (std::shared_ptr<Robot> r : robots_) {
-                if (r->name == robotName) {
-                    r->handleMessage(efforts);
+                if (r->name == messageRecipient) {
+                    r->receiveMessage(data_map);
 
-                    // TODO: send back correct response
-                    // Potrebbe aver senso che sia una funzione del robot stesso (come handleMessage)
-                    std::cout << "Sending back\n";
-                    // const char* response = "ROS: received\n";
-                    const float response = 1.f;
-                    write(client_fd, &response, sizeof(response));
+                    std::map<std::string, msgpack::object> answ = r->sendMessage();
+
+                    msgpack::sbuffer sbuf;
+                    msgpack::pack(sbuf, answ);
+
+                    ssize_t sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
+                    if (sent < 0) {
+                        close(client_fd);
+                        throw std::runtime_error("Failed to send message");
+                    }
                     break;
                 }
             }
@@ -357,6 +403,6 @@ class RobotManager {
         {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& team) {
              return std::make_shared<T1>(name, type, number, pos, ori, team);
          }}};
-};
+    };
 
 }  // namespace spqr

@@ -4,8 +4,10 @@
 
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <map>
 
 #include "Sensor.h"
 
@@ -39,7 +41,7 @@ enum class JointValue {
 
 class Joints : public Sensor {
    public:
-    Joints(mjModel* mujModel, mjData* mujData, std::unordered_map<JointValue, std::string> map)
+    Joints(mjModel* mujModel, mjData* mujData, std::map<JointValue, std::string> map)
         : mujModel(mujModel), mujData(mujData) {
         for (auto& [jv, joint_name] : map) {
             int jointId = mj_name2id(mujModel, mjOBJ_JOINT, joint_name.c_str());
@@ -91,6 +93,10 @@ class Joints : public Sensor {
             mujData->ctrl[act_id] = std::clamp(val, mujModel->actuator_ctrlrange[2 * act_id],
                                                mujModel->actuator_ctrlrange[2 * act_id + 1]);
         }
+    }
+
+    msgpack::object serialize(msgpack::zone& z){
+        throw std::runtime_error("not implemented");
     }
 
    private:

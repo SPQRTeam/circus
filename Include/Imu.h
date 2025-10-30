@@ -26,6 +26,18 @@ class Imu : public Sensor {
         angularVelocity = Eigen::Map<const Eigen::Vector3d>(mujData->sensordata + gyroAdr, gyroDim);
     };
 
+    msgpack::object serialize(msgpack::zone& z){
+        std::vector<double> orientation_vec = {orientation(0), orientation(1), 
+                                               orientation(2), orientation(3)};
+
+        std::vector<double> angular_vel_vec = {angularVelocity(0), angularVelocity(1), angularVelocity(2)};
+
+        std::map<std::string, msgpack::object> imu_data;
+        imu_data["orientation"] = msgpack::object(orientation_vec, z);
+        imu_data["angular_velocity"] = msgpack::object(angular_vel_vec, z);
+        return msgpack::object(imu_data, z);
+    }
+
     Eigen::Vector4d orientation;      // [q0, qx, qy, qz] : orientation of the Imu wrt the world frame
     Eigen::Vector3d angularVelocity;  // [wx, wy, wz] : angular velocity expressed in the local frame of the
                                       // Imu
