@@ -321,9 +321,7 @@ class RobotManager {
             throw std::runtime_error("Listen failed");
 
         std::cout << "TCP server listening on port " << port << std::endl;
-        for (std::shared_ptr<Robot> r : robots_) {
-            std::cout << "Welcome   " << r->name << std::endl;
-        }
+
         while (serverRunning_) {
             int client_fd = accept(server_fd, nullptr, nullptr);
             if (client_fd < 0)
