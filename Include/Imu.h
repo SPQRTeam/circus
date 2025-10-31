@@ -39,8 +39,7 @@ class Imu : public Sensor {
     }
 
     Eigen::Vector4d orientation;      // [q0, qx, qy, qz] : orientation of the Imu wrt the world frame
-    Eigen::Vector3d angularVelocity;  // [wx, wy, wz] : angular velocity expressed in the local frame of the
-                                      // Imu
+    Eigen::Vector3d angularVelocity;  // [wx, wy, wz] : angular velocity expressed in the local frame of the Imu
 
    private:
     mjModel* mujModel;

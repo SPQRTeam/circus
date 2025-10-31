@@ -45,6 +45,8 @@ class Robot {
     Eigen::Vector3d orientation;  // Euler angles
     std::unique_ptr<Container> container;
     std::shared_ptr<Team> team;
+
+    msgpack::zone buffer_zone_;
 };
 
 class T1 : public Robot {
@@ -112,11 +114,10 @@ class T1 : public Robot {
     }
 
     std::map<std::string, msgpack::object> sendMessage() override {
-        msgpack::zone z;
-
+        buffer_zone_.clear();
         std::map<std::string, msgpack::object> msg;
-        msg["robot_name"] = msgpack::object(name, z);
-        msg["imu"] = imu->serialize(z);
+        msg["robot_name"] = msgpack::object(name, buffer_zone_);
+        msg["imu"] = imu->serialize(buffer_zone_);
         
         return msg;
     }
