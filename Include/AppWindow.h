@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <csignal>
 #include <memory>
+#include <string>
 
 #include "MujocoContext.h"
 #include "SimulationThread.h"
@@ -28,6 +29,8 @@ class AppWindow : public QMainWindow {
     std::unique_ptr<MujocoContext> mujContext;
     std::unique_ptr<SimulationViewport> viewport;
     std::unique_ptr<SimulationThread> sim;
+
+    std::string dockerfile_path;
 };
 
 }  // namespace spqr

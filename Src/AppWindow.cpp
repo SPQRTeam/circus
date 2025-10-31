@@ -4,6 +4,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <memory>
+#include <stdexcept>
 
 #include "Constants.h"
 #include "Container.h"
@@ -32,10 +33,25 @@ AppWindow::AppWindow(int& argc, char** argv) {
     fileMenu->addAction(openSceneAction);
     connect(openSceneAction, &QAction::triggered, this, &AppWindow::openScene);
 
-    if (argc > 1) {
-        QString fileArg = QString::fromLocal8Bit(argv[1]);
+    if (argc < 2) {
+    throw std::runtime_error(
+        "A Dockerfile path is required. "
+        "Usage: pixi run circus-main <dockerfile_path> [scene.yaml]"
+        );
+    }
+
+    dockerfile_path = argv[1];
+    std::optional<std::string> scenePath;
+
+    if (argc >= 3 && std::string(argv[2]).ends_with(".yaml")) {
+        scenePath = argv[2];
+    }
+
+    if (scenePath) {
+        QString fileArg = QString::fromLocal8Bit(scenePath->c_str());
         loadScene(fileArg);
     }
+
 };
 
 void AppWindow::openScene() {
@@ -46,7 +62,7 @@ void AppWindow::openScene() {
     }
 }
 
-void AppWindow::loadScene(const QString& xml) {
+void AppWindow::loadScene(const QString& yamlFile) {
     try {
         if (sim) {
             sim->stop();
@@ -59,13 +75,13 @@ void AppWindow::loadScene(const QString& xml) {
             viewportContainer = nullptr;
         }
 
-        SceneParser parser(xml.toStdString());
+        SceneParser parser(yamlFile.toStdString());
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
-        RobotManager::instance().startContainers("ubuntu:22.04");
+        RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
         viewportContainer = QWidget::createWindowContainer(viewport.get());

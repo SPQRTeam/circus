@@ -2,8 +2,6 @@
 
 #include <cassert>
 #include <climits>
-#include <cstddef>
-#include <stdexcept>
 
 #define POST "POST"
 #define GET "GET"
@@ -33,7 +31,7 @@ inline std::string start_container_endpoint(const std::string& id) {
 inline std::string stop_container_endpoint(const std::string& id) {
     return "/containers/" + id
            + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround. If the application
-                           // is well behaved, this shouldn't be necessary
+                       // is well behaved, this shouldn't be necessary
 }
 
 inline std::string remove_container_endpoint(const std::string& id) {
@@ -66,18 +64,18 @@ Container::~Container() {
         curl_easy_cleanup(curl_handle);
 }
 
-void Container::create(const std::string& image, const std::vector<std::string>& entrypoint) {
+void Container::create(const std::string& robot_name, const std::string& image, const std::vector<std::string>& binds) {
     nlohmann::json payload;
     payload["Image"] = image;
-    if (!entrypoint.empty())
-        payload["Entrypoint"] = entrypoint;
 
     // Forcing networkMode to host is necessary to establish a communication between simulator and docker
     // container.
-    payload["HostConfig"] = {{"NetworkMode", "host"}};
+    payload["HostConfig"] = {
+        {"NetworkMode", "host"},
+        {"Binds", binds}
+    };
 
-    // TODO: Just a workaround to keep the container active
-    payload["Cmd"] = {"tail", "-f", "/dev/null"};
+    payload["Env"] = {"ROBOT_NAME="+robot_name};
 
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);
@@ -104,7 +102,7 @@ void Container::stop() {
         throw std::runtime_error("Failed to stop container " + name + " which is not RUNNING.");
 
     const std::string endpoint = stop_container_endpoint(id);
-    request(POST, endpoint, STOP_OK_RESPONSE);
+    request(POST, endpoint, 0);
     state = ContainerState::IDLE;
 }
 
@@ -155,7 +153,7 @@ std::string Container::request(const std::string& method, const std::string& end
     if (res != CURLE_OK)
         throw std::runtime_error(std::string("Curl error: ") + curl_easy_strerror(res));
 
-    if (response_code != expected_response)
+    if (expected_response && response_code != expected_response)
         throw std::runtime_error("Docker API request to " + endpoint + " failed: HTTP "
                                  + std::to_string(response_code) + ". " + response);
 

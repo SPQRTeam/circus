@@ -3,6 +3,8 @@
 #include <mujoco/mujoco.h>
 #include <netinet/in.h>
 #include <sys/types.h>
+#include <yaml-cpp/node/node.h>
+#include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
 #include <iostream>
@@ -21,6 +23,7 @@
 #include "Imu.h"
 #include "Joint.h"
 #include "MujocoContext.h"
+#include "Constants.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -83,7 +86,8 @@ class T1 : public Robot {
 
     void bindMujoco(MujocoContext* mujCtx) override {
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
-        imu = new Imu(mujCtx->model, mujCtx->data, "orientation", "angular-velocity");
+        imu = new Imu(mujCtx->model, mujCtx->data, (name + "_orientation").c_str(),
+                      (name + "_angular-velocity").c_str());
         cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
@@ -262,13 +266,46 @@ class RobotManager {
         return nullptr;
     }
 
-    void startContainers(const std::string& image) {
+    void startContainers() {
+        startCommunicationServer(frameworkCommunicationPort);
+
+        YAML::Node configRoot;
+        try {
+            configRoot = YAML::LoadFile(frameworkConfigPath);
+        } catch (const YAML::BadFile& e) {
+            throw std::runtime_error("Failed to open YAML file: " + std::string(frameworkConfigPath));
+        } catch (const YAML::ParserException& e) {
+            throw std::runtime_error("Failed to parse YAML file: " + std::string(e.what()));
+        }
+
+        if (!configRoot["image"])
+            throw std::runtime_error("Missing 'image' key in YAML file");
+
+        std::string image;
+        try {
+            image = configRoot["image"].as<std::string>();
+        } catch (const YAML::Exception& e) {
+            throw std::runtime_error("'image' must be a string: " + std::string(e.what()));
+        }
+
+        if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
+            throw std::runtime_error("'volumes' key missing or not a sequence");
+
+        std::vector<std::string> binds;
+        for (const auto& v : configRoot["volumes"]) {
+            try {
+                binds.push_back(v.as<std::string>());
+            } catch (const YAML::Exception& e) {
+                throw std::runtime_error("Volume entry must be a string: " + std::string(e.what()));
+            }
+        }
+
         for (std::shared_ptr<Robot> r : robots_) {
+            std::cout << r->name + "_container" << std::endl;
             r->container = std::make_unique<Container>(r->name + "_container");
-            r->container->create(image, {});
+            r->container->create(r->name, image, binds);
             r->container->start();
         }
-        startCommunicationServer(5555);
     }
 
     void startCommunicationServer(int port) {
@@ -319,8 +356,6 @@ class RobotManager {
 
         if (listen(server_fd, robots_.size()) < 0)
             throw std::runtime_error("Listen failed");
-
-        std::cout << "TCP server listening on port " << port << std::endl;
 
         while (serverRunning_) {
             int client_fd = accept(server_fd, nullptr, nullptr);

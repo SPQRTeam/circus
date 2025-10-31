@@ -12,7 +12,7 @@ class Container {
     Container(const std::string& name, const std::string& sockPath = "/var/run/docker.sock");
     ~Container();
 
-    void create(const std::string& image, const std::vector<std::string>& entrypoint = {});
+    void create(const std::string& robot_name, const std::string& image, const std::vector<std::string>& binds);
 
     void start();
     void stop();
