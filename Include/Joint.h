@@ -3,7 +3,6 @@
 #include <mujoco/mujoco.h>
 
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -59,7 +58,7 @@ class Joints : public Sensor {
         }
     }
 
-    void update() {
+    void doUpdate() override {
         for (const auto& [joint, joint_id] : joint_ids) {
             position[joint] = mujData->qpos[mujModel->jnt_qposadr[joint_id]];  // TODO: assuming size = 1
             velocity[joint] = mujData->qvel[mujModel->jnt_dofadr[joint_id]];
@@ -95,7 +94,7 @@ class Joints : public Sensor {
         }
     }
 
-    msgpack::object serialize(msgpack::zone& z){
+    msgpack::object doSerialize (msgpack::zone& z) override {
         throw std::runtime_error("not implemented");
     }
 

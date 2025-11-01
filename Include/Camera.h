@@ -12,12 +12,12 @@ class Camera : public Sensor {
         cam.fixedcamid = mj_name2id(mujContext->model, mjOBJ_CAMERA, cameraName);
     }
 
-    void update() {
+    void doUpdate() override {
         mjv_updateScene(mujContext->model, mujContext->data, &mujContext->opt, nullptr, &cam, mjCAT_ALL,
                         &mujContext->scene);
     };
 
-    msgpack::object serialize(msgpack::zone& z){
+    msgpack::object doSerialize(msgpack::zone& z) override {
         throw std::runtime_error("not implemented");
     }
 
