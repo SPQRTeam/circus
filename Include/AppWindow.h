@@ -3,9 +3,7 @@
 
 #include <QMainWindow>
 #include <QVBoxLayout>
-#include <csignal>
 #include <memory>
-#include <string>
 
 #include "MujocoContext.h"
 #include "SimulationThread.h"

@@ -1,7 +1,6 @@
 #include "Container.h"
 
 #include <cassert>
-#include <climits>
 
 #define POST "POST"
 #define GET "GET"
@@ -31,7 +30,7 @@ inline std::string start_container_endpoint(const std::string& id) {
 inline std::string stop_container_endpoint(const std::string& id) {
     return "/containers/" + id
            + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround. If the application
-                       // is well behaved, this shouldn't be necessary
+                           // is well behaved, this shouldn't be necessary
 }
 
 inline std::string remove_container_endpoint(const std::string& id) {
@@ -64,18 +63,16 @@ Container::~Container() {
         curl_easy_cleanup(curl_handle);
 }
 
-void Container::create(const std::string& robot_name, const std::string& image, const std::vector<std::string>& binds) {
+void Container::create(const std::string& robot_name, const std::string& image,
+                       const std::vector<std::string>& binds) {
     nlohmann::json payload;
     payload["Image"] = image;
 
     // Forcing networkMode to host is necessary to establish a communication between simulator and docker
     // container.
-    payload["HostConfig"] = {
-        {"NetworkMode", "host"},
-        {"Binds", binds}
-    };
+    payload["HostConfig"] = {{"NetworkMode", "host"}, {"Binds", binds}};
 
-    payload["Env"] = {"ROBOT_NAME="+robot_name};
+    payload["Env"] = {"ROBOT_NAME=" + robot_name};
 
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);

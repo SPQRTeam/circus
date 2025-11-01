@@ -3,10 +3,10 @@
 #include <mujoco/mujoco.h>
 
 #include <algorithm>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <map>
 
 #include "Sensor.h"
 
@@ -94,7 +94,7 @@ class Joints : public Sensor {
         }
     }
 
-    msgpack::object doSerialize (msgpack::zone& z) override {
+    msgpack::object doSerialize(msgpack::zone& z) override {
         throw std::runtime_error("not implemented");
     }
 

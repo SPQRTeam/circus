@@ -1,6 +1,7 @@
 #include "SimulationThread.h"
 
-#include "Joint.h"
+#include <stdexcept>
+
 #include "Robot.h"
 
 namespace spqr {
@@ -9,13 +10,10 @@ SimulationThread::SimulationThread(const mjModel* model, mjData* data)
     : model_(model), data_(data), running_(true) {}
 
 void SimulationThread::run() {
-    double sim_dt = 0.002;  // TODO: config
+    if (!model_)
+        throw std::runtime_error("Cannot start simulation without mujoco model");
 
-    if (model_) {
-        sim_dt = model_->opt.timestep;
-        if (sim_dt <= 0)
-            sim_dt = 0.002;
-    }
+    double sim_dt = model_->opt.timestep;
 
     using clock = std::chrono::steady_clock;
     auto next_step_time = clock::now();

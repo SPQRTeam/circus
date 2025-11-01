@@ -4,7 +4,7 @@
 #include <mutex>
 #include <shared_mutex>
 class Sensor {
-public:
+   public:
     virtual ~Sensor() = default;
 
     virtual void update() final {
@@ -17,10 +17,10 @@ public:
         return doSerialize(z);
     }
 
-protected:
+   protected:
     virtual void doUpdate() = 0;
     virtual msgpack::object doSerialize(msgpack::zone& z) = 0;
 
-private:
+   private:
     mutable std::shared_mutex mtx_;
 };

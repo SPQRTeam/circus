@@ -41,7 +41,6 @@ AppWindow::AppWindow(int& argc, char** argv) {
         QString fileArg = QString::fromLocal8Bit(scenePath->c_str());
         loadScene(fileArg);
     }
-
 };
 
 void AppWindow::openScene() {

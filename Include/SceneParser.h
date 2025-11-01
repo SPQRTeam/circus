@@ -6,7 +6,6 @@
 #include <memory>
 #include <pugixml.hpp>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 
 #include "Robot.h"

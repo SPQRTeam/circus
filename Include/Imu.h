@@ -27,8 +27,8 @@ class Imu : public Sensor {
     };
 
     msgpack::object doSerialize(msgpack::zone& z) override {
-        std::vector<double> orientation_vec = {orientation(0), orientation(1), 
-                                               orientation(2), orientation(3)};
+        std::vector<double> orientation_vec
+            = {orientation(0), orientation(1), orientation(2), orientation(3)};
 
         std::vector<double> angular_vel_vec = {angularVelocity(0), angularVelocity(1), angularVelocity(2)};
 
@@ -37,11 +37,11 @@ class Imu : public Sensor {
         imu_data["angular_velocity"] = msgpack::object(angular_vel_vec, z);
         return msgpack::object(imu_data, z);
     }
-    
-    private:
-    
+
+   private:
     Eigen::Vector4d orientation;      // [q0, qx, qy, qz] : orientation of the Imu wrt the world frame
-    Eigen::Vector3d angularVelocity;  // [wx, wy, wz] : angular velocity expressed in the local frame of the Imu
+    Eigen::Vector3d angularVelocity;  // [wx, wy, wz] : angular velocity expressed in the local frame of the
+                                      // Imu
 
     mjModel* mujModel;
     mjData* mujData;

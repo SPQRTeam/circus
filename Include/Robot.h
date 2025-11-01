@@ -2,6 +2,7 @@
 
 #include <mujoco/mujoco.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
@@ -17,14 +18,13 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <poll.h>
 
 #include "Camera.h"
+#include "Constants.h"
 #include "Container.h"
 #include "Imu.h"
 #include "Joint.h"
 #include "MujocoContext.h"
-#include "Constants.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -35,7 +35,7 @@ class Robot {
    public:
     Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
           const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : name(name), type(type), number(number), position(position), orientation(orientation), team(team){};
+        : name(name), type(type), number(number), position(position), orientation(orientation), team(team) {};
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -103,18 +103,17 @@ class T1 : public Robot {
         std::vector<double> joint_torques = it->second.as<std::vector<double>>();
 
         if (joint_torques.size() != joint_map.size()) {
-            throw std::runtime_error("Error: joint_torques size (" + 
-                                    std::to_string(joint_torques.size()) + 
-                                    ") doesn't match number of joints (" + 
-                                    std::to_string(joint_map.size()) + ")");
+            throw std::runtime_error("Error: joint_torques size (" + std::to_string(joint_torques.size())
+                                     + ") doesn't match number of joints (" + std::to_string(joint_map.size())
+                                     + ")");
         }
-        
+
         std::unordered_map<JointValue, mjtNum> torque_map;
         size_t i = 0;
         for (const auto& [joint_value, joint_name] : joint_map) {
             torque_map[joint_value] = joint_torques[i++];
         }
-        
+
         joints->set_torque(torque_map);
     }
 
@@ -123,7 +122,7 @@ class T1 : public Robot {
         std::map<std::string, msgpack::object> msg;
         msg["robot_name"] = msgpack::object(name, buffer_zone_);
         msg["imu"] = imu->serialize(buffer_zone_);
-        
+
         return msg;
     }
 
@@ -136,7 +135,7 @@ class T1 : public Robot {
         imu->update();
     }
 
-    ~T1(){};
+    ~T1() {};
 
    private:
     std::map<JointValue, std::string> joint_map;
@@ -186,7 +185,8 @@ class K1 : public Robot {
         std::cout << "Hi I'm " << name << " message received: {";
         bool first = true;
         for (const auto& [key, val] : message) {
-            if (!first) std::cout << ", ";
+            if (!first)
+                std::cout << ", ";
             std::cout << key << ": " << val;
             first = false;
         }
@@ -194,7 +194,7 @@ class K1 : public Robot {
     }
 
     std::map<std::string, msgpack::object> sendMessage() override {
-         return {};
+        return {};
     }
 
     void update() override {
@@ -206,7 +206,7 @@ class K1 : public Robot {
         imu->update();
     }
 
-    ~K1(){};
+    ~K1() {};
 
    private:
     std::map<JointValue, std::string> joint_map;
@@ -316,7 +316,8 @@ class RobotManager {
     }
 
     void stopCommunicationServer() {
-        if(!serverRunning_) return;
+        if (!serverRunning_)
+            return;
 
         serverRunning_ = false;
 
@@ -354,9 +355,12 @@ class RobotManager {
 
         // Using a polling server. It isn't immediately intuitive, but it is efficient for this use case.
         while (serverRunning_) {
-            // the poll blocks until a new connection arrives on server_fd or data arrives in one of the monitored fd or a socket closes or the timeout expires.
+            // the poll blocks until a new connection arrives on server_fd or data arrives in one of the
+            // monitored fd or a socket closes or the timeout expires.
             int ret = poll(fds.data(), fds.size(), 100);
-            if (ret <= 0) continue; // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is still true)
+            if (ret <= 0)
+                continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
+                           // still true)
 
             for (size_t i = 0; i < fds.size(); ++i) {
                 // An event occured for the i-th fd
@@ -366,8 +370,7 @@ class RobotManager {
                         int client_fd = accept(server_fd, nullptr, nullptr);
                         if (client_fd >= 0)
                             fds.push_back({client_fd, POLLIN, 0});
-                    } 
-                    else {
+                    } else {
                         // The events for other fds indicate either an incoming message or a closed connection
                         // the read call disambiguates the two cases
                         char buffer[MAX_MSG_SIZE];
@@ -382,7 +385,8 @@ class RobotManager {
                         msgpack::object_handle oh = msgpack::unpack(buffer, n);
                         auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
                         auto it = data_map.find("robot_name");
-                        if (it == data_map.end()) continue;
+                        if (it == data_map.end())
+                            continue;
 
                         std::string messageRecipient = it->second.as<std::string>();
 
@@ -402,7 +406,8 @@ class RobotManager {
             }
         }
 
-        for (auto& fd : fds) close(fd.fd);
+        for (auto& fd : fds)
+            close(fd.fd);
     }
 
     std::atomic<bool> serverRunning_ = false;
@@ -421,6 +426,6 @@ class RobotManager {
         {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& team) {
              return std::make_shared<T1>(name, type, number, pos, ori, team);
          }}};
-    };
+};
 
 }  // namespace spqr
