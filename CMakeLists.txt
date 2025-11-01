@@ -121,6 +121,7 @@ endif()
 # -------------------- Collect sources and split into: core, main, bindings
 set(_src_dir "${CMAKE_SOURCE_DIR}/Src")
 set(_include_dir "${CMAKE_SOURCE_DIR}/Include")
+set(_assets_dir "${CMAKE_SOURCE_DIR}/Assets")
 
 # Source files
 file(GLOB_RECURSE SOURCES ${_src_dir}/*.cpp)
@@ -134,6 +135,7 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 # Optional Qt UI and resource files (AUTOUIC/AUTORCC will process these)
 file(GLOB_RECURSE ALL_UIS  CONFIGURE_DEPENDS "${_src_dir}/*.ui")
 file(GLOB_RECURSE ALL_QRCS CONFIGURE_DEPENDS "${_src_dir}/*.qrc")
+file(GLOB_RECURSE ALL_QRCS CONFIGURE_DEPENDS "${_assets_dir}/*.qrc")
 
 # Identify entry points we don't want in the core lib
 set(MAIN_SRC "")
