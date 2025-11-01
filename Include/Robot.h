@@ -35,7 +35,7 @@ class Robot {
    public:
     Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
           const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : name(name), type(type), number(number), position(position), orientation(orientation), team(team) {};
+        : name(name), type(type), number(number), position(position), orientation(orientation), team(team) {}
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -135,7 +135,7 @@ class T1 : public Robot {
         imu->update();
     }
 
-    ~T1() {};
+    ~T1() = default;
 
    private:
     std::map<JointValue, std::string> joint_map;
@@ -206,7 +206,7 @@ class K1 : public Robot {
         imu->update();
     }
 
-    ~K1() {};
+    ~K1() = default;
 
    private:
     std::map<JointValue, std::string> joint_map;
