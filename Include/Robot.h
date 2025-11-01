@@ -17,6 +17,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <poll.h>
 
 #include "Camera.h"
 #include "Container.h"
@@ -315,7 +316,10 @@ class RobotManager {
     }
 
     void stopCommunicationServer() {
+        if(!serverRunning_) return;
+
         serverRunning_ = false;
+
         if (serverThread_.joinable())
             serverThread_.join();
     }
@@ -332,18 +336,8 @@ class RobotManager {
         if (server_fd < 0)
             throw std::runtime_error("Failed to create socket");
 
-        auto close_socket = [&]() { close(server_fd); };
-        struct SocketGuard {
-            int fd;
-            decltype(close_socket)& f;
-            ~SocketGuard() {
-                f();
-            }
-        } guard{server_fd, close_socket};
-
         int opt = 1;
-        if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-            throw std::runtime_error("Failed to set socket options");
+        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
         sockaddr_in address{};
         address.sin_family = AF_INET;
@@ -352,72 +346,63 @@ class RobotManager {
 
         if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0)
             throw std::runtime_error("Socket bind failed");
-
         if (listen(server_fd, robots_.size()) < 0)
             throw std::runtime_error("Listen failed");
 
+        std::vector<pollfd> fds;
+        fds.push_back({server_fd, POLLIN, 0});
+
+        // Using a polling server. It isn't immediately intuitive, but it is efficient for this use case.
         while (serverRunning_) {
-            int client_fd = accept(server_fd, nullptr, nullptr);
-            if (client_fd < 0)
-                continue;
+            // the poll blocks until a new connection arrives on server_fd or data arrives in one of the monitored fd or a socket closes or the timeout expires.
+            int ret = poll(fds.data(), fds.size(), 100);
+            if (ret <= 0) continue; // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is still true)
 
-            std::thread(&RobotManager::handleServerClient_, this, client_fd).detach();
-        }
-    }
+            for (size_t i = 0; i < fds.size(); ++i) {
+                // An event occured for the i-th fd
+                if (fds[i].revents & POLLIN) {
+                    if (fds[i].fd == server_fd) {
+                        // The only event for the server is someone knocking
+                        int client_fd = accept(server_fd, nullptr, nullptr);
+                        if (client_fd >= 0)
+                            fds.push_back({client_fd, POLLIN, 0});
+                    } 
+                    else {
+                        // The events for other fds indicate either an incoming message or a closed connection
+                        // the read call disambiguates the two cases
+                        char buffer[MAX_MSG_SIZE];
+                        int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                        if (n <= 0) {
+                            close(fds[i].fd);
+                            fds.erase(fds.begin() + i);
+                            --i;
+                            continue;
+                        }
 
-    void handleServerClient_(int client_fd) {
-        char buffer[MAX_MSG_SIZE];
+                        msgpack::object_handle oh = msgpack::unpack(buffer, n);
+                        auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
+                        auto it = data_map.find("robot_name");
+                        if (it == data_map.end()) continue;
 
-        while (true) {
-            int n = read(client_fd, buffer, sizeof(buffer) - 1);
-            if (n <= 0)
-                break;
+                        std::string messageRecipient = it->second.as<std::string>();
 
-            msgpack::object_handle oh = msgpack::unpack(buffer, n);
-            msgpack::object obj = oh.get();
-
-            if (obj.type != msgpack::type::MAP || obj.via.map.size == 0) {
-                close(client_fd);
-                throw std::runtime_error("Invalid message: expected non-empty map");
-            }
-
-            std::map<std::string, msgpack::object> data_map = obj.as<std::map<std::string, msgpack::object>>();
-            auto it = data_map.find("robot_name");
-            if (it == data_map.end()) {
-                close(client_fd);
-                throw std::runtime_error("Invalid message: 'robot_name' key not found");
-            }
-
-            if (it->second.type != msgpack::type::STR) {
-                close(client_fd);
-                throw std::runtime_error("Invalid message: 'robot_name' value is not a string");
-            }
-
-            std::string messageRecipient = it->second.as<std::string>();
-            
-            std::unique_lock lock(mutex_);
-
-            for (std::shared_ptr<Robot> r : robots_) {
-                if (r->name == messageRecipient) {
-                    r->receiveMessage(data_map);
-
-                    std::map<std::string, msgpack::object> answ = r->sendMessage();
-
-                    msgpack::sbuffer sbuf;
-                    msgpack::pack(sbuf, answ);
-
-                    ssize_t sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
-                    if (sent < 0) {
-                        close(client_fd);
-                        throw std::runtime_error("Failed to send message");
+                        std::unique_lock lock(mutex_);
+                        for (auto& r : robots_) {
+                            if (r->name == messageRecipient) {
+                                r->receiveMessage(data_map);
+                                auto answ = r->sendMessage();
+                                msgpack::sbuffer sbuf;
+                                msgpack::pack(sbuf, answ);
+                                send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
+                                break;
+                            }
+                        }
                     }
-                    break;
                 }
             }
-            lock.release();
-            mutex_.unlock();
         }
-        close(client_fd);
+
+        for (auto& fd : fds) close(fd.fd);
     }
 
     std::atomic<bool> serverRunning_ = false;

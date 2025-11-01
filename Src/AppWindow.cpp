@@ -4,10 +4,8 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <memory>
-#include <stdexcept>
 
 #include "Constants.h"
-#include "Container.h"
 #include "MujocoContext.h"
 #include "Robot.h"
 #include "SceneParser.h"
@@ -33,18 +31,10 @@ AppWindow::AppWindow(int& argc, char** argv) {
     fileMenu->addAction(openSceneAction);
     connect(openSceneAction, &QAction::triggered, this, &AppWindow::openScene);
 
-    if (argc < 2) {
-    throw std::runtime_error(
-        "A Dockerfile path is required. "
-        "Usage: pixi run circus-main <dockerfile_path> [scene.yaml]"
-        );
-    }
-
-    dockerfile_path = argv[1];
     std::optional<std::string> scenePath;
 
-    if (argc >= 3 && std::string(argv[2]).ends_with(".yaml")) {
-        scenePath = argv[2];
+    if (argc >= 2 && std::string(argv[1]).ends_with(".yaml")) {
+        scenePath = argv[1];
     }
 
     if (scenePath) {
@@ -64,6 +54,9 @@ void AppWindow::openScene() {
 
 void AppWindow::loadScene(const QString& yamlFile) {
     try {
+        TeamManager::instance().clear();
+        RobotManager::instance().stopCommunicationServer();
+
         if (sim) {
             sim->stop();
             sim.reset();
@@ -96,6 +89,7 @@ void AppWindow::loadScene(const QString& yamlFile) {
 
 void AppWindow::signalHandler(int signal) {
     TeamManager::instance().clear();
+    RobotManager::instance().stopCommunicationServer();
 
     std::signal(signal, SIG_DFL);
     std::raise(signal);
@@ -105,5 +99,6 @@ AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
     TeamManager::instance().clear();
+    RobotManager::instance().stopCommunicationServer();
 }
 }  // namespace spqr
