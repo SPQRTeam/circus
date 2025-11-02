@@ -4,7 +4,6 @@
 #include <qnamespace.h>
 #include <qpoint.h>
 
-#include "Team.h"
 namespace spqr {
 
 SimulationViewport::SimulationViewport(MujocoContext& mujContext)
@@ -12,7 +11,8 @@ SimulationViewport::SimulationViewport(MujocoContext& mujContext)
       data(mujContext.data),
       cam(&mujContext.cam),
       opt(&mujContext.opt),
-      scene(&mujContext.scene) {
+      scene(&mujContext.scene),
+      context(&mujContext.ctx) {
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&SimulationViewport::update));
     timer->start(16);
@@ -20,8 +20,8 @@ SimulationViewport::SimulationViewport(MujocoContext& mujContext)
 }
 
 void SimulationViewport::initializeGL() {
-    mjr_defaultContext(&context);
-    mjr_makeContext(model, &context, mjFONTSCALE_100);
+    mjr_defaultContext(context);
+    mjr_makeContext(model, context, mjFONTSCALE_100);
 }
 
 void SimulationViewport::resizeGL(int w, int h) {
@@ -37,8 +37,8 @@ void SimulationViewport::paintGL() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     mjrRect viewport = {0, 0, width, height};
-    mjr_setBuffer(mjFB_WINDOW, &context);
-    mjr_render(viewport, scene, &context);
+    mjr_setBuffer(mjFB_WINDOW, context);
+    mjr_render(viewport, scene, context);
     mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
 }
 

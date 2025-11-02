@@ -34,7 +34,7 @@ class SimulationViewport : public QOpenGLWindow {
     mjvCamera* cam;
     mjvOption* opt;
     mjvScene* scene;
-    mjrContext context;
+    mjrContext* context;
     QTimer* timer;
     mjvPerturb pert;
 
