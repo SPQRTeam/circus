@@ -3,7 +3,7 @@
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <memory>
+#include <csignal>
 
 #include "Constants.h"
 #include "MujocoContext.h"

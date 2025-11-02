@@ -122,6 +122,7 @@ class T1 : public Robot {
         std::map<std::string, msgpack::object> msg;
         msg["robot_name"] = msgpack::object(name, buffer_zone_);
         msg["imu"] = imu->serialize(buffer_zone_);
+        msg["joints"] = joints->serialize(buffer_zone_);
 
         return msg;
     }
