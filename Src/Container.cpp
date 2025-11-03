@@ -1,6 +1,7 @@
 #include "Container.h"
 
 #include <cassert>
+#include "Constants.h"
 
 #define POST "POST"
 #define GET "GET"
@@ -72,7 +73,10 @@ void Container::create(const std::string& robot_name, const std::string& image,
     // container.
     payload["HostConfig"] = {{"NetworkMode", "host"}, {"Binds", binds}};
 
-    payload["Env"] = {"ROBOT_NAME=" + robot_name};
+    payload["Env"] = {
+        "ROBOT_NAME=" + robot_name,
+        "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort)
+    };
 
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);
