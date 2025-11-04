@@ -1,13 +1,15 @@
 #pragma once
 #include <mujoco/mujoco.h>
+
+#include <msgpack.hpp>
+#include <vector>
+
 #include "MujocoContext.h"
 #include "Sensor.h"
-#include <vector>
-#include <msgpack.hpp>
 namespace spqr {
 
 class Camera : public Sensor {
-public:
+   public:
     Camera(MujocoContext* mujContext, const char* cameraName) : mujContext(mujContext) {
         cam.type = mjCAMERA_FIXED;
         cam.fixedcamid = mj_name2id(mujContext->model, mjOBJ_CAMERA, cameraName);
@@ -32,7 +34,7 @@ public:
         return msgpack::object(img_copy, z);
     }
 
-private:
+   private:
     int w, h;
     MujocoContext* mujContext;
     std::vector<uint8_t> image;

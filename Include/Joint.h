@@ -39,7 +39,7 @@ enum class JointValue {
 };
 
 class Joints : public Sensor {
-public:
+   public:
     Joints(mjModel* mujModel, mjData* mujData, std::map<JointValue, std::string> map)
         : mujModel(mujModel), mujData(mujData) {
         size_t idx = 0;
@@ -55,8 +55,8 @@ public:
 
             int actuator_id = -1;
             for (int act_id = 0; act_id < mujModel->nu; ++act_id) {
-                if (mujModel->actuator_trntype[act_id] == mjTRN_JOINT &&
-                    mujModel->actuator_trnid[2 * act_id] == jointId) {
+                if (mujModel->actuator_trntype[act_id] == mjTRN_JOINT
+                    && mujModel->actuator_trnid[2 * act_id] == jointId) {
                     actuator_id = act_id;
                     break;
                 }
@@ -75,17 +75,18 @@ public:
     void doUpdate() override {
         for (size_t i = 0; i < size; ++i) {
             int jid = joint_ids[i];
-            position[i]     = mujData->qpos[mujModel->jnt_qposadr[jid]];
-            velocity[i]     = mujData->qvel[mujModel->jnt_dofadr[jid]];
+            position[i] = mujData->qpos[mujModel->jnt_qposadr[jid]];
+            velocity[i] = mujData->qvel[mujModel->jnt_dofadr[jid]];
             acceleration[i] = mujData->qacc[mujModel->jnt_dofadr[jid]];
-            torque[i]       = mujData->qfrc_actuator[mujModel->jnt_dofadr[jid]];
+            torque[i] = mujData->qfrc_actuator[mujModel->jnt_dofadr[jid]];
         }
     }
 
     void set_position(const std::unordered_map<JointValue, mjtNum>& values) {
         for (const auto& [joint, val] : values) {
             auto it = index_of.find(joint);
-            if (it == index_of.end()) continue;
+            if (it == index_of.end())
+                continue;
             size_t i = it->second;
             int jid = joint_ids[i];
             mujData->qpos[mujModel->jnt_qposadr[jid]] = val;
@@ -96,14 +97,14 @@ public:
     void set_torque(const std::unordered_map<JointValue, mjtNum>& values) {
         for (const auto& [joint, val] : values) {
             auto it = index_of.find(joint);
-            if (it == index_of.end()) continue;
+            if (it == index_of.end())
+                continue;
             size_t i = it->second;
             int act_id = actuator_ids[i];
-            if (act_id < 0) continue;
-            mujData->ctrl[act_id] = std::clamp(
-                val,
-                mujModel->actuator_ctrlrange[2 * act_id],
-                mujModel->actuator_ctrlrange[2 * act_id + 1]);
+            if (act_id < 0)
+                continue;
+            mujData->ctrl[act_id] = std::clamp(val, mujModel->actuator_ctrlrange[2 * act_id],
+                                               mujModel->actuator_ctrlrange[2 * act_id + 1]);
         }
     }
 
@@ -114,15 +115,15 @@ public:
         std::vector<mjtNum> tor(torque.begin(), torque.begin() + size);
 
         std::map<std::string, msgpack::object> data;
-        data["position"]     = msgpack::object(pos, z);
-        data["velocity"]     = msgpack::object(vel, z);
+        data["position"] = msgpack::object(pos, z);
+        data["velocity"] = msgpack::object(vel, z);
         data["acceleration"] = msgpack::object(acc, z);
-        data["torque"]       = msgpack::object(tor, z);
+        data["torque"] = msgpack::object(tor, z);
 
         return msgpack::object(data, z);
     }
 
-private:
+   private:
     mjModel* mujModel;
     mjData* mujData;
     size_t size{0};
