@@ -1,7 +1,8 @@
 #include <nanobind/nanobind.h>
 
-#include "Constants.h"
 #include <iostream>
+
+#include "Constants.h"
 
 namespace spqr {
 

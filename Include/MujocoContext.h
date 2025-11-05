@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mujoco/mjrender.h>
 #include <mujoco/mujoco.h>
 
 #include <string>
@@ -9,6 +10,7 @@ namespace spqr {
 struct MujocoContext {
     mjModel* model = nullptr;
     mjData* data = nullptr;
+    mjrContext ctx{};
     mjvCamera cam{};
     mjvOption opt{};
     mjvScene scene{};
