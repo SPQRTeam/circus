@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Logger.h"
+#include "NoiseGenerator.h"
 #include "Sensor.h"
 
 namespace spqr {
@@ -24,7 +25,7 @@ class Imu : public Sensor {
     }
 
     Imu(mjModel* mujModel, mjData* mujData, const char* orientationName, const char* gyroName, const uint8_t robotNumber)
-        : mujModel(mujModel), mujData(mujData), gen(std::random_device{}()) {
+        : mujModel(mujModel), mujData(mujData) {
         orientationId = mj_name2id(mujModel, mjOBJ_SENSOR, orientationName);
         orientationAdr = mujModel->sensor_adr[orientationId];
         orientationDim = mujModel->sensor_dim[orientationId];
@@ -33,7 +34,6 @@ class Imu : public Sensor {
         gyroAdr = mujModel->sensor_adr[gyroId];
         gyroDim = mujModel->sensor_dim[gyroId];
 
-        orientationNoiseStd = mujModel->sensor_noise[orientationId];
         gyroNoiseStd = mujModel->sensor_noise[gyroId];
 
         std::string csvHeader = "q0,qx,qy,qz,wx,wy,wz";
@@ -41,14 +41,12 @@ class Imu : public Sensor {
         captureNoise = new Logger(std::to_string(robotNumber) + "_noise", csvHeader);
         captureNoise2 = new Logger(std::to_string(robotNumber) + "_noise2", csvHeader);
 
-        gyroBias.setZero();
-
         double dt_ = 0.002; // TODO: get from config when SimulationThread changes
 
         gyroNoiseStd = 0.03 / std::sqrt(dt_);
         gyroBiasWalkStd = 5 * std::sqrt(dt_);
         
-        normalDist = std::normal_distribution<double>(0., gyroNoiseStd);
+        noiseGen = NoiseGenerator(gyroNoiseStd, gyroBiasWalkStd);
     }
 
     //double theta;
@@ -63,7 +61,7 @@ class Imu : public Sensor {
             integrateOrientationRK4(orientationQuatNoisy, angularVelocityNoisy, 0.01);
         }
         angularVelocity = Eigen::Map<const Eigen::Vector3d>(mujData->sensordata + gyroAdr, gyroDim);
-        addNoise(angularVelocity, angularVelocityNoisy);
+        noiseGen.addNoise(angularVelocity, angularVelocityNoisy);
         
         if(capture) {
             capture->log(orientation[0], orientation[1], orientation[2], orientation[3], 
@@ -100,20 +98,7 @@ class Imu : public Sensor {
     double gyroNoiseStd;       // rad/s discrete
     double gyroBiasWalkStd;    // rad/s discrete (random walk step)
 
-    Eigen::Vector3d gyroBias;  // bias state
-    std::default_random_engine gen;
-    std::normal_distribution<double> normalDist;
-
-    void addNoise(const Eigen::Vector3d& angularVelocity, Eigen::Vector3d& angularVelocityNoisy)
-    {
-        // update bias for random walk component
-        for (int i = 0; i < 3; ++i)
-            gyroBias(i) += gyroBiasWalkStd * normalDist(gen);
-
-        // add normal noise + random wal bias
-        for (int i = 0; i < 3; ++i)
-            angularVelocityNoisy(i) = angularVelocity(i) + gyroBias(i) + gyroNoiseStd * normalDist(gen);
-    }
+    NoiseGenerator noiseGen;
 
     Eigen::Quaterniond quatDerivative(const Eigen::Quaterniond& q, const Eigen::Vector3d& omega) {
         Eigen::Quaterniond omegaQuat(0.0, omega.x(), omega.y(), omega.z());
