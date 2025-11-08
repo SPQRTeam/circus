@@ -19,37 +19,37 @@ void DebugDrawings::drawDebugDrawings() {
     }
 }
 
-void DebugDrawings::drawRegularGeom(mjString idLocal, mjtGeom type, drawGeomType geomType,
+void DebugDrawings::drawRegularGeom(mjString idLocal, mjtGeom mujocoType, drawGeomType customType,
                                     const double size[3], const double pos[3], QColor color) {
     mjvGeom geom;
     const float colorRGBA[4] = {color.redF(), color.greenF(), color.blueF(), color.alphaF()};
 
-    mjv_initGeom(&geom, type, size, pos, NULL, colorRGBA);
+    mjv_initGeom(&geom, mujocoType, size, pos, NULL, colorRGBA);
 
-    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(geomType));
-    mapIdGeom[extendedId] = {.geom = geom, .drawType = geomType};
+    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(customType));
+    mapIdGeom[extendedId] = {.geom = geom, .customType = customType};
 }
 
-void DebugDrawings::drawRenderOnlyGeom(mjString idLocal, mjtGeom type, drawGeomType geomType,
+void DebugDrawings::drawRenderOnlyGeom(mjString idLocal, mjtGeom mujocoType, drawGeomType customType,
                                        const double size[3], const double start[3], const double end[3],
                                        const double width, QColor color) {
     mjvGeom geom;
     const float colorRGBA[4] = {color.redF(), color.greenF(), color.blueF(), color.alphaF()};
 
-    mjv_initGeom(&geom, type, size, start, NULL, colorRGBA);
-    mjv_connector(&geom, type, width, start, end);
+    mjv_initGeom(&geom, mujocoType, size, start, NULL, colorRGBA);
+    mjv_connector(&geom, mujocoType, width, start, end);
 
-    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(geomType));
-    mapIdGeom[extendedId] = {.geom = geom, .drawType = geomType};
+    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(customType));
+    mapIdGeom[extendedId] = {.geom = geom, .customType = customType};
 }
 
-mjvGeom* DebugDrawings::isGeomExist(mjString idLocal, drawGeomType drawType) {
-    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(drawType));
+mjvGeom* DebugDrawings::isGeomExist(mjString idLocal, drawGeomType customType) {
+    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(customType));
     auto it = mapIdGeom.find(extendedId);
 
     if (it == mapIdGeom.end())
         return nullptr;
-    else if ((it->second).drawType == drawType)
+    else if ((it->second).customType == customType)
         return &((it->second).geom);
     else
         return nullptr;
@@ -77,74 +77,74 @@ void DebugDrawings::moveGeom(mjvGeom* g, const double start[3], const double end
 
 void DebugDrawings::drawSphere(mjString idLocal, const double center[3], const double radius, QColor color) {
     mjtGeom geomType = mjGEOM_SPHERE;
-    drawGeomType drawType = drawGeomType::Sphere;
+    drawGeomType customType = drawGeomType::Sphere;
 
-    mjvGeom* foundGeom = isGeomExist(idLocal, drawType);
+    mjvGeom* foundGeom = isGeomExist(idLocal, customType);
 
     if (foundGeom != nullptr) {
         moveGeom(foundGeom, center, color);
     } else {
         double size[3] = {radius, 0.0, 0.0};
-        drawRegularGeom(idLocal, geomType, drawType, size, center, color);
+        drawRegularGeom(idLocal, geomType, customType, size, center, color);
     }
 }
 
 void DebugDrawings::drawCircle(mjString idLocal, const double center[3], const double radius, QColor color) {
     mjtGeom geomType = mjGEOM_CYLINDER;
-    drawGeomType drawType = drawGeomType::Circle;
+    drawGeomType customType = drawGeomType::Circle;
 
-    mjvGeom* foundGeom = isGeomExist(idLocal, drawType);
+    mjvGeom* foundGeom = isGeomExist(idLocal, customType);
 
     if (foundGeom != nullptr) {
         moveGeom(foundGeom, center, color);
     } else {
         double size[3] = {radius, 0.0, 0.0};
-        drawRegularGeom(idLocal, geomType, drawType, size, center, color);
+        drawRegularGeom(idLocal, geomType, customType, size, center, color);
     }
 }
 
 void DebugDrawings::drawCylinder(mjString idLocal, const double center[3], double radius, double length,
                                  QColor color) {
     mjtGeom geomType = mjGEOM_CYLINDER;
-    drawGeomType drawType = drawGeomType::Cylinder;
+    drawGeomType customType = drawGeomType::Cylinder;
 
-    mjvGeom* foundGeom = isGeomExist(idLocal, drawType);
+    mjvGeom* foundGeom = isGeomExist(idLocal, customType);
 
     if (foundGeom != nullptr) {
         moveGeom(foundGeom, center, color);
     } else {
         double size[3] = {radius, length, 0.0};
-        drawRegularGeom(idLocal, geomType, drawType, size, center, color);
+        drawRegularGeom(idLocal, geomType, customType, size, center, color);
     }
 }
 
 void DebugDrawings::drawArrow(mjString idLocal, const double start[3], const double end[3],
                               const double thickness, QColor color) {
     mjtGeom geomType = mjGEOM_ARROW;
-    drawGeomType drawType = drawGeomType::Arrow;
+    drawGeomType customType = drawGeomType::Arrow;
 
-    mjvGeom* foundGeom = isGeomExist(idLocal, drawType);
+    mjvGeom* foundGeom = isGeomExist(idLocal, customType);
 
     if (foundGeom != nullptr) {
         moveGeom(foundGeom, start, end, color);
     } else {
         double size[3] = {1.0, 1.0, 1.0};
         double endDoubled[3] = {end[0] * 2, end[1], end[2]};
-        drawRenderOnlyGeom(idLocal, geomType, drawType, size, start, endDoubled, thickness / 100, color);
+        drawRenderOnlyGeom(idLocal, geomType, customType, size, start, endDoubled, thickness / 100, color);
     }
 }
 
 void DebugDrawings::drawLine(mjString idLocal, const double start[3], const double end[3],
                              const double thickness, QColor color) {
     mjtGeom geomType = mjGEOM_LINE;
-    drawGeomType drawType = drawGeomType::Line;
+    drawGeomType customType = drawGeomType::Line;
 
-    mjvGeom* foundGeom = isGeomExist(idLocal, drawType);
+    mjvGeom* foundGeom = isGeomExist(idLocal, customType);
 
     if (foundGeom != nullptr) {
         moveGeom(foundGeom, start, end, color);
     } else {
-        drawRenderOnlyGeom(idLocal, geomType, drawType, NULL, start, end, thickness, color);
+        drawRenderOnlyGeom(idLocal, geomType, customType, NULL, start, end, thickness, color);
     }
 }
 
