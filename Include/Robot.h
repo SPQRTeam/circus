@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mujoco/mujoco.h>
 #include <sys/types.h>
 
 #include <Eigen/Eigen>
@@ -9,8 +10,6 @@
 #include <vector>
 
 #include "Container.h"
-#include "Team.h"
-
 namespace spqr {
 
 struct Team;  // Forward declaration
@@ -23,6 +22,9 @@ struct Robot {
     Eigen::Vector3d orientation;  // Euler angles
     std::unique_ptr<Container> container;
     std::shared_ptr<Team> team;
+
+    mjvCamera leftCam{};
+    mjvCamera rightCam{};
 };
 
 class RobotManager {
@@ -35,6 +37,7 @@ class RobotManager {
 
     void registerRobot(std::shared_ptr<Robot> robot) {
         std::lock_guard<std::mutex> lock(mutex_);
+
         robots_.push_back(std::move(robot));
     }
 

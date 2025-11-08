@@ -68,6 +68,13 @@ void AppWindow::loadScene(const QString& xml) {
             robot->container = std::make_unique<Container>(robot->name + "_container");
             robot->container->create("ubuntu:22.04", {});
             robot->container->start();
+
+            robot->leftCam.type = mjCAMERA_FIXED;
+            robot->leftCam.fixedcamid
+                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_left_cam").c_str());
+            robot->rightCam.type = mjCAMERA_FIXED;
+            robot->rightCam.fixedcamid
+                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_right_cam").c_str());
         }
 
         viewportContainer = QWidget::createWindowContainer(viewport.get());
