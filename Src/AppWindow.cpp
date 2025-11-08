@@ -3,10 +3,9 @@
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <memory>
+#include <csignal>
 
 #include "Constants.h"
-#include "Container.h"
 #include "MujocoContext.h"
 #include "Robot.h"
 #include "SceneParser.h"
@@ -16,6 +15,7 @@ AppWindow::AppWindow(int& argc, char** argv) {
     std::signal(SIGTERM, signalHandler);
     std::signal(SIGINT, signalHandler);
     std::signal(SIGSEGV, signalHandler);
+    std::signal(SIGABRT, signalHandler);
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
     setWindowTitle(spqr::appName);
@@ -31,8 +31,14 @@ AppWindow::AppWindow(int& argc, char** argv) {
     fileMenu->addAction(openSceneAction);
     connect(openSceneAction, &QAction::triggered, this, &AppWindow::openScene);
 
-    if (argc > 1) {
-        QString fileArg = QString::fromLocal8Bit(argv[1]);
+    std::optional<std::string> scenePath;
+
+    if (argc >= 2 && std::string(argv[1]).ends_with(".yaml")) {
+        scenePath = argv[1];
+    }
+
+    if (scenePath) {
+        QString fileArg = QString::fromLocal8Bit(scenePath->c_str());
         loadScene(fileArg);
     }
 };
@@ -45,8 +51,11 @@ void AppWindow::openScene() {
     }
 }
 
-void AppWindow::loadScene(const QString& xml) {
+void AppWindow::loadScene(const QString& yamlFile) {
     try {
+        TeamManager::instance().clear();
+        RobotManager::instance().stopCommunicationServer();
+
         if (sim) {
             sim->stop();
             sim.reset();
@@ -58,24 +67,14 @@ void AppWindow::loadScene(const QString& xml) {
             viewportContainer = nullptr;
         }
 
-        SceneParser parser(xml.toStdString());
+        SceneParser parser(yamlFile.toStdString());
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
-        for (const shared_ptr<Robot>& robot : RobotManager::instance().getRobots()) {
-            robot->container = std::make_unique<Container>(robot->name + "_container");
-            robot->container->create("ubuntu:22.04", {});
-            robot->container->start();
-
-            robot->leftCam.type = mjCAMERA_FIXED;
-            robot->leftCam.fixedcamid
-                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_left_cam").c_str());
-            robot->rightCam.type = mjCAMERA_FIXED;
-            robot->rightCam.fixedcamid
-                = mj_name2id(mujContext->model, mjOBJ_CAMERA, (robot->name + "_right_cam").c_str());
-        }
+        RobotManager::instance().startContainers();
+        RobotManager::instance().bindMujoco(mujContext.get());
 
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
@@ -89,6 +88,7 @@ void AppWindow::loadScene(const QString& xml) {
 
 void AppWindow::signalHandler(int signal) {
     TeamManager::instance().clear();
+    RobotManager::instance().stopCommunicationServer();
 
     std::signal(signal, SIG_DFL);
     std::raise(signal);
@@ -98,5 +98,6 @@ AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
     TeamManager::instance().clear();
+    RobotManager::instance().stopCommunicationServer();
 }
 }  // namespace spqr

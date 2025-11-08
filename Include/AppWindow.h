@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 #include <QVBoxLayout>
-#include <csignal>
 #include <memory>
 
 #include "MujocoContext.h"
