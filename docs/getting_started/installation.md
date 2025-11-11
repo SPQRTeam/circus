@@ -1,7 +1,5 @@
 # Installation
 
-# Installation
-
 ## Linux
 
 Tested on Ubuntu 24.04
