@@ -10,6 +10,9 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
 
+permissions:
+  contents: write
+
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and the latest queued.
 concurrency:
   group: "pages"
