@@ -30,12 +30,12 @@ pugixml = ">=1.15,<2"
 libcurl = ">=8.14.1,<9"
 qt6-main = ">=6.9.2,<7"
 libmujoco = ">=3.3.2,<4"
-
-[package.target.linux-64.host-dependencies]
-libgl-devel = ">=1.7.0,<2"
 msgpack-cxx = ">=7.0.0,<8"
 libboost-devel = ">=1.88.0,<2"
 
+[package.target.linux-64.host-dependencies]
+libgl-devel = ">=1.7.0,<2"
+libegl-devel = ">=1.7.0,<2"
 
 [package.target.osx-arm64.host-dependencies]
 
