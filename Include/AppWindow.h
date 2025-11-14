@@ -1,8 +1,9 @@
 #pragma once
 #include <mujoco/mujoco.h>
+#include <qqmlapplicationengine.h>
+#include <qtmetamacros.h>
 
-#include <QMainWindow>
-#include <QVBoxLayout>
+#include <QObject>
 #include <memory>
 
 #include "MujocoContext.h"
@@ -10,19 +11,24 @@
 #include "SimulationViewport.h"
 namespace spqr {
 
-class AppWindow : public QMainWindow {
+class AppWindow : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(QString projectRoot READ projectRoot CONSTANT)
+
    public:
     AppWindow(int& argc, char** argv);
     ~AppWindow();
 
-   private:
-    void loadScene(const QString& xml);
-    void openScene();
+    Q_INVOKABLE void loadScene(const QString& yamlFile);
+    
+    QString projectRoot() const { return QString::fromStdString(PROJECT_ROOT); }
 
+   private:
     static void signalHandler(int signal);
 
-    QVBoxLayout* mainLayout;
-    QWidget* viewportContainer;
+    std::unique_ptr<QQmlApplicationEngine> qmlEngine;
+
+    QWidget* viewportContainer = nullptr;
 
     std::unique_ptr<MujocoContext> mujContext;
     std::unique_ptr<SimulationViewport> viewport;

@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(QT_QML_GENERATE_QMLLS_INI ON)  # For QML language server support
 file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
   "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n")
 add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
@@ -30,7 +31,7 @@ option(BUILD_PYTHON_BINDINGS "Build python bindings" ON)
 # ============================= Dependencies ==================================================
 find_package(Eigen3 REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets Qml Quick)
 
 # Optional deps (linked only if found)
 find_package(nlohmann_json QUIET)
@@ -135,6 +136,14 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 file(GLOB_RECURSE ALL_UIS  CONFIGURE_DEPENDS "${_src_dir}/*.ui")
 file(GLOB_RECURSE ALL_QRCS CONFIGURE_DEPENDS "${_src_dir}/*.qrc")
 
+# Add QML resources - only if the file exists
+if(EXISTS "${CMAKE_SOURCE_DIR}/Resources/qml.qrc")
+  qt_add_resources(QML_RESOURCES "${CMAKE_SOURCE_DIR}/Resources/qml.qrc")
+else()
+  set(QML_RESOURCES "")
+  message(WARNING "QML resources not found at ${CMAKE_SOURCE_DIR}/Resources/qml.qrc - skipping QML resources")
+endif()
+
 # Identify entry points we don't want in the core lib
 set(MAIN_SRC "")
 if(EXISTS "${_src_dir}/main.cpp")
@@ -163,14 +172,15 @@ set(_EXTRA_LIBS
   Qt6::Core
   Qt6::Widgets
   Qt6::OpenGLWidgets
-  OpenGL::GL
+  Qt6::Qml
+  Qt6::Quick
   ${_PUGI_TGT}
   CURL::libcurl
   nlohmann_json::nlohmann_json
 )
 
 # --- Build core library (ensure AUTOMOC is on for the target)
-add_library(${LIBRARY} STATIC ${SOURCES})
+add_library(${LIBRARY} STATIC ${SOURCES} ${QML_RESOURCES})
 target_sources(${LIBRARY} PRIVATE ${HEADERS} ${ALL_UIS} ${ALL_QRCS}) # Just used for IDE discovering headers
 
 set_target_properties(${LIBRARY} PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON)

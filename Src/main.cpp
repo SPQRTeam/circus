@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     app.setApplicationName(spqr::appName);
 
     spqr::AppWindow window(argc, argv);
-    window.show();
+    // No need to call show() - QML ApplicationWindow handles its own visibility
 
     return app.exec();
 }
