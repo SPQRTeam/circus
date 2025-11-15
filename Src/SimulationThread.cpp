@@ -21,6 +21,9 @@ void SimulationThread::run() {
         mj_step(model_, data_);
         RobotManager::instance().update();
 
+        // Emit signal to update QML
+        emit stepCompleted();
+
         next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
         std::this_thread::sleep_until(next_step_time);
 

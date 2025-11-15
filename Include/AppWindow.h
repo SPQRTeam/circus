@@ -23,6 +23,7 @@ class AppWindow : public QObject {
     ~AppWindow();
 
     Q_INVOKABLE void loadScene(const QString& yamlFile);
+    Q_INVOKABLE void updateRobotData();
 
     QString projectRoot() const {
         return QString::fromStdString(PROJECT_ROOT);
@@ -42,6 +43,8 @@ class AppWindow : public QObject {
     std::unique_ptr<MujocoContext> mujContext;
     std::unique_ptr<SimulationViewport> viewport;
     std::unique_ptr<SimulationThread> sim;
+
+    QList<QObject*> robotWrappers_;
 };
 
 }  // namespace spqr

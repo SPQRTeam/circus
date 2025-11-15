@@ -13,6 +13,9 @@ class SimulationThread : public QThread {
     void run() override;
     void stop();
 
+   signals:
+    void stepCompleted();
+
    private:
     const mjModel* model_;
     mjData* data_;

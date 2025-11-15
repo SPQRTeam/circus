@@ -13,7 +13,7 @@ Rectangle {
 
     readonly property bool isLeftSide: side === "left"
 
-    Layout.preferredWidth: isExpanded ? 250 : 60
+    Layout.preferredWidth: isExpanded ? 300 : 60
     Layout.fillHeight: true
     color: "#262525"
 
@@ -191,10 +191,64 @@ Rectangle {
                                 }
 
                                 Label {
-                                    text: "Properties (Coming Soon)"
-                                    font.pixelSize: 11
-                                    font.italic: true
-                                    color: "#95a5a6"
+                                    text: "Sensors"
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    color: "#ecf0f1"
+                                }
+
+                                // IMU Data
+                                Column {
+                                    spacing: 4
+                                    width: parent.width - parent.padding * 2
+
+                                    Label {
+                                        text: "IMU"
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        color: "#3498db"
+                                    }
+
+                                    Label {
+                                        text: "  Orientation (quat):"
+                                        font.pixelSize: 10
+                                        color: "#bdc3c7"
+                                    }
+
+                                    Label {
+                                        text: modelData.imu && modelData.imu.orientation ?
+                                              "    [" +
+                                              modelData.imu.orientation[0].toFixed(3) + ", " +
+                                              modelData.imu.orientation[1].toFixed(3) + ", " +
+                                              modelData.imu.orientation[2].toFixed(3) + ", " +
+                                              modelData.imu.orientation[3].toFixed(3) + "]"
+                                              : "    [N/A]"
+                                        font.pixelSize: 10
+                                        font.family: "Monospace"
+                                        color: "#95a5a6"
+                                        wrapMode: Text.WordWrap
+                                        width: parent.width
+                                    }
+
+                                    Label {
+                                        text: "  Angular Velocity:"
+                                        font.pixelSize: 10
+                                        color: "#bdc3c7"
+                                    }
+
+                                    Label {
+                                        text: modelData.imu && modelData.imu.angularVelocity ?
+                                              "    [" +
+                                              modelData.imu.angularVelocity[0].toFixed(3) + ", " +
+                                              modelData.imu.angularVelocity[1].toFixed(3) + ", " +
+                                              modelData.imu.angularVelocity[2].toFixed(3) + "]"
+                                              : "    [N/A]"
+                                        font.pixelSize: 10
+                                        font.family: "Monospace"
+                                        color: "#95a5a6"
+                                        wrapMode: Text.WordWrap
+                                        width: parent.width
+                                    }
                                 }
                             }
                         }

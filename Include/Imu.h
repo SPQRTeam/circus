@@ -38,6 +38,14 @@ class Imu : public Sensor {
         return msgpack::object(imu_data, z);
     }
 
+    Eigen::Vector3d getAngularVelocity() const {
+        return angularVelocity;
+    }
+
+    Eigen::Vector4d getOrientation() const {
+        return orientation;
+    }
+
    private:
     Eigen::Vector4d orientation;      // [q0, qx, qy, qz] : orientation of the Imu wrt the world frame
     Eigen::Vector3d angularVelocity;  // [wx, wy, wz] : angular velocity expressed in the local frame of the

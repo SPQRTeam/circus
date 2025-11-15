@@ -50,6 +50,10 @@ class Robot {
     std::unique_ptr<Container> container;
     std::shared_ptr<Team> team;
 
+    std::array<Camera*, 2> cameras = {};
+    Imu* imu = nullptr;
+    Joints* joints = nullptr;
+
     msgpack::zone buffer_zone_;
 };
 

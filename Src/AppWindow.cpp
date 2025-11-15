@@ -1,5 +1,7 @@
 #include "AppWindow.h"
 
+#include <qdebug.h>
+
 #include <QDebug>
 #include <QFileDialog>
 #include <QMenuBar>
@@ -13,6 +15,7 @@
 
 #include "MujocoContext.h"
 #include "Robot.h"
+#include "RobotQmlWrapper.h"
 #include "SceneParser.h"
 #include "Team.h"
 
@@ -29,28 +32,24 @@ QVariantList AppWindow::getTeamsForQml() const {
 
         QVariantList robotsList;
         for (const auto& robot : team->robots) {
-            QVariantMap robotMap;
-            robotMap["name"] = QString::fromStdString(robot->name);
-            robotMap["type"] = QString::fromStdString(robot->type);
-            robotMap["number"] = robot->number;
-
-            // Add position and orientation data
-            QVariantList position;
-            position << robot->position.x() << robot->position.y() << robot->position.z();
-            robotMap["position"] = position;
-
-            QVariantList orientation;
-            orientation << robot->orientation.x() << robot->orientation.y() << robot->orientation.z();
-            robotMap["orientation"] = orientation;
-
-            robotsList.append(robotMap);
+            auto robotWrapper = new RobotQmlWrapper(robot, const_cast<AppWindow*>(this));
+            const_cast<AppWindow*>(this)->robotWrappers_.append(robotWrapper);
+            robotsList.append(QVariant::fromValue(robotWrapper));
         }
         teamMap["robots"] = robotsList;
-
         teamsList.append(teamMap);
     }
 
     return teamsList;
+}
+
+void AppWindow::updateRobotData() {
+    // Call update() on all robot wrappers to emit signals
+    for (QObject* obj : robotWrappers_) {
+        if (auto wrapper = qobject_cast<RobotQmlWrapper*>(obj)) {
+            wrapper->update();
+        }
+    }
 }
 
 AppWindow::AppWindow(int& argc, char** argv) {
@@ -83,7 +82,6 @@ AppWindow::AppWindow(int& argc, char** argv) {
     }
     if (scenePath) {
         QString fileArg = QString::fromLocal8Bit(scenePath->c_str());
-        // Use QTimer to load scene after QML is fully initialized
         QTimer::singleShot(100, [this, fileArg]() { loadScene(fileArg); });
     }
 }
@@ -94,6 +92,9 @@ void AppWindow::loadScene(const QString& yamlFile) {
 
         qDebug() << "1. Clearing team manager...";
         TeamManager::instance().clear();
+
+        qDeleteAll(robotWrappers_);
+        robotWrappers_.clear();
 
         qDebug() << "2. Stopping communication server...";
         RobotManager::instance().stopCommunicationServer();
@@ -145,20 +146,11 @@ void AppWindow::loadScene(const QString& yamlFile) {
             QQuickWindow* quickWindow = qmlContainer->window();
 
             if (quickWindow) {
-                // Make the viewport a transient child of the QQuickWindow
                 viewport->setTransientParent(quickWindow);
-
-                // Set flags to make it embedded, not a top-level window
                 viewport->setFlags(Qt::Widget);
-
-                // Create the container widget without a parent initially
                 viewportContainer = QWidget::createWindowContainer(viewport.get());
-
-                // Make it a child of a widget wrapper for the quick window
                 viewportContainer->setParent(nullptr);
                 viewportContainer->setWindowFlags(Qt::Widget);
-
-                // Create the native window ID to allow parenting
                 WId viewportWinId = viewportContainer->winId();
                 WId quickWinId = quickWindow->winId();
 
@@ -195,6 +187,11 @@ void AppWindow::loadScene(const QString& yamlFile) {
 
         qDebug() << "12. Starting simulation thread...";
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
+
+        // Connect simulation step to update robot data
+        connect(sim.get(), &SimulationThread::stepCompleted, this, &AppWindow::updateRobotData,
+                Qt::QueuedConnection);
+
         sim->start();
 
         qDebug() << "13. Emitting teams changed signal...";

@@ -6,6 +6,7 @@ import Qt.labs.platform as Platform
 ApplicationWindow {
     id: root
     visible: true
+    visibility: Window.Maximized
     width: 1280
     height: 720
     title: "SPQR Circus"
