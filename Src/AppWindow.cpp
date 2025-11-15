@@ -1,15 +1,15 @@
 #include "AppWindow.h"
 
+#include <QDebug>
 #include <QFileDialog>
-#include <QQmlContext>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <QQuickWindow>
+#include <QQmlContext>
 #include <QQuickItem>
-#include <QDebug>
-#include <csignal>
+#include <QQuickWindow>
 #include <QTimer>
 #include <QWindow>
+#include <csignal>
 
 #include "MujocoContext.h"
 #include "Robot.h"
@@ -20,36 +20,36 @@ namespace spqr {
 
 QVariantList AppWindow::getTeamsForQml() const {
     QVariantList teamsList;
-    
+
     auto teams = TeamManager::instance().getTeams();
-    
+
     for (const auto& team : teams) {
         QVariantMap teamMap;
         teamMap["name"] = QString::fromStdString(team->name);
-        
+
         QVariantList robotsList;
         for (const auto& robot : team->robots) {
             QVariantMap robotMap;
             robotMap["name"] = QString::fromStdString(robot->name);
             robotMap["type"] = QString::fromStdString(robot->type);
             robotMap["number"] = robot->number;
-            
+
             // Add position and orientation data
             QVariantList position;
             position << robot->position.x() << robot->position.y() << robot->position.z();
             robotMap["position"] = position;
-            
+
             QVariantList orientation;
             orientation << robot->orientation.x() << robot->orientation.y() << robot->orientation.z();
             robotMap["orientation"] = orientation;
-            
+
             robotsList.append(robotMap);
         }
         teamMap["robots"] = robotsList;
-        
+
         teamsList.append(teamMap);
     }
-    
+
     return teamsList;
 }
 
@@ -64,16 +64,16 @@ AppWindow::AppWindow(int& argc, char** argv) {
     qmlEngine->rootContext()->setContextProperty("appWindow", this);
 
     const QUrl qrcUrl = QUrl(QStringLiteral("Resources/qml/main.qml"));
-    
+
     // Connect to objectCreated to detect if QML failed to load
     QObject::connect(qmlEngine.get(), &QQmlApplicationEngine::objectCreated,
-        [](QObject* obj, const QUrl& objUrl) {
-            if (!obj) {
-                qCritical() << "Failed to load QML:" << objUrl;
-                QCoreApplication::exit(-1);
-            }
-        });
-    
+                     [](QObject* obj, const QUrl& objUrl) {
+                         if (!obj) {
+                             qCritical() << "Failed to load QML:" << objUrl;
+                             QCoreApplication::exit(-1);
+                         }
+                     });
+
     qmlEngine->load(qrcUrl);
 
     // Load scene from command line argument if provided
@@ -84,9 +84,7 @@ AppWindow::AppWindow(int& argc, char** argv) {
     if (scenePath) {
         QString fileArg = QString::fromLocal8Bit(scenePath->c_str());
         // Use QTimer to load scene after QML is fully initialized
-        QTimer::singleShot(100, [this, fileArg]() {
-            loadScene(fileArg);
-        });
+        QTimer::singleShot(100, [this, fileArg]() { loadScene(fileArg); });
     }
 }
 
@@ -96,7 +94,7 @@ void AppWindow::loadScene(const QString& yamlFile) {
 
         qDebug() << "1. Clearing team manager...";
         TeamManager::instance().clear();
-        
+
         qDebug() << "2. Stopping communication server...";
         RobotManager::instance().stopCommunicationServer();
 
@@ -129,68 +127,64 @@ void AppWindow::loadScene(const QString& yamlFile) {
 
         qDebug() << "8. Starting containers...";
         RobotManager::instance().startContainers();
-       
+
         qDebug() << "9. Binding MuJoCo...";
         RobotManager::instance().bindMujoco(mujContext.get());
 
         qDebug() << "10. Embedding viewport in QML...";
-        
+
         if (qmlEngine->rootObjects().isEmpty()) {
             qWarning() << "No root QML objects found!";
             return;
         }
-        
+
         QObject* rootObject = qmlEngine->rootObjects().first();
         QQuickItem* qmlContainer = rootObject->findChild<QQuickItem*>("viewportContainer");
-        
+
         if (qmlContainer) {
             QQuickWindow* quickWindow = qmlContainer->window();
-            
+
             if (quickWindow) {
                 // Make the viewport a transient child of the QQuickWindow
                 viewport->setTransientParent(quickWindow);
-                
+
                 // Set flags to make it embedded, not a top-level window
                 viewport->setFlags(Qt::Widget);
-                
+
                 // Create the container widget without a parent initially
                 viewportContainer = QWidget::createWindowContainer(viewport.get());
-                
+
                 // Make it a child of a widget wrapper for the quick window
                 viewportContainer->setParent(nullptr);
                 viewportContainer->setWindowFlags(Qt::Widget);
-                
+
                 // Create the native window ID to allow parenting
                 WId viewportWinId = viewportContainer->winId();
                 WId quickWinId = quickWindow->winId();
-                
-                // On X11, we can directly set the parent using xcb
-                #ifdef Q_OS_LINUX
+
+// On X11, we can directly set the parent using xcb
+#ifdef Q_OS_LINUX
                 viewportContainer->windowHandle()->setParent(quickWindow);
-                #endif
-                
+#endif
+
                 auto updateGeometry = [qmlContainer, quickWindow, this]() {
                     QPointF scenePos = qmlContainer->mapToScene(QPointF(0, 0));
                     QPoint globalPos = quickWindow->mapToGlobal(scenePos.toPoint());
-                    
-                    this->viewportContainer->setGeometry(
-                        scenePos.x(),
-                        scenePos.y(),
-                        qmlContainer->width(),
-                        qmlContainer->height()
-                    );
+
+                    this->viewportContainer->setGeometry(scenePos.x(), scenePos.y(), qmlContainer->width(),
+                                                         qmlContainer->height());
                 };
-                
+
                 updateGeometry();
-                
+
                 QObject::connect(qmlContainer, &QQuickItem::widthChanged, updateGeometry);
                 QObject::connect(qmlContainer, &QQuickItem::heightChanged, updateGeometry);
                 QObject::connect(qmlContainer, &QQuickItem::xChanged, updateGeometry);
                 QObject::connect(qmlContainer, &QQuickItem::yChanged, updateGeometry);
-                
+
                 viewportContainer->show();
                 viewportContainer->raise();
-                
+
                 qDebug() << "Viewport embedded successfully";
             } else {
                 qWarning() << "Could not get QQuickWindow";
@@ -202,10 +196,10 @@ void AppWindow::loadScene(const QString& yamlFile) {
         qDebug() << "12. Starting simulation thread...";
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
         sim->start();
-        
+
         qDebug() << "13. Emitting teams changed signal...";
         emit teamsChanged();
-        
+
         qDebug() << "Scene loaded successfully";
     } catch (const std::exception& e) {
         qWarning() << "Error loading scene:" << e.what();

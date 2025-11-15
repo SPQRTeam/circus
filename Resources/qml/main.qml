@@ -42,7 +42,7 @@ ApplicationWindow {
     RowLayout {
         anchors.fill: parent
         spacing: 0
-        
+
         // Left Team Panel
         TeamPanel {
             id: leftPanel
@@ -50,7 +50,7 @@ ApplicationWindow {
             teamName: "Team 1"
             teamRobots: appWindow.teams.length > 0 ? appWindow.teams[0].robots : []
         }
-        
+
         // Center - Viewport Container
         Item {
             id: viewportContainer
@@ -58,7 +58,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
-        
+
         // Right Team Panel
         TeamPanel {
             id: rightPanel

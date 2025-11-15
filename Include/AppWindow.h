@@ -23,8 +23,10 @@ class AppWindow : public QObject {
     ~AppWindow();
 
     Q_INVOKABLE void loadScene(const QString& yamlFile);
-    
-    QString projectRoot() const { return QString::fromStdString(PROJECT_ROOT); }
+
+    QString projectRoot() const {
+        return QString::fromStdString(PROJECT_ROOT);
+    }
     QVariantList getTeamsForQml() const;
 
    signals:
