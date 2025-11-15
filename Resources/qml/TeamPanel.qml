@@ -9,7 +9,7 @@ Rectangle {
     property string side: "left"  // "left" or "right"
     property string teamName: "Team"
     property var teamRobots: []
-    property bool isExpanded: true
+    property bool isExpanded: teamRobots.length > 0
 
     readonly property bool isLeftSide: side === "left"
 
