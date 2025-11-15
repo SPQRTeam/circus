@@ -14,7 +14,44 @@
 #include "MujocoContext.h"
 #include "Robot.h"
 #include "SceneParser.h"
+#include "Team.h"
+
 namespace spqr {
+
+QVariantList AppWindow::getTeamsForQml() const {
+    QVariantList teamsList;
+    
+    auto teams = TeamManager::instance().getTeams();
+    
+    for (const auto& team : teams) {
+        QVariantMap teamMap;
+        teamMap["name"] = QString::fromStdString(team->name);
+        
+        QVariantList robotsList;
+        for (const auto& robot : team->robots) {
+            QVariantMap robotMap;
+            robotMap["name"] = QString::fromStdString(robot->name);
+            robotMap["type"] = QString::fromStdString(robot->type);
+            robotMap["number"] = robot->number;
+            
+            // Add position and orientation data
+            QVariantList position;
+            position << robot->position.x() << robot->position.y() << robot->position.z();
+            robotMap["position"] = position;
+            
+            QVariantList orientation;
+            orientation << robot->orientation.x() << robot->orientation.y() << robot->orientation.z();
+            robotMap["orientation"] = orientation;
+            
+            robotsList.append(robotMap);
+        }
+        teamMap["robots"] = robotsList;
+        
+        teamsList.append(teamMap);
+    }
+    
+    return teamsList;
+}
 
 AppWindow::AppWindow(int& argc, char** argv) {
     std::signal(SIGTERM, signalHandler);
@@ -165,6 +202,9 @@ void AppWindow::loadScene(const QString& yamlFile) {
         qDebug() << "12. Starting simulation thread...";
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
         sim->start();
+        
+        qDebug() << "13. Emitting teams changed signal...";
+        emit teamsChanged();
         
         qDebug() << "Scene loaded successfully";
     } catch (const std::exception& e) {

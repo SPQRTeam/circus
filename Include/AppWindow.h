@@ -4,6 +4,8 @@
 #include <qtmetamacros.h>
 
 #include <QObject>
+#include <QVariantList>
+#include <QVariantMap>
 #include <memory>
 
 #include "MujocoContext.h"
@@ -14,6 +16,7 @@ namespace spqr {
 class AppWindow : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString projectRoot READ projectRoot CONSTANT)
+    Q_PROPERTY(QVariantList teams READ getTeamsForQml NOTIFY teamsChanged)
 
    public:
     AppWindow(int& argc, char** argv);
@@ -22,6 +25,10 @@ class AppWindow : public QObject {
     Q_INVOKABLE void loadScene(const QString& yamlFile);
     
     QString projectRoot() const { return QString::fromStdString(PROJECT_ROOT); }
+    QVariantList getTeamsForQml() const;
+
+   signals:
+    void teamsChanged();
 
    private:
     static void signalHandler(int signal);
