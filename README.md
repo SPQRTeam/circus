@@ -28,7 +28,7 @@ This instructs pixi to create the environment specified in [pixi.toml](pixi.toml
 ### Run
 The pixi manifest declares a task named `main` that runs the python entrypoint (see [pixi.toml](pixi.toml) tasks). Run
 ```
-pixi run main
+pixi run circus-main
 ```
 
 ### Links

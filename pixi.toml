@@ -40,7 +40,8 @@ libboost-devel = ">=1.88.0,<2"
 [package.target.osx-arm64.host-dependencies]
 
 [tasks]
-test = "python -c 'import circuspy; circuspy.test()'" 
+test = "python -c 'import circuspy; circuspy.test()'"
+docker-clean = "docker rm -f $(docker ps -aq)"
 
 [activation]
 # Add DYLD_LIBRARY_PATH on macOS so the MuJoCo dylib is found when running binaries directly
