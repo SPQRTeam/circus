@@ -224,7 +224,8 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
     xml_node robotNode = *worldbodyModel.begin();
 
     std::ostringstream posStream;
-    posStream << robotSpec->initPosition.x() << " " << robotSpec->initPosition.y() << " " << robotSpec->initPosition.z();
+    posStream << robotSpec->initPosition.x() << " " << robotSpec->initPosition.y() << " "
+              << robotSpec->initPosition.z();
     xml_attribute posAttr = robotNode.attribute("pos");
     if (posAttr) {
         posAttr.set_value(posStream.str().c_str());

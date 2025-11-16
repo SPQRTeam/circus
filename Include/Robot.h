@@ -19,14 +19,13 @@
 #include <thread>
 #include <vector>
 
-#include "Pose.h"
-#include "Imu.h"
-#include "Joint.h"
 #include "Camera.h"
-
 #include "Constants.h"
 #include "Container.h"
+#include "Imu.h"
+#include "Joint.h"
 #include "MujocoContext.h"
+#include "Pose.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -35,9 +34,15 @@ struct Team;  // Forward declaration
 
 class Robot {
    public:
-    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
-          const Eigen::Vector3d& initOrientation, const std::shared_ptr<Team>& team)
-        : name(name), type(type), number(number), initPosition(initPosition), initOrientation(initOrientation), team(team) {}
+    Robot(const std::string& name, const std::string& type, uint8_t number,
+          const Eigen::Vector3d& initPosition, const Eigen::Vector3d& initOrientation,
+          const std::shared_ptr<Team>& team)
+        : name(name),
+          type(type),
+          number(number),
+          initPosition(initPosition),
+          initOrientation(initOrientation),
+          team(team) {}
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -57,7 +62,6 @@ class Robot {
 
 class T1 : public Robot {
    public:
-    
     Pose* pose = nullptr;
     Imu* imu = nullptr;
     Joints* joints = nullptr;
@@ -94,7 +98,7 @@ class T1 : public Robot {
         pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(),
                         (name + "_orientation").c_str());
         imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(),
-                    (name + "_angular-velocity").c_str());
+                      (name + "_angular-velocity").c_str());
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
         cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
@@ -142,7 +146,7 @@ class T1 : public Robot {
         /*
         cameras[0]->update();
         cameras[1]->update();
-        */        
+        */
     }
 
     ~T1() = default;
@@ -153,7 +157,6 @@ class T1 : public Robot {
 
 class K1 : public Robot {
    public:
-
     Pose* pose = nullptr;
     Imu* imu;
     Joints* joints = nullptr;
@@ -189,7 +192,7 @@ class K1 : public Robot {
         pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(),
                         (name + "_orientation").c_str());
         imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(),
-                        (name + "_angular-velocity").c_str());
+                      (name + "_angular-velocity").c_str());
         joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
         cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
