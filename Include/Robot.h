@@ -35,9 +35,9 @@ struct Team;  // Forward declaration
 
 class Robot {
    public:
-    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
-          const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : name(name), type(type), number(number), position(position), orientation(orientation), team(team) {}
+    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
+          const Eigen::Vector3d& initOrientation, const std::shared_ptr<Team>& team)
+        : name(name), type(type), number(number), initPosition(initPosition), initOrientation(initOrientation), team(team) {}
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -47,8 +47,8 @@ class Robot {
     std::string name;
     std::string type;
     uint8_t number;
-    Eigen::Vector3d position;
-    Eigen::Vector3d orientation;  // Euler angles
+    Eigen::Vector3d initPosition;
+    Eigen::Vector3d initOrientation;  // Euler angles
     std::unique_ptr<Container> container;
     std::shared_ptr<Team> team;
 
@@ -63,9 +63,9 @@ class T1 : public Robot {
     Joints* joints = nullptr;
     std::array<Camera*, 2> cameras = {};
 
-    T1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
-       const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : Robot(name, type, number, position, orientation, team),
+    T1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
+       const Eigen::Vector3d& initOrientation, const std::shared_ptr<Team>& team)
+        : Robot(name, type, number, initPosition, initOrientation, team),
           joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                     {JointValue::HEAD_PITCH, name + "_Head_pitch"},
                     {JointValue::SHOULDER_LEFT_PITCH, name + "_Left_Shoulder_Pitch"},
@@ -159,9 +159,9 @@ class K1 : public Robot {
     Joints* joints = nullptr;
     std::array<Camera*, 2> cameras = {};
 
-    K1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
-       const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : Robot(name, type, number, position, orientation, team),
+    K1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
+       const Eigen::Vector3d& initOrientation, const std::shared_ptr<Team>& team)
+        : Robot(name, type, number, initPosition, initOrientation, team),
           joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                     {JointValue::HEAD_PITCH, name + "_Head_pitch"},
                     {JointValue::SHOULDER_LEFT_PITCH, name + "_ALeft_Shoulder_Pitch"},
