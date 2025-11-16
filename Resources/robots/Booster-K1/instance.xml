@@ -264,7 +264,9 @@
         <motor name="Right_Ankle_Roll" joint="Right_Ankle_Roll" ctrllimited="true" ctrlrange="-20.0 20.0" gear="1" />
     </actuator>
     <sensor>
-        <framequat name="orientation" objtype="site" noise="0.001" objname="imu" />
-        <gyro name="angular-velocity" site="imu" noise="0.005" />
+        <framepos name="position" objtype="site" objname="imu" />
+        <framequat name="orientation" objtype="site" objname="imu" />
+        <gyro name="angular-velocity" site="imu" noise="0.0005" />
+        <accelerometer name='linear-acceleration' site="imu" noise="0.005" />
     </sensor>
 </mujoco>
