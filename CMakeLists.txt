@@ -119,7 +119,7 @@ endif()
 # ======================= CIRCUS LIBRARY ============================================================
 
 # -------------------- Collect sources and split into: core, main, bindings
-set(_src_dir "${CMAKE_SOURCE_DIR}/Src")
+set(_src_dir "${CMAKE_SOURCE_DIR}/src")
 set(_include_dir "${CMAKE_SOURCE_DIR}/Include")
 
 # Source files

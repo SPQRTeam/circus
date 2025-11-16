@@ -99,11 +99,11 @@ string SceneParser::buildMuJoCoXml() {
 
     xml_node compiler = mujoco.append_child("compiler");
     compiler.append_attribute("angle") = "radian";
-    compiler.append_attribute("meshdir") = "Resources/meshes/";
+    compiler.append_attribute("meshdir") = "resources/meshes/";
 
     xml_node include_node = mujoco.append_child("include");
     include_node.append_attribute("file")
-        = (filesystem::path(PROJECT_ROOT) / "Resources" / "includes" / (scene.field + ".xml")).c_str();
+        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.field + ".xml")).c_str();
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");
@@ -111,7 +111,7 @@ string SceneParser::buildMuJoCoXml() {
 
     include_node = mujoco.append_child("include");
     include_node.append_attribute("file")
-        = (filesystem::path(PROJECT_ROOT) / "Resources" / "includes" / "ball.xml").c_str();
+        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "ball.xml").c_str();
 
     for (const string& robotType : robotTypes)
         buildRobotCommon(robotType, mujoco);
@@ -153,7 +153,7 @@ string SceneParser::buildMuJoCoXml() {
 
 void SceneParser::buildRobotCommon(const string& robotType, xml_node& mujoco) {
     filesystem::path commonPath
-        = filesystem::path(PROJECT_ROOT) / "Resources" / "robots" / robotType / "common.xml";
+        = filesystem::path(PROJECT_ROOT) / "resources" / "robots" / robotType / "common.xml";
     if (!filesystem::exists(commonPath)) {
         throw runtime_error("Robot common file does not exist: " + commonPath.string());
     }
@@ -192,7 +192,7 @@ void SceneParser::prefixSubtree(xml_node& root, const string& robotName) {
 void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody,
                                      xml_node& actuator, xml_node& sensor) {
     filesystem::path instancePath
-        = filesystem::path(PROJECT_ROOT) / "Resources" / "robots" / robotSpec->type / "instance.xml";
+        = filesystem::path(PROJECT_ROOT) / "resources" / "robots" / robotSpec->type / "instance.xml";
 
     if (!filesystem::exists(instancePath)) {
         throw runtime_error("Robot instance file does not exist: " + instancePath.string());
