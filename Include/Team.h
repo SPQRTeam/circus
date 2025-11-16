@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Robot.h"
+#include "RobotManager.h"
 
 namespace spqr {
 

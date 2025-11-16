@@ -13,7 +13,9 @@
 #include <stdexcept>
 
 #include "Robot.h"
+#include "RobotManager.h"
 #include "Team.h"
+
 using namespace pugi;
 using namespace std;
 namespace spqr {

@@ -7,8 +7,9 @@
 
 #include "Constants.h"
 #include "MujocoContext.h"
-#include "Robot.h"
+#include "RobotManager.h"
 #include "SceneParser.h"
+
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
