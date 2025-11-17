@@ -120,7 +120,7 @@ endif()
 
 # -------------------- Collect sources and split into: core, main, bindings
 set(_src_dir "${CMAKE_SOURCE_DIR}/src")
-set(_include_dir "${CMAKE_SOURCE_DIR}/Include")
+set(_include_dir "${CMAKE_SOURCE_DIR}/include")
 
 # Source files
 file(GLOB_RECURSE SOURCES ${_src_dir}/*.cpp)

@@ -12,9 +12,9 @@
 #include <stack>
 #include <stdexcept>
 
-#include "Robot.h"
 #include "RobotManager.h"
 #include "Team.h"
+#include "robots/Robot.h"
 
 using namespace pugi;
 using namespace std;

@@ -19,7 +19,9 @@
 
 #include "Constants.h"
 #include "MujocoContext.h"
-#include "Robot.h"
+#include "robots/BoosterK1.h"
+#include "robots/BoosterT1.h"
+#include "robots/Robot.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -234,12 +236,14 @@ class RobotManager {
                                                               const Eigen::Vector3d&, const Eigen::Vector3d&,
                                                               const std::shared_ptr<Team>&)>;
 
-    std::unordered_map<std::string, RobotCreator> robotFactory = {
-        {"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori,
-                          auto&& team) { return std::make_shared<K1>(name, type, number, pos, ori, team); }},
-        {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& team) {
-             return std::make_shared<T1>(name, type, number, pos, ori, team);
-         }}};
+    std::unordered_map<std::string, RobotCreator> robotFactory
+        = {{"Booster-K1",
+            [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& team) {
+                return std::make_shared<BoosterK1>(name, type, number, pos, ori, team);
+            }},
+           {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& team) {
+                return std::make_shared<BoosterT1>(name, type, number, pos, ori, team);
+            }}};
 };
 
 }  // namespace spqr
