@@ -128,10 +128,8 @@ class T1 : public Robot {
     }
 
     void update() override {
-        /*
         cameras[0]->update();
         cameras[1]->update();
-        */
         joints->update();
         imu->update();
     }
@@ -199,10 +197,8 @@ class K1 : public Robot {
     }
 
     void update() override {
-        /*
         cameras[0]->update();
         cameras[1]->update();
-        */
         joints->update();
         imu->update();
     }
@@ -238,9 +234,18 @@ class RobotManager {
     }
 
     void update() {
-        std::lock_guard lock(mutex_);
-        for (std::shared_ptr<Robot> r : robots_) {
-            r->update();
+        std::vector<std::thread> threads;
+
+        {
+            std::lock_guard lock(mutex_);
+            for (std::shared_ptr<Robot> r : robots_) {
+                threads.emplace_back([r]() { r->update(); });
+            }
+        }
+
+        // Wait for all robot updates to complete
+        for (auto& thread : threads) {
+            thread.join();
         }
     }
 

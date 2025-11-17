@@ -1,22 +1,27 @@
 #include "SimulationThread.h"
 
-#include <stdexcept>
-
-#include "Robot.h"
-
 namespace spqr {
 
-SimulationThread::SimulationThread(const mjModel* model, mjData* data)
-    : model_(model), data_(data), running_(true) {}
+SimulationThread::SimulationThread(const mjModel* model, mjData* data, CameraContext& cameraCtx)
+    : model_(model), data_(data), cameraContext_(cameraCtx), running_(false) {}
+
+SimulationThread::~SimulationThread() {
+    if (running_) {
+        stop();
+    }
+}
 
 void SimulationThread::run() {
     if (!model_)
         throw std::runtime_error("Cannot start simulation without mujoco model");
 
+    running_ = true;
+
     double sim_dt = model_->opt.timestep;
 
     using clock = std::chrono::steady_clock;
     auto next_step_time = clock::now();
+
     while (running_) {
         mj_step(model_, data_);
         RobotManager::instance().update();

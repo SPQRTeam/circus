@@ -76,10 +76,33 @@ void AppWindow::loadScene(const QString& yamlFile) {
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
+        if (cameraSidebar_) {
+            mainLayout->removeWidget(cameraSidebar_);
+            delete cameraSidebar_;
+        }
+        cameraSidebar_ = new CameraSidebar(this);
+
+        auto teams = TeamManager::instance().getTeams();
+        if (!teams.empty()) {
+            const auto& team1 = teams[0];  // First team
+            for (const auto& robot : team1->robots) {
+                cameraSidebar_->addRobotCameras(robot.get(), QString::fromStdString(robot->name));
+            }
+        }
+
+        // Update layout
+        if (viewportContainer) {
+            mainLayout->removeWidget(viewportContainer);
+            viewportContainer->deleteLater();
+        }
+
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
+        mainLayout->addWidget(cameraSidebar_);
 
-        sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
+        sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data,
+                                                 mujContext->cameraContext);
+
         sim->start();
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error loading scene", e.what());
