@@ -100,8 +100,7 @@ void AppWindow::loadScene(const QString& yamlFile) {
         mainLayout->addWidget(viewportContainer);
         mainLayout->addWidget(cameraSidebar_);
 
-        sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data,
-                                                 mujContext->cameraContext);
+        sim = std::make_unique<SimulationThread>(mujContext.get());
 
         sim->start();
     } catch (const std::exception& e) {

@@ -13,16 +13,14 @@ namespace spqr {
 class SimulationThread : public QThread {
     Q_OBJECT
    public:
-    SimulationThread(const mjModel* model, mjData* data, CameraContext& cameraCtx);
+    SimulationThread(MujocoContext* mujContext);
     ~SimulationThread() override;
 
     void run() override;
     void stop();
 
    private:
-    const mjModel* model_;
-    mjData* data_;
-    CameraContext& cameraContext_;
+    MujocoContext* mujContext_;
     std::atomic<bool> running_;
 };
 

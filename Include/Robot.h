@@ -25,6 +25,7 @@
 #include "Imu.h"
 #include "Joint.h"
 #include "MujocoContext.h"
+#include "ThreadPool.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -234,18 +235,18 @@ class RobotManager {
     }
 
     void update() {
-        std::vector<std::thread> threads;
+        std::vector<std::future<void>> futures;
 
         {
             std::lock_guard lock(mutex_);
             for (std::shared_ptr<Robot> r : robots_) {
-                threads.emplace_back([r]() { r->update(); });
+                futures.push_back(threadPool_.enqueue([r]() { r->update(); }));
             }
         }
 
         // Wait for all robot updates to complete
-        for (auto& thread : threads) {
-            thread.join();
+        for (auto& future : futures) {
+            future.wait();
         }
     }
 
@@ -421,6 +422,7 @@ class RobotManager {
 
     mutable std::mutex mutex_;
     std::vector<std::shared_ptr<Robot>> robots_;
+    ThreadPool threadPool_{std::thread::hardware_concurrency()};
 
     using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t,
                                                               const Eigen::Vector3d&, const Eigen::Vector3d&,

@@ -26,6 +26,7 @@ MujocoContext::MujocoContext(const std::string& xmlString) {
     }
 
     data = mj_makeData(model);
+    dataSnapshot = mj_makeData(model);  // Create snapshot copy
 
     // Viewport rendering setup
     mjv_defaultOption(&opt);
@@ -39,6 +40,8 @@ MujocoContext::MujocoContext(const std::string& xmlString) {
 }
 
 MujocoContext::~MujocoContext() {
+    if (dataSnapshot)
+        mj_deleteData(dataSnapshot);
     if (data)
         mj_deleteData(data);
     if (model)
@@ -48,6 +51,8 @@ MujocoContext::~MujocoContext() {
 
 MujocoContext& MujocoContext::operator=(MujocoContext&& other) noexcept {
     if (this != &other) {
+        if (dataSnapshot)
+            mj_deleteData(dataSnapshot);
         if (data)
             mj_deleteData(data);
         if (model)
@@ -56,6 +61,7 @@ MujocoContext& MujocoContext::operator=(MujocoContext&& other) noexcept {
 
         model = other.model;
         data = other.data;
+        dataSnapshot = other.dataSnapshot;
         cam = other.cam;
         opt = other.opt;
         scene = other.scene;
@@ -63,6 +69,7 @@ MujocoContext& MujocoContext::operator=(MujocoContext&& other) noexcept {
 
         other.model = nullptr;
         other.data = nullptr;
+        other.dataSnapshot = nullptr;
     }
     return *this;
 }
@@ -162,6 +169,11 @@ void CameraContext::cleanup() {
 
         eglTerminate(eglDisplay);
     }
+}
+
+void MujocoContext::updateSnapshot() {
+    std::lock_guard<std::mutex> lock(snapshotMutex);
+    mj_copyData(dataSnapshot, model, data);
 }
 
 }  // namespace spqr

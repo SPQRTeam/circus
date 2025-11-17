@@ -29,7 +29,7 @@ class Sensor {
 
         std::unique_lock lock(mtx_);
         doUpdate();
-        lastUpdateTime = std::chrono::steady_clock::now();
+        lastUpdateTime = now;
     }
 
     virtual msgpack::object serialize(msgpack::zone& z) final {
