@@ -23,9 +23,15 @@ struct Team;  // Forward declaration
 
 class Robot {
    public:
-    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
-          const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : name(name), type(type), number(number), position(position), orientation(orientation), team(team) {}
+    Robot(const std::string& name, const std::string& type, uint8_t number,
+          const Eigen::Vector3d& initPosition, const Eigen::Vector3d& initOrientation,
+          const std::shared_ptr<Team>& team)
+        : name(name),
+          type(type),
+          number(number),
+          initPosition(initPosition),
+          initOrientation(initOrientation),
+          team(team) {}
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -35,8 +41,8 @@ class Robot {
     std::string name;
     std::string type;
     uint8_t number;
-    Eigen::Vector3d position;
-    Eigen::Vector3d orientation;  // Euler angles
+    Eigen::Vector3d initPosition;
+    Eigen::Vector3d initOrientation;  // Euler angles
     std::unique_ptr<Container> container;
     std::shared_ptr<Team> team;
 

@@ -226,7 +226,8 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
     xml_node robotNode = *worldbodyModel.begin();
 
     std::ostringstream posStream;
-    posStream << robotSpec->position.x() << " " << robotSpec->position.y() << " " << robotSpec->position.z();
+    posStream << robotSpec->initPosition.x() << " " << robotSpec->initPosition.y() << " "
+              << robotSpec->initPosition.z();
     xml_attribute posAttr = robotNode.attribute("pos");
     if (posAttr) {
         posAttr.set_value(posStream.str().c_str());
@@ -235,8 +236,8 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
     }
 
     std::ostringstream oriStream;
-    oriStream << robotSpec->orientation.x() << " " << robotSpec->orientation.y() << " "
-              << robotSpec->orientation.z();
+    oriStream << robotSpec->initOrientation.x() << " " << robotSpec->initOrientation.y() << " "
+              << robotSpec->initOrientation.z();
     xml_attribute eulerAttr = robotNode.attribute("euler");
     if (eulerAttr) {
         eulerAttr.set_value(oriStream.str().c_str());

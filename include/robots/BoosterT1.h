@@ -20,6 +20,7 @@
 #include "sensors/Camera.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
+#include "sensors/Pose.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -28,13 +29,15 @@ struct Team;  // Forward declaration
 
 class BoosterT1 : public Robot {
    public:
-    std::array<Camera*, 2> cameras = {};
+    Pose* pose = nullptr;
     Imu* imu = nullptr;
     Joints* joints = nullptr;
+    std::array<Camera*, 2> cameras = {};
+
     BoosterT1(const std::string& name, const std::string& type, uint8_t number,
-              const Eigen::Vector3d& position, const Eigen::Vector3d& orientation,
+              const Eigen::Vector3d& initPosition, const Eigen::Vector3d& initOrientation,
               const std::shared_ptr<Team>& team)
-        : Robot(name, type, number, position, orientation, team),
+        : Robot(name, type, number, initPosition, initOrientation, team),
           joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                     {JointValue::HEAD_PITCH, name + "_Head_pitch"},
                     {JointValue::SHOULDER_LEFT_PITCH, name + "_Left_Shoulder_Pitch"},
@@ -60,9 +63,11 @@ class BoosterT1 : public Robot {
                     {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
     void bindMujoco(MujocoContext* mujCtx) override {
-        joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
-        imu = new Imu(mujCtx->model, mujCtx->data, (name + "_orientation").c_str(),
+        pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(),
+                        (name + "_orientation").c_str());
+        imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(),
                       (name + "_angular-velocity").c_str());
+        joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
         cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
@@ -95,6 +100,7 @@ class BoosterT1 : public Robot {
         buffer_zone_.clear();
         std::map<std::string, msgpack::object> msg;
         msg["robot_name"] = msgpack::object(name, buffer_zone_);
+        msg["pose"] = pose->serialize(buffer_zone_);
         msg["imu"] = imu->serialize(buffer_zone_);
         msg["joints"] = joints->serialize(buffer_zone_);
 
@@ -102,12 +108,13 @@ class BoosterT1 : public Robot {
     }
 
     void update() override {
+        pose->update();
+        imu->update();
+        joints->update();
         /*
         cameras[0]->update();
         cameras[1]->update();
         */
-        joints->update();
-        imu->update();
     }
 
     ~BoosterT1() = default;
