@@ -38,6 +38,8 @@ libboost-devel = ">=1.88.0,<2"
 
 
 [package.target.osx-arm64.host-dependencies]
+msgpack-cxx = ">=7.0.0,<8"
+libboost-devel = ">=1.88.0,<2"
 
 [tasks]
 test = "python -c 'import circuspy; circuspy.test()'"
