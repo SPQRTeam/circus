@@ -25,6 +25,7 @@
 #include "Imu.h"
 #include "Joint.h"
 #include "MujocoContext.h"
+#include "Pose.h"
 #include "ThreadPool.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
@@ -34,9 +35,15 @@ struct Team;  // Forward declaration
 
 class Robot {
    public:
-    Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
-          const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : name(name), type(type), number(number), position(position), orientation(orientation), team(team) {}
+    Robot(const std::string& name, const std::string& type, uint8_t number,
+          const Eigen::Vector3d& initPosition, const Eigen::Vector3d& initOrientation,
+          const std::shared_ptr<Team>& team)
+        : name(name),
+          type(type),
+          number(number),
+          initPosition(initPosition),
+          initOrientation(initOrientation),
+          team(team) {}
     virtual ~Robot() = default;
     virtual void bindMujoco(MujocoContext* mujContext) = 0;
     virtual void update() = 0;
@@ -46,8 +53,8 @@ class Robot {
     std::string name;
     std::string type;
     uint8_t number;
-    Eigen::Vector3d position;
-    Eigen::Vector3d orientation;  // Euler angles
+    Eigen::Vector3d initPosition;
+    Eigen::Vector3d initOrientation;  // Euler angles
     std::unique_ptr<Container> container;
     std::shared_ptr<Team> team;
 
@@ -56,12 +63,14 @@ class Robot {
 
 class T1 : public Robot {
    public:
-    std::array<Camera*, 2> cameras = {};
+    Pose* pose = nullptr;
     Imu* imu = nullptr;
     Joints* joints = nullptr;
-    T1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
-       const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : Robot(name, type, number, position, orientation, team),
+    std::array<Camera*, 2> cameras = {};
+
+    T1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
+       const Eigen::Vector3d& initOrientation, const std::shared_ptr<Team>& team)
+        : Robot(name, type, number, initPosition, initOrientation, team),
           joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                     {JointValue::HEAD_PITCH, name + "_Head_pitch"},
                     {JointValue::SHOULDER_LEFT_PITCH, name + "_Left_Shoulder_Pitch"},
@@ -87,9 +96,11 @@ class T1 : public Robot {
                     {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
     void bindMujoco(MujocoContext* mujCtx) override {
-        joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
-        imu = new Imu(mujCtx->model, mujCtx->data, (name + "_orientation").c_str(),
+        pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(),
+                        (name + "_orientation").c_str());
+        imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(),
                       (name + "_angular-velocity").c_str());
+        joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
         cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
@@ -122,6 +133,7 @@ class T1 : public Robot {
         buffer_zone_.clear();
         std::map<std::string, msgpack::object> msg;
         msg["robot_name"] = msgpack::object(name, buffer_zone_);
+        msg["pose"] = pose->serialize(buffer_zone_);
         msg["imu"] = imu->serialize(buffer_zone_);
         msg["joints"] = joints->serialize(buffer_zone_);
 
@@ -129,10 +141,11 @@ class T1 : public Robot {
     }
 
     void update() override {
+        pose->update();
+        imu->update();
+        joints->update();
         cameras[0]->update();
         cameras[1]->update();
-        joints->update();
-        imu->update();
     }
 
     ~T1() = default;
@@ -143,13 +156,14 @@ class T1 : public Robot {
 
 class K1 : public Robot {
    public:
-    std::array<Camera*, 2> cameras = {};
+    Pose* pose = nullptr;
     Imu* imu;
     Joints* joints = nullptr;
+    std::array<Camera*, 2> cameras = {};
 
-    K1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& position,
-       const Eigen::Vector3d& orientation, const std::shared_ptr<Team>& team)
-        : Robot(name, type, number, position, orientation, team),
+    K1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
+       const Eigen::Vector3d& initOrientation, const std::shared_ptr<Team>& team)
+        : Robot(name, type, number, initPosition, initOrientation, team),
           joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                     {JointValue::HEAD_PITCH, name + "_Head_pitch"},
                     {JointValue::SHOULDER_LEFT_PITCH, name + "_ALeft_Shoulder_Pitch"},
@@ -174,9 +188,11 @@ class K1 : public Robot {
                     {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
     void bindMujoco(MujocoContext* mujCtx) override {
-        joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
-        imu = new Imu(mujCtx->model, mujCtx->data, (name + "_orientation").c_str(),
+        pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(),
+                        (name + "_orientation").c_str());
+        imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(),
                       (name + "_angular-velocity").c_str());
+        joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
         cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
         cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
     }
@@ -194,14 +210,22 @@ class K1 : public Robot {
     }
 
     std::map<std::string, msgpack::object> sendMessage() override {
-        return {};
+        buffer_zone_.clear();
+        std::map<std::string, msgpack::object> msg;
+        msg["robot_name"] = msgpack::object(name, buffer_zone_);
+        msg["pose"] = pose->serialize(buffer_zone_);
+        msg["imu"] = imu->serialize(buffer_zone_);
+        msg["joints"] = joints->serialize(buffer_zone_);
+
+        return msg;
     }
 
     void update() override {
+        pose->update();
+        imu->update();
+        joints->update();
         cameras[0]->update();
         cameras[1]->update();
-        joints->update();
-        imu->update();
     }
 
     ~K1() = default;
