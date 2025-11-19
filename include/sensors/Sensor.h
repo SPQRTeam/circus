@@ -3,6 +3,7 @@
 #include <msgpack.hpp>
 #include <mutex>
 #include <shared_mutex>
+
 class Sensor {
    public:
     virtual ~Sensor() = default;

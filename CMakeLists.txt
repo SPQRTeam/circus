@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 project(circus VERSION 0.1.0 LANGUAGES CXX)
 add_compile_definitions(_LIBCPP_DISABLE_AVAILABILITY)
 
-set(LIBRARY ${PROJECT_NAME})
-set(EXECUTABLE ${PROJECT_NAME}-main)
+set(LIBRARY ${PROJECT_NAME}-lib)
+set(EXECUTABLE ${PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -36,6 +36,11 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets Qml Quick)
 # Optional deps (linked only if found)
 find_package(nlohmann_json QUIET)
 find_package(CURL QUIET)
+
+# Generate .clangd configuration after dependencies are found
+get_target_property(EIGEN_INCLUDE_DIR Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
+  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n  Add:\n    - -I${CMAKE_CURRENT_SOURCE_DIR}/include\n    - -isystem${EIGEN_INCLUDE_DIR}\n")
 
 # -------------------- yaml-cpp (config -> module -> manual) [robust]
 set(_YAML_HINT "/opt/homebrew/opt/yaml-cpp")
@@ -120,8 +125,8 @@ endif()
 # ======================= CIRCUS LIBRARY ============================================================
 
 # -------------------- Collect sources and split into: core, main, bindings
-set(_src_dir "${CMAKE_SOURCE_DIR}/Src")
-set(_include_dir "${CMAKE_SOURCE_DIR}/Include")
+set(_src_dir "${CMAKE_SOURCE_DIR}/src")
+set(_include_dir "${CMAKE_SOURCE_DIR}/include")
 
 # Source files
 file(GLOB_RECURSE SOURCES ${_src_dir}/*.cpp)
@@ -137,11 +142,11 @@ file(GLOB_RECURSE ALL_UIS  CONFIGURE_DEPENDS "${_src_dir}/*.ui")
 file(GLOB_RECURSE ALL_QRCS CONFIGURE_DEPENDS "${_src_dir}/*.qrc")
 
 # Add QML resources - only if the file exists
-if(EXISTS "${CMAKE_SOURCE_DIR}/Resources/qml.qrc")
-  qt_add_resources(QML_RESOURCES "${CMAKE_SOURCE_DIR}/Resources/qml.qrc")
+if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qml.qrc")
+  qt_add_resources(QML_RESOURCES "${CMAKE_SOURCE_DIR}/resources/qml.qrc")
 else()
   set(QML_RESOURCES "")
-  message(WARNING "QML resources not found at ${CMAKE_SOURCE_DIR}/Resources/qml.qrc - skipping QML resources")
+  message(WARNING "QML resources not found at ${CMAKE_SOURCE_DIR}/resources/qml.qrc - skipping QML resources")
 endif()
 
 # Identify entry points we don't want in the core lib
@@ -211,14 +216,18 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 # 1. Install the library target and headers
-set_target_properties(${LIBRARY} PROPERTIES PUBLIC_HEADER "${HEADERS}")
 install(TARGETS ${LIBRARY}
     EXPORT ${LIBRARY}Targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+)
+
+# Install headers preserving directory structure
+install(DIRECTORY ${_include_dir}/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 # 2. Generate the relocatable package config file in the build directory

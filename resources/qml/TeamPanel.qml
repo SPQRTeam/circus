@@ -164,9 +164,9 @@ Rectangle {
 
                                 Label {
                                     text: "Position: [" +
-                                          modelData.position[0].toFixed(2) + ", " +
-                                          modelData.position[1].toFixed(2) + ", " +
-                                          modelData.position[2].toFixed(2) + "]"
+                                          modelData.pose.position[0].toFixed(2) + ", " +
+                                          modelData.pose.position[1].toFixed(2) + ", " +
+                                          modelData.pose.position[2].toFixed(2) + "]"
                                     font.pixelSize: 12
                                     color: "#bdc3c7"
                                     wrapMode: Text.WordWrap
@@ -175,9 +175,9 @@ Rectangle {
 
                                 Label {
                                     text: "Orientation: [" +
-                                          modelData.orientation[0].toFixed(2) + ", " +
-                                          modelData.orientation[1].toFixed(2) + ", " +
-                                          modelData.orientation[2].toFixed(2) + "]"
+                                          modelData.pose.orientation[0].toFixed(2) + ", " +
+                                          modelData.pose.orientation[1].toFixed(2) + ", " +
+                                          modelData.pose.orientation[2].toFixed(2) + "]"
                                     font.pixelSize: 12
                                     color: "#bdc3c7"
                                     wrapMode: Text.WordWrap
@@ -210,18 +210,17 @@ Rectangle {
                                     }
 
                                     Label {
-                                        text: "  Orientation (quat):"
+                                        text: "  Linear Acceleration:"
                                         font.pixelSize: 10
                                         color: "#bdc3c7"
                                     }
 
                                     Label {
-                                        text: modelData.imu && modelData.imu.orientation ?
+                                        text: modelData.imu && modelData.imu.linearAcceleration ?
                                               "    [" +
-                                              modelData.imu.orientation[0].toFixed(3) + ", " +
-                                              modelData.imu.orientation[1].toFixed(3) + ", " +
-                                              modelData.imu.orientation[2].toFixed(3) + ", " +
-                                              modelData.imu.orientation[3].toFixed(3) + "]"
+                                              modelData.imu.linearAcceleration[0].toFixed(3) + ", " +
+                                              modelData.imu.linearAcceleration[1].toFixed(3) + ", " +
+                                              modelData.imu.linearAcceleration[2].toFixed(3) + "]"
                                               : "    [N/A]"
                                         font.pixelSize: 10
                                         font.family: "Monospace"

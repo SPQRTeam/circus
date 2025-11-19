@@ -30,7 +30,7 @@ ApplicationWindow {
     Platform.FileDialog {
         id: fileDialog
         title: "Open Scene File"
-        folder: "file://" + appWindow.projectRoot + "/Resources/Scenes"
+        folder: "file://" + appWindow.projectRoot + "/resources/scenes"
         nameFilters: ["YAML Files (*.yaml)", "All Files (*)"]
         onAccepted: {
             var path = file.toString()

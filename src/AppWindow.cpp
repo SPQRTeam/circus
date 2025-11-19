@@ -14,7 +14,7 @@
 #include <csignal>
 
 #include "MujocoContext.h"
-#include "Robot.h"
+#include "RobotManager.h"
 #include "RobotQmlWrapper.h"
 #include "SceneParser.h"
 #include "Team.h"
@@ -62,7 +62,7 @@ AppWindow::AppWindow(int& argc, char** argv) {
     qmlEngine = std::make_unique<QQmlApplicationEngine>();
     qmlEngine->rootContext()->setContextProperty("appWindow", this);
 
-    const QUrl qrcUrl = QUrl(QStringLiteral("Resources/qml/main.qml"));
+    const QUrl qrcUrl = QUrl(QStringLiteral("resources/qml/main.qml"));
 
     // Connect to objectCreated to detect if QML failed to load
     QObject::connect(qmlEngine.get(), &QQmlApplicationEngine::objectCreated,
@@ -84,7 +84,7 @@ AppWindow::AppWindow(int& argc, char** argv) {
         QString fileArg = QString::fromLocal8Bit(scenePath->c_str());
         QTimer::singleShot(100, [this, fileArg]() { loadScene(fileArg); });
     }
-}
+};
 
 void AppWindow::loadScene(const QString& yamlFile) {
     try {

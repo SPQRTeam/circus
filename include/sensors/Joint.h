@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "Sensor.h"
+#include "sensors/Sensor.h"
 
 namespace spqr {
 
