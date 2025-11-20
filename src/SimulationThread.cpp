@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "Robot.h"
+#include "RobotManager.h"
 
 namespace spqr {
 

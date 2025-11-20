@@ -4,7 +4,7 @@
 
 #include <Eigen/Eigen>
 
-#include "Sensor.h"
+#include "sensors/Sensor.h"
 
 namespace spqr {
 

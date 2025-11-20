@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "Robot.h"
+#include "RobotManager.h"
+#include "robots/Robot.h"
 
 namespace spqr {
 

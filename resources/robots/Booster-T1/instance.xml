@@ -89,7 +89,7 @@
                 </body>
             </body>
 
-            <!-- Waist --> 
+            <!-- Waist -->
             <body name="Waist" pos="0.0625 0 -0.1155">
                 <inertial pos="0.002284 3e-06 0.007301" quat="0.983649 0.000360386 -0.180076 0.00269791" mass="2.581" diaginertia="0.00536742 0.005299 0.00474258"/>
                 <joint name="Waist" pos="0 0 0" axis="0 0 1" range="-1.57 1.57" actuatorfrcrange="-30 30"/>
@@ -100,7 +100,7 @@
                     <inertial pos="0.000534 -0.007296 -0.018083" quat="0.975141 0.2211 0.0145808 0.0017406" mass="1.021" diaginertia="0.00180547 0.00145926 0.00125327"/>
                     <joint name="Left_Hip_Pitch" pos="0 0 0" axis="0 1 0" range="-1.8 1.57" actuatorfrcrange="-45 45"/>
                     <geom class="visual" material="black" mesh="Booster-T1_Hip_Pitch_Left"/>
-                    
+
                     <!-- Left Hip Roll -->
                     <body name="Hip_Roll_Left" pos="0 0 -0.02">
                         <inertial pos="0.001101 2.4e-05 -0.05375" quat="0.707081 -0.00599604 -0.00599604 0.707081" mass="0.385" diaginertia="0.001743 0.00151729 0.000514712"/>
@@ -127,7 +127,7 @@
                                     <joint name="Left_Ankle_Pitch" pos="0 0 0" axis="0 1 0" range="-0.87 0.35" actuatorfrcrange="-20 20"/>
                                     <geom class="visual" material="black" mesh="Booster-T1_Ankle_Cross_Left"/>
 
-                                    <!-- Left Ankle Roll -->    
+                                    <!-- Left Ankle Roll -->
                                     <body name="left_foot_link" pos="0 0.00025 -0.012">
                                         <inertial pos="-0.000249 0 -0.00914" quat="0 0.679927 0 0.733279" mass="0.685" diaginertia="0.00268212 0.002385 0.000726885"/>
                                         <joint name="Left_Ankle_Roll" pos="0 0 0" axis="1 0 0" range="-0.44 0.44" actuatorfrcrange="-15 15"/>
@@ -147,7 +147,7 @@
                     <joint name="Right_Hip_Pitch" pos="0 0 0" axis="0 1 0" range="-1.8 1.57" actuatorfrcrange="-45 45"/>
                     <geom class="visual" material="black" mesh="Booster-T1_Hip_Pitch_Right"/>
 
-                    <!-- Right Hip Roll --> 
+                    <!-- Right Hip Roll -->
                     <body name="Hip_Roll_Right" pos="0 0 -0.02">
                         <inertial pos="0.001099 2.4e-05 -0.053748" quat="0.707081 -0.00599604 -0.00599604 0.707081" mass="0.385" diaginertia="0.001743 0.00151729 0.000514712"/>
                         <joint name="Right_Hip_Roll" pos="0 0 0" axis="1 0 0" range="-1.57 0.2" actuatorfrcrange="-30 30"/>

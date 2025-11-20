@@ -7,8 +7,9 @@
 
 #include "Constants.h"
 #include "MujocoContext.h"
-#include "Robot.h"
+#include "RobotManager.h"
 #include "SceneParser.h"
+
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
@@ -44,7 +45,7 @@ AppWindow::AppWindow(int& argc, char** argv) {
 };
 
 void AppWindow::openScene() {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "Resources/Scenes/",
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "resources/scenes/",
                                                     tr("YAML Files (*.yaml)"));
     if (!fileName.isEmpty()) {
         loadScene(fileName);
