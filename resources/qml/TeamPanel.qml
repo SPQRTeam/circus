@@ -155,99 +155,59 @@ Rectangle {
                                     NumberAnimation { duration: 200 }
                                 }
 
-                                Label {
-                                    text: "Type: " + modelData.type
-                                    font.pixelSize: 12
-                                    color: "#bdc3c7"
-                                    width: parent.width - parent.padding * 2
-                                }
+                                // Label {
+                                //     text: modelData.type
+                                //     font.pixelSize: 10
+                                //     color: "#bdc3c7"
+                                //     width: parent.width - parent.padding * 2
+                                // }
 
                                 Label {
-                                    text: "Position: [" +
-                                          modelData.pose.position[0].toFixed(2) + ", " +
-                                          modelData.pose.position[1].toFixed(2) + ", " +
-                                          modelData.pose.position[2].toFixed(2) + "]"
-                                    font.pixelSize: 12
+                                    text: "Position: [ X: " +
+                                          modelData.pose.position[0].toFixed(2) + ", Y: " +
+                                          modelData.pose.position[1].toFixed(2) + ", Z: " +
+                                          modelData.pose.position[2].toFixed(2) + " ]"
+                                    font.pixelSize: 10
                                     color: "#bdc3c7"
                                     wrapMode: Text.WordWrap
                                     width: parent.width - parent.padding * 2
                                 }
 
                                 Label {
-                                    text: "Orientation: [" +
-                                          modelData.pose.orientation[0].toFixed(2) + ", " +
-                                          modelData.pose.orientation[1].toFixed(2) + ", " +
+                                    text: "Orientation: [ R: " +
+                                          modelData.pose.orientation[0].toFixed(2) + ", P: " +
+                                          modelData.pose.orientation[1].toFixed(2) + ", Y: " +
                                           modelData.pose.orientation[2].toFixed(2) + "]"
-                                    font.pixelSize: 12
+                                    font.pixelSize: 10
                                     color: "#bdc3c7"
                                     wrapMode: Text.WordWrap
                                     width: parent.width - parent.padding * 2
                                 }
 
-                                Rectangle {
-                                    width: parent.width - parent.padding * 2
-                                    height: 1
-                                    color: "#7f8c8d"
+                                Label {
+                                    text: modelData.imu && modelData.imu.linearAcceleration ?
+                                            "Linear Acceleration: [ X: " +
+                                            modelData.imu.linearAcceleration[0].toFixed(3) + ", Y: " +
+                                            modelData.imu.linearAcceleration[1].toFixed(3) + ", Z: " +
+                                            modelData.imu.linearAcceleration[2].toFixed(3) + "]"
+                                            : "    [N/A]"
+                                    font.pixelSize: 10
+                                    color: "#bdc3c7"
+                                    wrapMode: Text.WordWrap
+                                    width: parent.width
                                 }
 
                                 Label {
-                                    text: "Sensors"
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                    color: "#ecf0f1"
-                                }
-
-                                // IMU Data
-                                Column {
-                                    spacing: 4
-                                    width: parent.width - parent.padding * 2
-
-                                    Label {
-                                        text: "IMU"
-                                        font.pixelSize: 11
-                                        font.bold: true
-                                        color: "#3498db"
-                                    }
-
-                                    Label {
-                                        text: "  Linear Acceleration:"
-                                        font.pixelSize: 10
-                                        color: "#bdc3c7"
-                                    }
-
-                                    Label {
-                                        text: modelData.imu && modelData.imu.linearAcceleration ?
-                                              "    [" +
-                                              modelData.imu.linearAcceleration[0].toFixed(3) + ", " +
-                                              modelData.imu.linearAcceleration[1].toFixed(3) + ", " +
-                                              modelData.imu.linearAcceleration[2].toFixed(3) + "]"
-                                              : "    [N/A]"
-                                        font.pixelSize: 10
-                                        font.family: "Monospace"
-                                        color: "#95a5a6"
-                                        wrapMode: Text.WordWrap
-                                        width: parent.width
-                                    }
-
-                                    Label {
-                                        text: "  Angular Velocity:"
-                                        font.pixelSize: 10
-                                        color: "#bdc3c7"
-                                    }
-
-                                    Label {
-                                        text: modelData.imu && modelData.imu.angularVelocity ?
-                                              "    [" +
-                                              modelData.imu.angularVelocity[0].toFixed(3) + ", " +
-                                              modelData.imu.angularVelocity[1].toFixed(3) + ", " +
-                                              modelData.imu.angularVelocity[2].toFixed(3) + "]"
-                                              : "    [N/A]"
-                                        font.pixelSize: 10
-                                        font.family: "Monospace"
-                                        color: "#95a5a6"
-                                        wrapMode: Text.WordWrap
-                                        width: parent.width
-                                    }
+                                    text: modelData.imu && modelData.imu.angularVelocity ?
+                                            "Angular Velocity: [ X: " +
+                                            modelData.imu.angularVelocity[0].toFixed(3) + ", Y: " +
+                                            modelData.imu.angularVelocity[1].toFixed(3) + ", Z: " +
+                                            modelData.imu.angularVelocity[2].toFixed(3) + "]"
+                                            : "    [N/A]"
+                                    font.pixelSize: 10
+                                    color: "#bdc3c7"
+                                    wrapMode: Text.WordWrap
+                                    width: parent.width
                                 }
                             }
                         }
