@@ -8,8 +8,8 @@
 #include <string>
 #include <unordered_set>
 
-#include "Robot.h"
 #include "Team.h"
+#include "robots/Robot.h"
 
 using namespace pugi;
 using namespace std;

@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 #include <memory>
 
-#include "CameraSidebar.h"
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
@@ -25,7 +24,6 @@ class AppWindow : public QMainWindow {
 
     QVBoxLayout* mainLayout;
     QWidget* viewportContainer;
-    CameraSidebar* cameraSidebar_ = nullptr;
 
     std::unique_ptr<MujocoContext> mujContext;
     std::unique_ptr<SimulationViewport> viewport;

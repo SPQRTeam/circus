@@ -4,9 +4,10 @@
 
 #include <QThread>
 #include <atomic>
+#include <stdexcept>
 
 #include "MujocoContext.h"
-#include "Robot.h"
+#include "RobotManager.h"
 
 namespace spqr {
 

@@ -7,8 +7,9 @@
 
 #include "Constants.h"
 #include "MujocoContext.h"
-#include "Robot.h"
+#include "RobotManager.h"
 #include "SceneParser.h"
+
 namespace spqr {
 
 AppWindow::AppWindow(int& argc, char** argv) {
@@ -44,7 +45,7 @@ AppWindow::AppWindow(int& argc, char** argv) {
 };
 
 void AppWindow::openScene() {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "Resources/Scenes/",
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "resources/scenes/",
                                                     tr("YAML Files (*.yaml)"));
     if (!fileName.isEmpty()) {
         loadScene(fileName);
@@ -76,20 +77,6 @@ void AppWindow::loadScene(const QString& yamlFile) {
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
-        if (cameraSidebar_) {
-            mainLayout->removeWidget(cameraSidebar_);
-            delete cameraSidebar_;
-        }
-        cameraSidebar_ = new CameraSidebar(this);
-
-        auto teams = TeamManager::instance().getTeams();
-        if (!teams.empty()) {
-            const auto& team1 = teams[0];  // First team
-            for (const auto& robot : team1->robots) {
-                cameraSidebar_->addRobotCameras(robot.get(), QString::fromStdString(robot->name));
-            }
-        }
-
         // Update layout
         if (viewportContainer) {
             mainLayout->removeWidget(viewportContainer);
@@ -98,7 +85,6 @@ void AppWindow::loadScene(const QString& yamlFile) {
 
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
-        mainLayout->addWidget(cameraSidebar_);
 
         sim = std::make_unique<SimulationThread>(mujContext.get());
 

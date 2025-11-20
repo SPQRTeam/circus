@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "MujocoContext.h"
-#include "Sensor.h"
+#include "sensors/Sensor.h"
 
 namespace spqr {
 
