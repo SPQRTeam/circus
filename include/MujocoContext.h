@@ -10,15 +10,21 @@
 
 namespace spqr {
 
-struct CameraContext {
+// Shared EGL display for all cameras (owned by MujocoContext)
+struct SharedEGLDisplay {
     EGLDisplay eglDisplay = EGL_NO_DISPLAY;
+
+    ~SharedEGLDisplay();
+    void cleanup();
+};
+
+// Per-camera rendering context (owned by each Camera instance)
+struct CameraContext {
+    EGLDisplay eglDisplay = EGL_NO_DISPLAY;  // Borrowed from SharedEGLDisplay
     EGLContext eglContext = EGL_NO_CONTEXT;
     EGLSurface eglSurface = EGL_NO_SURFACE;
     mjrContext mjContext{};
     mjvOption opt{};
-
-    ~CameraContext();
-    void cleanup();
 };
 
 struct MujocoContext {
@@ -32,8 +38,8 @@ struct MujocoContext {
     mjvOption opt{};
     mjvScene scene{};
 
-    // Camera rendering
-    CameraContext cameraContext;
+    // Shared EGL display for camera rendering
+    SharedEGLDisplay sharedEGL;
 
     // Thread synchronization for snapshot updates
     mutable std::mutex snapshotMutex;

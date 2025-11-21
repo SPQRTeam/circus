@@ -38,10 +38,8 @@ class Camera : public Sensor {
         mjv_defaultScene(&scene);
         mjv_makeScene(mujModel, &scene, 1000);
 
-        // Initialize per-camera EGL context
-        if (!initializeCameraContext()) {
-            throw std::runtime_error("Failed to initialize per-camera rendering context");
-        }
+        // EGL context will be initialized lazily on first doUpdate() call
+        // because it must be created on the thread that will use it
     }
 
     ~Camera() {
@@ -51,6 +49,15 @@ class Camera : public Sensor {
 
     // Called when sensor needs to update (respects frequency limiting)
     void doUpdate() override {
+        // Lazy-initialize EGL context on first call (must be on worker thread)
+        if (!contextInitialized) {
+            if (!initializeCameraContext()) {
+                std::cerr << "Failed to initialize camera context on worker thread" << std::endl;
+                return;
+            }
+            contextInitialized = true;
+        }
+
         // Track update frequency per camera instance
         auto now = std::chrono::steady_clock::now();
         updateCount++;
@@ -136,17 +143,14 @@ class Camera : public Sensor {
     }
 
     bool initializeCameraContext() {
-        cameraContext.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        // Reuse the EGL display from MujocoContext instead of creating a new one
+        cameraContext.eglDisplay = mujContext->sharedEGL.eglDisplay;
         if (cameraContext.eglDisplay == EGL_NO_DISPLAY) {
-            std::cerr << "Failed to get EGL display for camera" << std::endl;
+            std::cerr << "Failed to get EGL display from MujocoContext" << std::endl;
             return false;
         }
 
-        EGLint major, minor;
-        if (!eglInitialize(cameraContext.eglDisplay, &major, &minor)) {
-            std::cerr << "Failed to initialize EGL for camera" << std::endl;
-            return false;
-        }
+        // Skip eglInitialize and eglBindAPI - already done by MujocoContext
 
         const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
                                         EGL_PBUFFER_BIT,
@@ -169,6 +173,7 @@ class Camera : public Sensor {
             return false;
         }
 
+        // eglBindAPI is per-thread, so each camera thread must call it
         if (!eglBindAPI(EGL_OPENGL_API)) {
             std::cerr << "Failed to bind OpenGL API for camera" << std::endl;
             return false;
@@ -217,17 +222,14 @@ class Camera : public Sensor {
                                cameraContext.eglContext);
                 mjr_freeContext(&cameraContext.mjContext);
                 eglMakeCurrent(cameraContext.eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+                eglDestroyContext(cameraContext.eglDisplay, cameraContext.eglContext);
             }
 
             if (cameraContext.eglSurface != EGL_NO_SURFACE) {
                 eglDestroySurface(cameraContext.eglDisplay, cameraContext.eglSurface);
             }
 
-            if (cameraContext.eglContext != EGL_NO_CONTEXT) {
-                eglDestroyContext(cameraContext.eglDisplay, cameraContext.eglContext);
-            }
-
-            eglTerminate(cameraContext.eglDisplay);
+            // DON'T call eglTerminate() - MujocoContext owns the display
         }
     }
 
@@ -237,6 +239,7 @@ class Camera : public Sensor {
 
     // Per-camera rendering context
     CameraContext cameraContext{};
+    bool contextInitialized = false;
 
     // Camera configuration
     int w, h;
