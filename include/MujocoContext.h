@@ -63,6 +63,6 @@ struct MujocoContext {
     MujocoContext& operator=(MujocoContext&& other) noexcept;
 
    private:
-    bool initializeCameraContext();
+    bool initializeSharedEGL();
 };
 }  // namespace spqr

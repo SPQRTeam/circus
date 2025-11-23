@@ -34,8 +34,8 @@ MujocoContext::MujocoContext(const std::string& xmlString) {
     mjv_makeScene(model, &scene, 10000);
 
     // Camera rendering setup
-    if (!initializeCameraContext()) {
-        throw std::runtime_error("Failed to initialize camera context");
+    if (!initializeSharedEGL()) {
+        throw std::runtime_error("Failed to initialize shared EGL context");
     }
 }
 
@@ -74,7 +74,7 @@ MujocoContext& MujocoContext::operator=(MujocoContext&& other) noexcept {
     return *this;
 }
 
-bool MujocoContext::initializeCameraContext() {
+bool MujocoContext::initializeSharedEGL() {
     sharedEGL.eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (sharedEGL.eglDisplay == EGL_NO_DISPLAY) {
         std::cerr << "Failed to get EGL display" << std::endl;
@@ -84,11 +84,6 @@ bool MujocoContext::initializeCameraContext() {
     EGLint major, minor;
     if (!eglInitialize(sharedEGL.eglDisplay, &major, &minor)) {
         std::cerr << "Failed to initialize EGL" << std::endl;
-        return false;
-    }
-
-    if (!eglBindAPI(EGL_OPENGL_API)) {
-        std::cerr << "Failed to bind OpenGL API" << std::endl;
         return false;
     }
 

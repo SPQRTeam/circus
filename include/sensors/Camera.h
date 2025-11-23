@@ -58,21 +58,6 @@ class Camera : public Sensor {
             contextInitialized = true;
         }
 
-        // Track update frequency per camera instance
-        auto now = std::chrono::steady_clock::now();
-        updateCount++;
-
-        // Print statistics every second
-        auto timeSinceLastPrint
-            = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPrintTime).count();
-        if (timeSinceLastPrint >= 1000) {
-            float actualHz = (updateCount * 1000.0f) / timeSinceLastPrint;
-            std::cout << "[Camera " << cam.fixedcamid << "] Updates in last " << timeSinceLastPrint
-                      << "ms: " << updateCount << " (actual frequency: " << actualHz << " Hz)" << std::endl;
-            updateCount = 0;
-            lastPrintTime = now;
-        }
-
         // Make this camera's EGL context current
         if (!eglMakeCurrent(cameraContext.eglDisplay, cameraContext.eglSurface, cameraContext.eglSurface,
                             cameraContext.eglContext)) {
@@ -150,7 +135,7 @@ class Camera : public Sensor {
             return false;
         }
 
-        // Skip eglInitialize and eglBindAPI - already done by MujocoContext
+        // Skip eglInitialize - already done by MujocoContext
 
         const EGLint configAttribs[] = {EGL_SURFACE_TYPE,
                                         EGL_PBUFFER_BIT,
@@ -251,10 +236,6 @@ class Camera : public Sensor {
     // Image buffer (written by doUpdate, read by doSerialize/copyImageTo)
     std::vector<uint8_t> image;
     mutable std::mutex imageMutex;
-
-    // Update frequency tracking
-    int updateCount = 0;
-    std::chrono::steady_clock::time_point lastPrintTime = std::chrono::steady_clock::now();
 };
 
 }  // namespace spqr
