@@ -1,4 +1,5 @@
-image: ubuntu:22.04
+image: spqr:booster
 volumes:
-  - "/home/daniaffch/Dev/spqrbooster2026/src/SimBridge/bridge/build:/app/BridgeSubscriber"
-  - "/home/daniaffch/Dev/spqrbooster2026/src/SimBridge/fake_framework/build:/app/fake_framework"
+  - "/home/flavio/circus/resources/booster_motion:/app/booster_motion"
+  - "/home/flavio/Scrivania/RoboCup/spqrbooster2026/src/SimBridge/bridge/build:/app/bridge"
+  

@@ -1,0 +1,756 @@
+# /* Robot mode */
+# enum class RobotMode {
+#     kUnknown = -1, // For error handling
+#     kDamping = 0,  // All motor enter damping mode, robot will fall down if it is not supported
+#     kPrepare = 1,  // Prepare mode, the robot keeps standing on both feet and can switch to walking mode
+#     kWalking = 2,  // Walking mode, in walking mode, the robot can move, rotate, kick the ball, etc.
+#     kCustom = 3,   // Custom mode, in custom mode, the robot can do some custom actions
+# };
+
+
+# /* Command source */
+# enum class Source {
+#     kUnknown = -1, // For error handling
+#     kSystem = 0,  
+#     kCustom = 1,  
+# };
+
+[controller_instruction]
+
+[[controller_instruction.commands]]
+id = "1"
+key = "ToDampingMode"
+prerequisites = '''
+{
+    "mode": [0, 1, 2, 3]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+
+[[controller_instruction.commands]]
+id = "2"
+key = "ToPrepareMode"
+prerequisites = '''
+{
+    "mode": [0, 1, 2, 3]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "3"
+key = "ToRLLocomotion"
+prerequisites = '''
+{
+    "mode": [1,2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "4"
+key = "RobocupLocomotion"
+prerequisites = '''
+{
+    "mode": [1,2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "5"
+key = "BigStepLocomotion"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "6"
+key = "EnableRLLocomotionHandControl"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "7"
+key = "CloseHandToGetBox"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "8"
+key = "OpenHandToGrabBox"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "9"
+key = "WaveHand"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "10"
+key = "ShakeHand"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "28"
+key = "RLFallRecovery"
+prerequisites = '''
+{
+    "mode": [0,1]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+# [[controller_instruction.commands]]
+# id = "11"
+# key = "FaceUpGetUp"
+# prerequisites = '''
+# {
+#     "mode": [0,1]
+# }
+# '''
+# status = 0
+# source = 0
+# disabled = false
+
+[[controller_instruction.commands]]
+id = "12"
+key = "LieDown"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "13"
+key = "PushUp"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "14"
+key = "FaceDownGetUp"
+prerequisites = '''
+{
+    "mode": [0,1]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "15"
+key = "MoveHeadUp"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "16"
+key = "MoveHeadRight"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "17"
+key = "MoveHeadDown"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "18"
+key = "MoveHeadLeft"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "19"
+key = "MoveHeadRightUp"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "20"
+key = "MoveHeadRightDown"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "21"
+key = "MoveHeadLeftUp"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "22"
+key = "MoveHeadLeftDown"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "23"
+key = "ToCustomMode"
+prerequisites = '''
+{
+    "mode": [0, 1]
+}
+'''
+status = 0
+source = 0
+disabled = true
+
+[[controller_instruction.commands]]
+id = "24"
+key = "kZeroTorqueMode"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "25"
+key = "kRecordDragTraj"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "26"
+key = "kRunRecordedTraj"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "27"
+key = "kNewYearDance"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "29"
+key = "kBoxing"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+
+[[controller_instruction.commands]]
+id = "30"
+key = "kRunFileTrajList2"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "31"
+key = "kRunFileTrajList3"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "32"
+key = "kRunFileTrajList4"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "33"
+key = "kToRobocupLocomotionGait2"
+prerequisites = '''
+{
+    "mode": [1,2]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+[[controller_instruction.commands]]
+id = "34"
+key = "kToBigStepLocomotionGait2"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+status = 0
+source = 0
+disabled = false
+
+
+[[controller_instruction.buttons]]
+key_combination = ["LT", "BACK"]
+command_key = "ToDampingMode"
+prerequisites = '''
+{
+    "mode": [1, 2, 3]
+}
+'''
+disabled = false
+
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "Y"]
+command_key = "ToPrepareMode"
+prerequisites = '''
+{
+    "mode": [0, 2, 3]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "A"]
+command_key = "ToRLLocomotion"
+prerequisites = '''
+{
+    "mode": [1,2]
+}
+'''
+disabled = true
+
+
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "LT", "A"]
+command_key = "RobocupLocomotion"
+prerequisites = '''
+{
+    "mode": [1,2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "LT", "B"]
+command_key = "BigStepLocomotion"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+disabled = true
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "RB"]
+command_key = "EnableRLLocomotionHandControl"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["RB", "Y"]
+command_key = "CloseHandToGetBox"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["RB", "X"]
+command_key = "OpenHandToGrabBox"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["B"]
+command_key = "WaveHand"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["A"]
+command_key = "ShakeHand"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["LT", "HAT_UP"]
+command_key = "RLFallRecovery"
+prerequisites = '''
+{
+    "mode": [0,1]
+}
+'''
+disabled = true
+
+# [[controller_instruction.buttons]]
+# key_combination = ["LT", "HAT_UP"]
+# command_key = "FaceUpGetUp"
+# prerequisites = '''
+# {
+#     "mode": [0,1]
+# }
+# '''
+# disabled = true
+
+[[controller_instruction.buttons]]
+key_combination = ["LT", "HAT_DOWN"]
+command_key = "LieDown"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+disabled = true
+
+
+[[controller_instruction.buttons]]
+key_combination = ["LT", "HAT_LEFT"]
+command_key = "PushUp"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+disabled = true
+
+[[controller_instruction.buttons]]
+key_combination = ["LT", "HAT_RIGHT"]
+command_key = "FaceDownGetUp"
+prerequisites = '''
+{
+    "mode": [0,1]
+}
+'''
+disabled = true
+
+# head control
+# hat_up
+[[controller_instruction.buttons]]
+key_combination = ["HAT_UP"]
+command_key = "MoveHeadUp"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+# hat_right
+[[controller_instruction.buttons]]
+key_combination = ["HAT_RIGHT"]
+command_key = "MoveHeadRight"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+# hat_down
+[[controller_instruction.buttons]]
+key_combination = ["HAT_DOWN"]
+command_key = "MoveHeadDown"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+# hat_left
+[[controller_instruction.buttons]]
+key_combination = ["HAT_LEFT"]
+command_key = "MoveHeadLeft"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+# hat_right_up
+[[controller_instruction.buttons]]
+key_combination = ["HAT_RIGHTUP"]
+command_key = "MoveHeadRightUp"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+# hat_right_down
+[[controller_instruction.buttons]]
+key_combination = ["HAT_RIGHTDOWN"]
+command_key = "MoveHeadRightDown"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+# hat_left_up
+[[controller_instruction.buttons]]
+key_combination = ["HAT_LEFTUP"]
+command_key = "MoveHeadLeftUp"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+# hat_left_down
+[[controller_instruction.buttons]]
+key_combination = ["HAT_LEFTDOWN"]
+command_key = "MoveHeadLeftDown"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "B"]
+command_key = "ToCustomMode"
+prerequisites = '''
+{
+    "mode": [0, 1]
+}
+'''
+disabled = true
+
+[[controller_instruction.buttons]]
+key_combination = ["RB", "B"]
+command_key = "kZeroTorqueMode"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+[[controller_instruction.buttons]]
+key_combination = ["LB", "X"]
+command_key = "kRecordDragTraj"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = true
+
+[[controller_instruction.buttons]]
+key_combination = ["LB", "Y"]
+command_key = "kRunRecordedTraj"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = true
+
+[[controller_instruction.buttons]]
+key_combination = ["LB", "A"]
+command_key = "kNewYearDance"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = false
+
+
+
+[[controller_instruction.buttons]]
+key_combination = ["LB", "HAT_UP"]
+command_key = "kBoxing"
+prerequisites = '''
+{
+    "mode": [2]
+}
+'''
+disabled = true
+
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "LT", "Y"]
+command_key = "kToRobocupLocomotionGait2"
+prerequisites = '''
+{
+    "mode": [1,2]
+}
+'''
+disabled = true
+
+[[controller_instruction.buttons]]
+key_combination = ["RT", "LT", "X"]
+command_key = "kToBigStepLocomotionGait2"
+prerequisites = '''
+{
+    "mode": [1]
+}
+'''
+disabled = true
+

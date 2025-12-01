@@ -1,0 +1,567 @@
+[common]
+# URDF文件资源的路径
+urdf_path = "./configs/robot.urdf"
+
+# qp solver max iteration， 解决qp问题的工作集重新计算的最大次数
+nwsr_max = 1000
+
+# cpu计算时间，单位秒
+cpu_time_max = 0.1
+
+# 是否启用优化变量归一化
+enable_regulation = false
+
+# 归一化的权重
+weight_regulation = 1e-3
+
+# 采用什么求解器, wqp or hqp
+wbc_algorithm = "wqp"
+
+# 腿部关节起始索引
+leg_start_index = 11
+
+# 是否要debug wbc，即输出wbc优化的关节力矩，关节加速度，末端执行器接触力旋量
+debug_wbc = false
+
+# 规则：优化变量向量中，躯干虚拟关节加速度在向量中位置区间，左闭右开
+# 规则：该优化变量必须从0开始，如果结束位置也是0，即和开始位置相同，则表示没有躯干虚拟关节加速度，及固定基
+op_var_torso_range = [0, 6]
+
+# 规则：优化变量向量中，主动关节加速度在向量中位置区间，左闭右开
+# 规则：op_var_joint_acc_range的起始位置，必须等于op_var_torso_range的结束位置
+op_var_joint_acc_range = [6, 29]
+
+# 规则：优化变量向量中，末端执行器接触力（旋量）在向量中的位置区间，左闭右开
+# 规则：key是末端执行器的在urdf中的名字
+# 规则: op_var_wrenches_range的起始位置，必须等于op_var_joint_acc_range的结束位置
+# 规则: 末端执行器必须按照urdf中的顺序，依次排列
+# 规则：每一个末端执行器的开始位置，必须是上一个末端执行器的结束位置
+# 规则：point_position是接触末端力旋量作用点的相对于连杆的坐标，放在这里，是因为
+# 首先，机器人动力学是WBC必要的约束，具有接触力的末端执行器的jacob矩阵计算，甚至pa的计算，必须指定相同的接触点
+# 注意，末端执行器接触力（旋量）的表达顺序
+# 末端执行器的接触力旋量序列，这么设计，是因为可能多个末端执行器，且用户关注的可能是接触力或接触力旋量
+# wrench的顺序是有意义的，反馈数据和规划数据，应该和优化变量的顺序一致
+[[common.op_var_wrenches]]
+link_name = 'left_foot_link'
+point_position = [0.015,  0.000, -0.060]
+range = [29, 35]
+
+[[common.op_var_wrenches]]
+link_name = 'right_foot_link'
+point_position = [0.015,  0.000, -0.060]
+range = [35, 41]
+
+# 接触力旋量跟踪任务
+[[wbc.tasks]]
+# 名字
+name = "左足力矩跟踪任务"
+# 任务类型，接触力旋量跟踪任务
+type_name = "contact_wrench_task"
+# 输出任务的debug信息
+debug = false
+# 配置
+[wbc.tasks.configuration]
+# 刚体在urdf中的名称
+link_name = "left_foot_link"
+point_position = [0.015,  0.000, -0.060]
+# 要追踪的力矩分量，长度和末端执行器是否有力矩有关
+# 如果没有力矩，则3个分量依次表示 Fx,Fy,Fz
+# 如果有阻力矩，则6个分量依次表示 Tx,Ty,Tz,Fx,Fy,Fz
+# 规则：如果该任务中，link_name对应的末端执行器没有力矩，则长度为3，否则长度为6（可通过末端执行器优化变量的长度确认）
+select = [true, true, true, true, true, true]
+# 参数
+[wbc.tasks.parameter]
+# 权重向量，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的权重不起作用
+# 规则：如果该任务中，link_name对应的末端执行器没有力矩，则长度为3，否则长度为6（可通过末端执行器优化变量的长度确认）
+weight = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+# 任务优先级，仅在hqp算法中使用
+priority = 2
+
+[[wbc.tasks]]
+name = "右足力矩跟踪任务"
+type_name = "contact_wrench_task"
+debug = false
+[wbc.tasks.configuration]
+link_name = "right_foot_link"
+point_position = [0.015,  0.000, -0.060]
+select = [true, true, true, true, true, true]
+[wbc.tasks.parameter]
+priority = 2
+weight = [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+
+# 浮动基运动跟踪任务
+# 该任务，是为了让机器人保持平衡，不倒下
+# 目前该任务仅控制姿态（RPY）维度，质心的线性（XYZ）运动交由质心运动任务来控制
+[[wbc.tasks]]
+name = "浮动基运动跟踪任务"
+# 类型，浮动基运动跟踪任务
+type_name = "floating_base_motion_task"
+# 是否禁用该任务
+disabled = false
+debug = false
+# 配置
+[wbc.tasks.configuration]
+# 刚体在urdf中的名称
+link_name = "torso"
+# 跟踪点在刚体质心的偏移， x,y,z
+point_position = [0, 0, 0]
+# 要追踪的位置分量，长度等于6，分别为 x,y,z,roll,pitch,yaw
+# warning: 请一定注意浮动基各分量的顺序，一定是 x,y,z,roll,pitch,yaw
+# 规则：长度为6
+select = [false, false, false, true, true, true]
+[wbc.tasks.parameter]
+# 权重，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的权重不起作用
+# 规则：长度为6
+weight = [0, 0, 0, 210, 230, 200]
+# kp位置增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kd不起作用
+# 规则：长度为6
+kp = [100, 100, 300, 350, 350, 350]
+# kd速度增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kp不起作用
+# 规则：长度为6
+kd = [20 , 20, 60, 40, 40, 40]
+priority = 1
+
+# 质心动力学跟踪任务 
+[[wbc.tasks]]
+# 名字
+name = "质心动力学跟踪任务"
+# 任务类型，质心动力学跟踪任务
+type_name = "centroidal_motion_task"
+# 是否禁用该任务
+disabled = false
+debug = false
+# 配置
+[wbc.tasks.configuration]
+# 需要跟踪的质心中的哪几个分量，依次分别为 roll,pitch,yaw,x,y,z
+select = [false, false, false, true, true, true]
+# 参数
+[wbc.tasks.parameter]
+# 权重，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的权重不起作用
+# 规则：长度为6
+weight = [0, 0, 0, 40, 40, 70]
+# 线动量增益，依次为 x,y,z
+# 规则：长度为3
+kp = [0, 0, 0, 55, 55, 150]
+# 动量变化量增益，依次为 roll, pitch, yaw,x,y,z
+# 规则：长度为6
+kd = [1, 1, 1.5, 5, 5, 10]
+priority = 1
+
+# 刚体运动跟踪任务
+[[wbc.tasks]]
+# 名字
+name = "左足运动跟踪任务"
+# 类型，刚体运动跟踪任务
+type_name = "rigid_body_motion_task"
+# 是否禁用该任务
+disabled = false
+debug = false
+# 配置
+[wbc.tasks.configuration]
+# 刚体在urdf中的名称
+link_name = "left_foot_link"
+# 跟踪点在刚体质心的偏移
+point_position = [0.015,  0.000, -0.060]
+# 要追踪的位置分量，长度等于6，分别为 roll,pitch,yaw,x,y,z
+# 规则：长度为6
+select = [true, true, true, true, true, true]
+[wbc.tasks.parameter]
+# 权重，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的权重不起作用
+# length equal to Length(select), if select[idx] == false, then weight[idx] is not used
+# 规则：长度为6
+weight = [50.0, 50.0, 150.0, 200.0, 200.0, 200.0]
+# kp位置增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kd不起作用
+# 规则：长度为6
+kp = [200.0, 200.0, 300.0, 200.0, 200.0, 500.0]
+# kd速度增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kp不起作用
+# 规则：长度为6
+kd = [30.0, 30.0, 35.0, 10.0, 10.0, 25.0]
+priority = 1
+
+[[wbc.tasks]]
+name = "右足运动跟踪任务"
+type_name = "rigid_body_motion_task"
+# 是否禁用该任务
+disabled = false
+debug = false
+[wbc.tasks.configuration]
+link_name = "right_foot_link"
+point_position = [0.015,  0.000, -0.060]
+select = [true, true, true, true, true, true]
+[wbc.tasks.parameter]
+weight = [50.0, 50.0, 150.0, 200.0, 200.0, 200.0]
+# kp位置增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kd不起作用
+# 规则：长度为6
+kp = [200.0, 200.0, 300.0, 200.0, 200.0, 500.0]
+# kd速度增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kp不起作用
+# 规则：长度为6
+kd = [30.0, 30.0, 35.0, 10.0, 10.0, 25.0]
+priority = 1
+
+
+# 刚体运动跟踪任务
+[[wbc.tasks]]
+# 名字
+name = "左手运动跟踪任务"
+# 类型，刚体运动跟踪任务
+type_name = "rigid_body_motion_task"
+# 是否禁用该任务
+disabled = false
+debug = false
+# 配置
+[wbc.tasks.configuration]
+# 刚体在urdf中的名称
+link_name = "left_hand_link"
+# 跟踪点在刚体质心的偏移
+point_position = [-0.012,  0.213,  0.000]
+# 要追踪的位置分量，长度等于6，分别为 roll,pitch,yaw,x,y,z
+# 规则：长度为6
+select = [true, true, true, true, true, true]
+[wbc.tasks.parameter]
+# 权重，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的权重不起作用
+# length equal to Length(select), if select[idx] == false, then weight[idx] is not used
+# 规则：长度为6
+weight = [20.0, 20.0, 20.0, 100.0, 100.0, 100.0]
+# kp位置增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kd不起作用
+# 规则：长度为6
+kp = [20.0, 20.0, 20.0, 160.0, 160.0, 160.0]
+# kd速度增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kp不起作用
+# 规则：长度为6
+kd = [1.5, 1.5, 1.5, 20.0, 20.0, 20.0]
+priority = 2
+
+[[wbc.tasks]]
+name = "右手运动跟踪任务"
+type_name = "rigid_body_motion_task"
+# 是否禁用该任务
+disabled = false
+debug = false
+[wbc.tasks.configuration]
+link_name = "right_hand_link"
+point_position = [-0.012, -0.213,  0.000]
+select = [true, true, true, true, true, true]
+[wbc.tasks.parameter]
+# weight = [60.0, 60.0, 60.0, 190.0, 140.0, 150.0]
+weight = [20.0, 20.0, 20.0, 100.0, 100.0, 100.0]
+# kp位置增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kd不起作用
+# 规则：长度为6
+kp = [20.0, 20.0, 20.0, 160.0, 160.0, 160.0]
+# kd速度增益，向量长度等于select的长度，如果该分量上idx上的select为false，则该分量的kp不起作用
+# 规则：长度为6
+kd = [1.5, 1.5, 1.5, 20.0, 20.0, 20.0]
+priority = 2
+
+
+[[wbc.tasks]]
+name = "关节轨迹跟踪任务"
+type_name = "joint_traj_tracking_task"
+# 是否禁用该任务
+disabled = false
+debug = false
+[wbc.tasks.configuration]
+# 关节 index
+# 规则：值为数组，index 数组中记录需要跟踪的关节
+index = [0, 1, 10]
+[wbc.tasks.parameter]
+# kp位置增益，向量长度等于index的长度
+# 规则：值与inde对应
+kp = [
+  90.0, 90.0, 300.0, 
+]
+# kd速度增益，向量长度等于index的长度
+# 规则：值与inde对应
+kd = [
+  10.0, 10.0, 30.0, 
+]
+priority = 1
+weight =  [
+  200.0, 200.0, 600.0
+]
+
+
+
+
+
+
+# 下面是约束
+# 浮动基动力学约束
+[[wbc.constraints]]
+name = "浮动基动力学约束"
+type_name = "floating_base_dynamics_constraint"
+# 是否禁用该约束
+disabled = false
+debug = false
+[wbc.constraints.configuration]
+[wbc.constraints.parameter]
+# 是否是硬约束
+is_hard_constraint = true
+# 约束优先级
+priority = 1
+
+# 接触力旋量约束
+[[wbc.constraints]]
+name = "左足底接触力旋量约束"
+type_name = "end_effector_wrench_constraint"
+# 是否禁用该约束
+disabled = false
+[wbc.constraints.configuration]
+# 接触面在x和y方向上的长度，当且仅当接触末端的接触力旋量包含力矩的情况，可配置
+contact_surface_length = [0.095, 0.040]
+# 刚体在urdf中的名称
+link_name = 'left_foot_link'
+point_position = [0.015,  0.000, -0.060]
+[wbc.constraints.parameter]
+is_hard_constraint = true
+priority = 1
+# 摩擦锥系数
+mu = 0.3
+# 最小z方向接触力
+force_z_min = 35.0
+# 最大z方向接触力
+force_z_max = 350.0
+
+[[wbc.constraints]]
+name = "右足底接触力旋量约束"
+type_name = "end_effector_wrench_constraint"
+# 是否禁用该约束
+disabled = false
+debug = false
+[wbc.constraints.configuration]
+# 接触面在x和y方向上的长度，当且仅当接触末端的接触力旋量包含力矩的情况，可配置
+contact_surface_length = [0.095, 0.040]
+# 刚体在urdf中的名称
+link_name = 'right_foot_link'
+point_position = [0.015,  0.000, -0.060]
+[wbc.constraints.parameter]
+is_hard_constraint = true
+priority = 1
+# 摩擦锥系数
+mu = 0.3
+# 最小z方向接触力
+force_z_min = 35.0
+# 最大z方向接触力
+force_z_max = 350.0
+
+# 关节力矩约束
+[[wbc.constraints]]
+name = '关节力矩约束'
+type_name = 'joint_torque_constraint'
+disabled = false
+debug = false
+[wbc.constraints.configuration]
+# 最大主动关节力矩，必须和优化变量中的主动关节的顺序一致，不区分正反转
+joint_max_torque = [
+  # 7.0, 7.0,
+  # 36.0, 36.0, 36.0, 36.0,
+  # 36.0, 36.0, 36.0, 36.0,
+  # 60.0,
+  # 90.0, 60.0, 60.0, 130.0, 36.0, 50.0,
+  # 90.0, 60.0, 60.0, 130.0, 36.0, 50.0,
+
+  1.0, 1.0,
+  3.0, 3.0, 3.0, 3.0,
+  3.0, 3.0, 3.0, 3.0,
+  60.0,
+  90.0, 60.0, 60.0, 90.0, 36.0, 36.0,
+  90.0, 60.0, 60.0, 90.0, 36.0, 36.0,
+]
+# 约束单位
+unit = 'N'
+[wbc.constraints.parameter]
+is_hard_constraint = true
+priority = 2
+
+# 关节速度约束
+[[wbc.constraints]]
+name = "关节速度约束"
+type_name = "joint_velocity_constraint"
+disabled = true
+[wbc.constraints.configuration]
+joint_max_velocity = [
+  13.0, 13.0,
+  13.0, 13.0, 13.0, 13.0,
+  13.0, 13.0, 13.0, 13.0,
+  13.0,
+  13.0, 13.0, 13.0, 13.0, 13.0, 13.0,
+  13.0, 13.0, 13.0, 13.0, 13.0, 13.0,
+]
+unit = 'rad/s'
+[wbc.constraints.parameter]
+# 关节转速估计的时间间隔，单位是秒
+is_hard_constraint = true
+priority = 2
+vel_pred_time = 0.01
+
+# 关节位置约束
+[[wbc.constraints]]
+name = "关节位置约束"
+type_name = "joint_position_constraint"
+# 是否禁用该约束
+disabled = true
+[wbc.constraints.configuration]
+# 主动关节最小位置，必须和优化变量中的主动关节的顺序一致
+# TODO joint min position: 通过 key-value 的形式，指定每个关节的最小位置
+joint_min_position = [
+  -1.5708, -0.3491,
+  -3.3161, -1.7453, -2.2689, -2.4435,
+  -3.3161, -1.5708, -2.2689, -0.0000,
+  -3.1416,
+  -3.1416, -0.5236, -1.0472, -0.0000, -0.8727, -0.4363,
+  -3.1416, -1.5708, -1.0472, -0.0000, -0.8727, -0.4363,
+]
+# 主动关节最大位置，必须和优化变量中的主动关节的顺序一致
+joint_max_position = [
+  1.5708,  1.2217,
+  1.2217,  1.5708,  2.2689,  0.0000,
+  1.2217,  1.7453,  2.2689,  2.4435,
+  3.1416,
+  3.1416,  1.5708,  1.0472,  2.3387,  0.3491,  0.4363,
+  3.1416,  0.5236,  1.0472,  2.3387,  0.3491,  0.4363,
+]
+unit = 'rad'
+[wbc.constraints.parameter]
+# 关节转速估计的时间间隔，单位是秒
+is_hard_constraint = true
+priority = 2
+vel_pred_time = 0.01
+
+# 关节功率约束
+[[wbc.constraints]]
+name = "关节功率约束"
+type_name = "joint_power_constraint"
+disabled = true
+[wbc.constraints.configuration]
+# 主动关节最大力矩，必须和优化变量中的主动关节的顺序一致
+joint_max_power = [
+  140.0,
+  140.0,  140.0,
+  140.0,  140.0,  140.0,  140.0,
+  140.0,  140.0,  140.0,  140.0,
+  140.0,  140.0,  140.0,  140.0,  140.0,  140.0, 
+  140.0,  140.0,  140.0,  140.0,  140.0,  140.0, 
+]
+unit = 'Watt'
+[wbc.constraints.parameter]
+is_hard_constraint = true
+priority = 2
+
+
+# 以下时EKF的参数
+[legged_state_estimate]
+# 对关节力矩反馈进行低通滤波时，滤波的系数。数值越小，则曲线越平滑
+# scope: （0，1）
+# unit: 
+filter_decay = 0.7
+
+# 低通滤波截止频率。
+# scope: 
+# unit: s
+cut_freq_hz = 25
+
+# 判断脚是否触地时，用于比较的接触力阈值。数值越小，则越容易被判别为触地
+# scope: 
+# unit: N
+min_contact_force = 20.0
+
+# desc: 判断脚是否离地时的脚板Z方向速度大小阈值。数值越小，则越容易被判别为离地
+# scope: 
+# unit: m/s
+lift_vel_thres = 0.06
+
+# 加速度测量噪声的高斯分布的方差
+# scope: 
+# unit: (m^2)*s^(-4)
+var_a = 10.0
+
+# 加速度测量噪声的高斯过程的方差增速
+# scope: 
+# unit: (m^2)*s^(-4)
+var_ba = 0.0
+
+# 执行器末端在笛卡尔空间的位置状态噪声的高斯分布的方差
+# scope: 
+# unit: m^2
+var_pi = 0.1
+
+# 关节位置测量噪声的高斯分布的方差
+# scope: 
+# unit: rad^2
+var_j = 0.002
+
+# 关节转速测量噪声的高斯分布的方差
+# scope: 
+# unit: （rad^2)*s^(-2)
+var_vj = 0.09
+
+# 执行器末端在笛卡尔空间的位置观测值噪声的高斯分布的方差
+# scope: 
+# unit: （m^2)
+var_s = 0.01
+
+# 执行器末端在笛卡尔空间的速度观测值噪声的高斯分布的方差
+# scope: 
+# unit: （m^2)*s^(-2)
+var_vs = 10.1
+
+# 重力加速度的三维向量，各个分量分别对应x,y,z分量
+# scope: 
+# unit: m*s^(-2)
+gravity = [0.0, 0.0, -9.8]
+
+# 准备时间。在准备时间结束之前，机器人的脚始终被判定为触地
+# scope: 
+# unit: s
+warm_up_duration = 0.1
+
+# 触地后建立信任的时间。每次在机器人的一只脚触地再经过这样一段时间后，这只脚的状态才被纳入ekf状态估计中。不会影响ekf输出的feet_contact
+# scope: 
+# unit: s
+trust_foot_duration = 0.02
+
+# 重置机器人高度估计值的周期。每经过这样一段时间后，机器人会根据脚末端位置重新估计躯干高度
+# scope: 
+# unit: s
+reset_z_pos_duration = 0.1
+
+# 表示状态的协方差矩阵清零的周期
+# scope: 
+# unit: s
+reset_P_duration = 5.0
+
+
+# 每个脚的关节数量
+foot_joint_count = 6
+
+# 脚关节的开始索引， 假设机器人的第一个关节的索引是0
+foot_joint_start_index = 11
+
+# 机器人脚的半径
+# scope:
+# unit: m
+foot_radius = 0
+
+v_record_len = 1
+
+# 是否是球状足底
+is_balled_feet = false
+
+
+[[legged_state_estimate.foot_identifiers]]
+link_name = "left_foot_link"
+point_position = [0.015,  0.000, -0.060]
+
+[[legged_state_estimate.foot_identifiers]]
+link_name = "right_foot_link"
+point_position = [0.015,  0.000, -0.060]
+
+[[legged_state_estimate.desired_state_estimate_rigid_bodies]]
+link_name = "left_hand_link"
+point_position = [-0.012,  0.213,  0.000]
+
+[[legged_state_estimate.desired_state_estimate_rigid_bodies]]
+link_name = "right_hand_link"
+point_position = [-0.012, -0.213,  0.000]
+
+[[legged_state_estimate.desired_state_estimate_rigid_bodies]]
+link_name = "H2"
+point_position = [0.0613, 0.0, 0.108]
