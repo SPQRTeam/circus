@@ -77,10 +77,17 @@ void AppWindow::loadScene(const QString& yamlFile) {
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
+        // Update layout
+        if (viewportContainer) {
+            mainLayout->removeWidget(viewportContainer);
+            viewportContainer->deleteLater();
+        }
+
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
 
-        sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
+        sim = std::make_unique<SimulationThread>(mujContext.get());
+
         sim->start();
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error loading scene", e.what());

@@ -8,6 +8,7 @@
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
+
 namespace spqr {
 
 class AppWindow : public QMainWindow {
