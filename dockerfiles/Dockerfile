@@ -13,13 +13,16 @@ RUN apt-get update && apt-get install -y \
     libpulse0 \
     libpulse-mainloop-glib0 \
     libasound2 \
+    libmsgpack-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /opt/booster
 RUN mkdir /opt/booster/configs
 COPY configs/system_settings_config.yaml /opt/booster/configs
 COPY booster.conf /etc/supervisor/conf.d/
+COPY start_container.sh /app/start_container.sh
+RUN chmod +x /app/start_container.sh
 
 RUN echo "source /opt/ros/humble/setup.sh" >> ~/.bashrc
 
-CMD ["/usr/bin/supervisord", "-n"]
+CMD ["/app/start_container.sh"]

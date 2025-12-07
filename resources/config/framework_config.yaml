@@ -1,5 +1,5 @@
 image: spqr:booster
 volumes:
   - "/home/flavio/circus/resources/booster_motion:/app/booster_motion"
-  - "/home/flavio/Scrivania/RoboCup/spqrbooster2026/src/SimBridge/bridge/build:/app/bridge"
-  
+  - "/home/flavio/Scrivania/RoboCup/spqrbooster2026/src/SimBridge/bridge:/app/bridge"
+
