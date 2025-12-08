@@ -1,24 +1,34 @@
 #include "SimulationThread.h"
 
-#include <stdexcept>
-
-#include "RobotManager.h"
-
 namespace spqr {
 
-SimulationThread::SimulationThread(const mjModel* model, mjData* data)
-    : model_(model), data_(data), running_(true) {}
+SimulationThread::SimulationThread(MujocoContext* mujContext) : mujContext_(mujContext), running_(false) {}
+
+SimulationThread::~SimulationThread() {
+    if (running_) {
+        stop();
+    }
+}
 
 void SimulationThread::run() {
-    if (!model_)
+    if (!mujContext_ || !mujContext_->model)
         throw std::runtime_error("Cannot start simulation without mujoco model");
 
-    double sim_dt = model_->opt.timestep;
+    running_ = true;
+
+    double sim_dt = mujContext_->model->opt.timestep;
 
     using clock = std::chrono::steady_clock;
     auto next_step_time = clock::now();
+
     while (running_) {
-        mj_step(model_, data_);
+        // Step the simulation (updates live data)
+        mj_step(mujContext_->model, mujContext_->data);
+
+        // Create snapshot for sensors to use
+        mujContext_->updateSnapshot();
+
+        // Update all robots (which update their sensors using the snapshot)
         RobotManager::instance().update();
 
         next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
