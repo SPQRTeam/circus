@@ -82,31 +82,6 @@ class ThreadPool {
         return result;
     }
 
-    // Wait for all currently enqueued tasks to complete
-    void waitAll() {
-        std::vector<std::future<void>> futures;
-
-        {
-            std::unique_lock<std::mutex> lock(queueMutex_);
-            // Snapshot current task count
-            size_t taskCount = tasks_.size();
-
-            // Create dummy tasks that we can wait on
-            for (size_t i = 0; i < taskCount; ++i) {
-                auto task = std::make_shared<std::packaged_task<void()>>([]() {});
-                futures.push_back(task->get_future());
-                tasks_.emplace([task]() { (*task)(); });
-            }
-        }
-
-        condition_.notify_all();
-
-        // Wait for all futures
-        for (auto& future : futures) {
-            future.wait();
-        }
-    }
-
    private:
     std::vector<std::thread> workers_;
     std::queue<std::function<void()>> tasks_;

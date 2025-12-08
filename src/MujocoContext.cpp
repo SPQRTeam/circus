@@ -1,5 +1,6 @@
 #include "MujocoContext.h"
 
+#include <cstring>
 #include <filesystem>
 #include <functional>
 #include <iostream>
@@ -8,9 +9,24 @@
 
 namespace spqr {
 
+// Custom warning handler to filter out harmless GL_INVALID_OPERATION warnings from mjr_makeContext
+static void mujocoWarningHandler(const char* msg) {
+    // Filter out the specific OpenGL warning that's harmless
+    if (strstr(msg, "OpenGL error 0x502 in or before mjr_makeContext") != nullptr) {
+        // Silently ignore this specific warning - it's caused by Qt/EGL context switching
+        // and doesn't affect functionality (see: https://github.com/google-deepmind/mujoco/issues/2393)
+        return;
+    }
+    // Print all other warnings normally
+    std::cerr << "MuJoCo Warning: " << msg << std::endl;
+}
+
 MujocoContext::MujocoContext(const std::string& xmlString) {
     char error[1024] = {0};
     std::filesystem::current_path(PROJECT_ROOT);
+
+    // Install custom warning handler to filter harmless OpenGL warnings
+    mju_user_warning = mujocoWarningHandler;
 
     std::unique_ptr<mjSpec, std::function<void(mjSpec*)>> spec(
         mj_parseXMLString(xmlString.c_str(), nullptr, error, sizeof(error)),

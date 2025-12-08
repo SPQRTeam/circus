@@ -77,12 +77,6 @@ void AppWindow::loadScene(const QString& yamlFile) {
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
-        // Update layout
-        if (viewportContainer) {
-            mainLayout->removeWidget(viewportContainer);
-            viewportContainer->deleteLater();
-        }
-
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         mainLayout->addWidget(viewportContainer);
 

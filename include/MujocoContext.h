@@ -10,6 +10,32 @@
 
 namespace spqr {
 
+// RAII guard that holds a lock while accessing the snapshot
+class SnapshotGuard {
+   public:
+    SnapshotGuard(std::mutex& mutex, mjData* data) : lock_(mutex), data_(data) {}
+
+    // Get raw pointer to snapshot data
+    mjData* get() const {
+        return data_;
+    }
+
+    // Allow pointer-like access
+    mjData* operator->() const {
+        return data_;
+    }
+
+    // Prevent copying and moving (lock_guard is non-copyable and non-movable)
+    SnapshotGuard(const SnapshotGuard&) = delete;
+    SnapshotGuard& operator=(const SnapshotGuard&) = delete;
+    SnapshotGuard(SnapshotGuard&&) = delete;
+    SnapshotGuard& operator=(SnapshotGuard&&) = delete;
+
+   private:
+    std::lock_guard<std::mutex> lock_;
+    mjData* data_;
+};
+
 // Shared EGL display for all cameras (owned by MujocoContext)
 struct SharedEGLDisplay {
     EGLDisplay eglDisplay = EGL_NO_DISPLAY;
@@ -52,8 +78,9 @@ struct MujocoContext {
     void updateSnapshot();
 
     // Get thread-safe read access to snapshot
-    mjData* getSnapshot() const {
-        return dataSnapshot;
+    // Returns a guard that holds the lock while the snapshot is being accessed
+    SnapshotGuard getSnapshot() const {
+        return SnapshotGuard(snapshotMutex, dataSnapshot);
     }
 
     // Copying could potentially lead to freeing the model or data twice.

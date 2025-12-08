@@ -8,6 +8,7 @@
 #include <iostream>
 #include <msgpack.hpp>
 #include <mutex>
+#include <regex>
 #include <stdexcept>
 #include <vector>
 
@@ -18,7 +19,7 @@ namespace spqr {
 
 class Camera : public Sensor {
    public:
-    Camera(MujocoContext* mujContext, const char* cameraName)
+    Camera(MujocoContext* mujContext, const char* cameraName, int maxgeom = 100)
         : Sensor(30.0f), mujContext(mujContext), mujModel(mujContext->model) {
         // Find the camera in the MuJoCo model
         cam.type = mjCAMERA_FIXED;
@@ -35,8 +36,9 @@ class Camera : public Sensor {
         // Allocate image buffer (RGB, 3 bytes per pixel)
         image.resize(w * h * 3);
         // Create a scene for this camera's viewpoint
+        // maxgeom determines memory usage: ~240 KB per 1000 geoms
         mjv_defaultScene(&scene);
-        mjv_makeScene(mujModel, &scene, 1000);
+        mjv_makeScene(mujModel, &scene, maxgeom);
 
         // EGL context will be initialized lazily on first doUpdate() call
         // because it must be created on the thread that will use it
@@ -69,8 +71,11 @@ class Camera : public Sensor {
         mjrRect viewport = {0, 0, w, h};
 
         // 2. Update the scene from this camera's viewpoint using snapshot data
-        mjData* snapshot = mujContext->getSnapshot();
-        mjv_updateScene(mujModel, snapshot, &cameraContext.opt, nullptr, &cam, mjCAT_ALL, &scene);
+        // getSnapshot() returns a SnapshotGuard that holds the lock during access
+        {
+            auto snapshotGuard = mujContext->getSnapshot();
+            mjv_updateScene(mujModel, snapshotGuard.get(), &cameraContext.opt, nullptr, &cam, mjCAT_ALL, &scene);
+        }  // Lock released here
 
         // 3. Render the scene to the framebuffer
         mjr_render(viewport, &scene, &cameraContext.mjContext);
@@ -131,7 +136,7 @@ class Camera : public Sensor {
         // Reuse the EGL display from MujocoContext instead of creating a new one
         cameraContext.eglDisplay = mujContext->sharedEGL.eglDisplay;
         if (cameraContext.eglDisplay == EGL_NO_DISPLAY) {
-            std::cerr << "Failed to get EGL display from MujocoContext" << std::endl;
+            throw std::runtime_error("EGL display not initialized in MujocoContext");
             return false;
         }
 
