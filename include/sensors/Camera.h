@@ -74,7 +74,8 @@ class Camera : public Sensor {
         // getSnapshot() returns a SnapshotGuard that holds the lock during access
         {
             auto snapshotGuard = mujContext->getSnapshot();
-            mjv_updateScene(mujModel, snapshotGuard.get(), &cameraContext.opt, nullptr, &cam, mjCAT_ALL, &scene);
+            mjv_updateScene(mujModel, snapshotGuard.get(), &cameraContext.opt, nullptr, &cam, mjCAT_ALL,
+                            &scene);
         }  // Lock released here
 
         // 3. Render the scene to the framebuffer
