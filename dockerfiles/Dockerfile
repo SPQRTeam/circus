@@ -20,9 +20,7 @@ RUN mkdir /opt/booster
 RUN mkdir /opt/booster/configs
 COPY configs/system_settings_config.yaml /opt/booster/configs
 COPY booster.conf /etc/supervisor/conf.d/
-COPY start_container.sh /app/start_container.sh
-RUN chmod +x /app/start_container.sh
 
 RUN echo "source /opt/ros/humble/setup.sh" >> ~/.bashrc
 
-CMD ["/app/start_container.sh"]
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/booster.conf"]
