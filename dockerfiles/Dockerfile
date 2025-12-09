@@ -13,7 +13,20 @@ RUN apt-get update && apt-get install -y \
     libpulse0 \
     libpulse-mainloop-glib0 \
     libasound2 \
-    libmsgpack-dev \
+    libxcursor1 \
+    libxinerama1 \
+    libxi6 \
+    libxfixes3 \
+    libxrandr2 \
+    libxss1 \
+    libxxf86vm1 \
+    libdrm2 \
+    libgbm1 \
+    libwayland-egl1 \
+    libwayland-client0 \
+    libwayland-cursor0 \
+    libxkbcommon0 \
+    libdecor-0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /opt/booster
