@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMetaObject>
 #include <csignal>
 
 #include "Constants.h"
@@ -89,6 +90,20 @@ void AppWindow::loadScene(const QString& yamlFile) {
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
+        // Callback to start the simulation
+        // Simulation starts when the all the robots are ready
+        RobotManager::instance().setAreAllRobotsReadyCallback([this]() {
+            QMetaObject::invokeMethod(
+                this,
+                [this]() {
+                    if (sim) {
+                        std::cout << "Starting simulation!" << std::endl;
+                        sim->start();
+                    }
+                },
+                Qt::QueuedConnection);
+        });
+
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
@@ -96,7 +111,7 @@ void AppWindow::loadScene(const QString& yamlFile) {
         mainLayout->addWidget(viewportContainer);
 
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
-        // sim->start();
+
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error loading scene", e.what());
     }

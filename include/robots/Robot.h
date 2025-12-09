@@ -47,6 +47,9 @@ class Robot {
     std::shared_ptr<Team> team;
 
     msgpack::zone buffer_zone_;
+
+    bool isConnected = false;
+    bool isReady = false;
 };
 
 }  // namespace spqr

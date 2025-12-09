@@ -98,7 +98,6 @@ class BoosterT1 : public Robot {
     }
 
     void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
-        std::cout << "Receive message" << std::endl;
         auto it = message.find("joint_torques");
         if (it == message.end()) {
             throw std::runtime_error("Error: 'joint_torques' key not found in message");

@@ -141,6 +141,11 @@ class RobotManager {
             serverThread_.join();
     }
 
+    void setAreAllRobotsReadyCallback(std::function<void()> cb) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        areAllRobotsReadyCallback_ = std::move(cb);
+    }
+
    private:
     RobotManager() = default;
     ~RobotManager() = default;
@@ -208,11 +213,13 @@ class RobotManager {
                             }
 
                             std::string robotName = obj.as<std::string>();
-                            std::cout << "Connected Robot: " << robotName << "\n";
 
                             // Send message with initial state
+                            std::lock_guard<std::mutex> lock(mutex_);
                             for (auto& r : robots_) {
                                 if (r->name == robotName) {
+                                    r->isConnected = true;
+                                    std::cout << "Connected Robot: " << robotName << "\n";
                                     std::cout << "Sending initial message to " << robotName << std::endl;
                                     auto answ = r->sendMessage();
                                     msgpack::sbuffer sbuf;
@@ -245,6 +252,11 @@ class RobotManager {
                         std::unique_lock lock(mutex_);
                         for (auto& r : robots_) {
                             if (r->name == messageRecipient) {
+                                if (!r->isReady) {
+                                    r->isReady = true;
+                                    std::cout << "Robot ready: " << r->name << std::endl;
+                                    areAllRobotsReadyWrapper();
+                                }
                                 r->receiveMessage(data_map);
                                 auto answ = r->sendMessage();
                                 msgpack::sbuffer sbuf;
@@ -262,11 +274,25 @@ class RobotManager {
             close(fd.fd);
     }
 
+    void areAllRobotsReadyWrapper() {
+        if (areAllRobotsReady() && areAllRobotsReadyCallback_) {
+            areAllRobotsReadyCallback_();
+        }
+    }
+    bool areAllRobotsReady() const {
+        for (const auto& r : robots_)
+            if (!r->isReady)
+                return false;
+        std::cout << "All robots are ready!" << std::endl;
+        return true;
+    }
+
     std::atomic<bool> serverRunning_ = false;
     std::thread serverThread_;
 
     mutable std::mutex mutex_;
     std::vector<std::shared_ptr<Robot>> robots_;
+    std::function<void()> areAllRobotsReadyCallback_;
 
     using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t,
                                                               const Eigen::Vector3d&, const Eigen::Vector3d&,
