@@ -75,27 +75,19 @@ void Container::create(const std::string& robot_name, const std::string& image,
     all_binds.push_back("/usr/lib/x86_64-linux-gnu:/host/usr/lib/x86_64-linux-gnu:ro");
     all_binds.push_back("/lib/x86_64-linux-gnu:/host/lib/x86_64-linux-gnu:ro");
 
-    payload["HostConfig"] = {
-        {"Binds", all_binds},
-        {"IpcMode", "host"},                      
-        {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},     
-        {"SecurityOpt", {"seccomp=unconfined"}},  
-        {"Ulimits", nlohmann::json::array({
-            {
-                {"Name", "memlock"},
-                {"Soft", -1},
-                {"Hard", -1}
-            }
-        })}
-    };
+    payload["HostConfig"]
+        = {{"Binds", all_binds},
+           {"IpcMode", "host"},
+           {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
+           {"SecurityOpt", {"seccomp=unconfined"}},
+           {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})}};
 
-    payload["Env"] = {
-        "ROBOT_NAME=" + robot_name, 
-        "SERVER_IP=172.17.0.1",
-        "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
-        "LD_LIBRARY_PATH=/app/booster_motion/lib:/app/booster_motion/lib-usr-local:/app/booster_motion/lib-x86_64-linux-gnu:/host/usr/lib/x86_64-linux-gnu:/host/lib/x86_64-linux-gnu",
-        "FASTRTPS_DEFAULT_PROFILES_FILE=/app/booster_motion/fastdds_profile.xml"
-    };
+    payload["Env"] = {"ROBOT_NAME=" + robot_name, "SERVER_IP=172.17.0.1",
+                      "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
+                      "LD_LIBRARY_PATH=/app/booster_motion/lib:/app/booster_motion/lib-usr-local:/app/"
+                      "booster_motion/lib-x86_64-linux-gnu:/host/usr/lib/x86_64-linux-gnu:/host/lib/"
+                      "x86_64-linux-gnu",
+                      "FASTRTPS_DEFAULT_PROFILES_FILE=/app/booster_motion/fastdds_profile.xml"};
 
     payload["Tty"] = true;
     payload["OpenStdin"] = true;

@@ -2,4 +2,3 @@ image: spqr:booster
 volumes:
   - "/home/flavio/Scrivania/RoboCup/simbridge/tools/booster_motion:/app/booster_motion"
   - "/home/flavio/Scrivania/RoboCup/simbridge/build:/app/bridge"
-

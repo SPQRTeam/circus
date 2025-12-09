@@ -222,8 +222,7 @@ class RobotManager {
                                 }
                             }
                         }
-                    } 
-                    else {
+                    } else {
                         // The events for other fds indicate either an incoming message or a closed connection
                         // the read call disambiguates the two cases
                         char buffer[MAX_MSG_SIZE];
