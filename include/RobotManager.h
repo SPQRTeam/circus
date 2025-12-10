@@ -120,10 +120,6 @@ class RobotManager {
             } catch (const YAML::Exception& e) {
                 throw std::runtime_error("Volume entry must be a string: " + std::string(e.what()));
             }
-            if (v2.starts_with("<B>")) {
-                std::cout << pathsRoot["simbridge"].Type() << std::endl;
-                v2.replace(0, 3, pathsRoot["simbridge"].as<std::string>());
-            }
             try {
                 std::string appo;
                 if (v2.starts_with("<M>")) {
