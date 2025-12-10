@@ -129,16 +129,13 @@ class RobotManager {
                 if (v2.starts_with("<M>")) {
                     appo = pathsRoot["framework"].as<std::string>();
                     v2.replace(0, 3, appo);
-                }
-                else if (v2.starts_with("<C>")) {
+                } else if (v2.starts_with("<C>")) {
                     appo = pathsRoot["circus"].as<std::string>();
                     v2.replace(0, 3, appo);
-                }
-                else if (v2.starts_with("<S>")) {
+                } else if (v2.starts_with("<S>")) {
                     appo = pathsRoot["booster_robotics_sdk"].as<std::string>();
                     v2.replace(0, 3, appo);
-                }
-                else if (v2.starts_with("<B>")) {
+                } else if (v2.starts_with("<B>")) {
                     appo = pathsRoot["simbridge"].as<std::string>();
                     v2.replace(0, 3, appo);
                 }
