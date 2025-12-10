@@ -83,17 +83,21 @@ class RobotManager {
         return nullptr;
     }
 
-    void startContainers() {
-        startCommunicationServer(frameworkCommunicationPort);
-
-        YAML::Node configRoot;
+    YAML::Node loadYamlFile(const char* path) {
         try {
-            configRoot = YAML::LoadFile(frameworkConfigPath);
+            return YAML::LoadFile(path);
         } catch (const YAML::BadFile& e) {
-            throw std::runtime_error("Failed to open YAML file: " + std::string(frameworkConfigPath));
+            throw std::runtime_error("Failed to open YAML file: " + std::string(path));
         } catch (const YAML::ParserException& e) {
             throw std::runtime_error("Failed to parse YAML file: " + std::string(e.what()));
         }
+    }
+
+    void startContainers() {
+        startCommunicationServer(frameworkCommunicationPort);
+
+        YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
+        YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
 
         if (!configRoot["image"])
             throw std::runtime_error("Missing 'image' key in YAML file");
@@ -110,11 +114,38 @@ class RobotManager {
 
         std::vector<std::string> binds;
         for (const auto& v : configRoot["volumes"]) {
+            std::string v2;
             try {
-                binds.push_back(v.as<std::string>());
+                v2 = v.as<std::string>();
             } catch (const YAML::Exception& e) {
                 throw std::runtime_error("Volume entry must be a string: " + std::string(e.what()));
             }
+            if (v2.starts_with("<B>")) {
+                std::cout << pathsRoot["simbridge"].Type() << std::endl;
+                v2.replace(0, 3, pathsRoot["simbridge"].as<std::string>());
+            }
+            try {
+                std::string appo;
+                if (v2.starts_with("<M>")) {
+                    appo = pathsRoot["framework"].as<std::string>();
+                    v2.replace(0, 3, appo);
+                }
+                else if (v2.starts_with("<C>")) {
+                    appo = pathsRoot["circus"].as<std::string>();
+                    v2.replace(0, 3, appo);
+                }
+                else if (v2.starts_with("<S>")) {
+                    appo = pathsRoot["booster_robotics_sdk"].as<std::string>();
+                    v2.replace(0, 3, appo);
+                }
+                else if (v2.starts_with("<B>")) {
+                    appo = pathsRoot["simbridge"].as<std::string>();
+                    v2.replace(0, 3, appo);
+                }
+            } catch (const YAML::Exception& e) {
+                throw std::runtime_error("path_constants entries must be strings: " + std::string(e.what()));
+            }
+            binds.push_back(v2);
         }
 
         for (std::shared_ptr<Robot> r : robots_) {
