@@ -428,4 +428,6 @@ build/
 .pixi/*
 !.pixi/config.toml
 
+MUJOCO_LOG.TXT
+
 path_constants.yaml

@@ -133,6 +133,7 @@ void AppWindow::stopSimulation() {
 void AppWindow::stepSimulation() {
     if (mujContext) {
         mj_step(mujContext->model, mujContext->data);
+        RobotManager::instance().update();
         viewport->update();
     }
 }
