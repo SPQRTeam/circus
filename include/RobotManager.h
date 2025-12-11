@@ -121,7 +121,7 @@ class RobotManager {
             if (v2.starts_with("<")) {
                 int end = v2.find('>');
                 std::string name = v2.substr(1, end - 1);
-                
+
                 if (!pathsRoot[name]) {
                     throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
                 }
