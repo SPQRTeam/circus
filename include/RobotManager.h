@@ -121,19 +121,19 @@ class RobotManager {
                 throw std::runtime_error("Volume entry must be a string: " + std::string(e.what()));
             }
             try {
-                std::string appo;
-                if (v2.starts_with("<M>")) {
-                    appo = pathsRoot["framework"].as<std::string>();
-                    v2.replace(0, 3, appo);
-                } else if (v2.starts_with("<C>")) {
-                    appo = pathsRoot["circus"].as<std::string>();
-                    v2.replace(0, 3, appo);
-                } else if (v2.starts_with("<S>")) {
-                    appo = pathsRoot["booster_robotics_sdk"].as<std::string>();
-                    v2.replace(0, 3, appo);
-                } else if (v2.starts_with("<B>")) {
-                    appo = pathsRoot["simbridge"].as<std::string>();
-                    v2.replace(0, 3, appo);
+                if (v2.starts_with("<")) {
+                    int end = v2.find('>');
+                    std::cout << "And the v2 is " << v2 << std::endl;
+                    std::string name = v2.substr(1, end-1);
+                    std::cout << "And the name is " << name << std::endl;
+
+                    if (!pathsRoot[name]) {
+                        throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
+                    }
+                    std::string name_str = pathsRoot[name].as<std::string>();
+
+                    v2.replace(0, end+1, name_str);
+                    std::cout << "And the NEW v2 is " << v2 << std::endl;
                 }
             } catch (const YAML::Exception& e) {
                 throw std::runtime_error("path_constants entries must be strings: " + std::string(e.what()));

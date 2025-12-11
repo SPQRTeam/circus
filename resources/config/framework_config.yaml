@@ -1,12 +1,7 @@
-# path_constant replacements legend:
-# <M> framework
-# <C> circus
-# <S> booster_robotics_sdk
-# <B> simbridge
-# strictly NO FINAL SLASH in the path_constants paths.
+# advice: NO FINAL SLASH in the path_constants paths.
 
 image: spqr:booster
 volumes:
-  - "<B>/tools/booster_motion:/app/booster_motion"
-  - "<B>/build:/app/bridge"
-  - "<S>/build:/app/sdk"
+  - "<simbridge>/tools/booster_motion:/app/booster_motion"
+  - "<simbridge>/build:/app/bridge"
+  - "<booster_robotics_sdk>/build:/app/sdk"
