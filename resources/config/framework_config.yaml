@@ -1,4 +1,7 @@
+# advice: NO FINAL SLASH in the path_constants paths.
+
 image: spqr:booster
 volumes:
-  - "/home/flavio/Scrivania/RoboCup/simbridge/tools/booster_motion:/app/booster_motion"
-  - "/home/flavio/Scrivania/RoboCup/simbridge/build:/app/bridge"
+  - "<simbridge>/tools/booster_motion:/app/booster_motion"
+  - "<simbridge>/build:/app/bridge"
+  - "<booster_robotics_sdk>/build:/app/sdk"

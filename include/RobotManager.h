@@ -83,38 +83,53 @@ class RobotManager {
         return nullptr;
     }
 
-    void startContainers() {
-        startCommunicationServer(frameworkCommunicationPort);
-
-        YAML::Node configRoot;
+    YAML::Node loadYamlFile(const char* path) {
         try {
-            configRoot = YAML::LoadFile(frameworkConfigPath);
+            return YAML::LoadFile(path);
         } catch (const YAML::BadFile& e) {
-            throw std::runtime_error("Failed to open YAML file: " + std::string(frameworkConfigPath));
+            throw std::runtime_error("Failed to open YAML file: " + std::string(path));
         } catch (const YAML::ParserException& e) {
             throw std::runtime_error("Failed to parse YAML file: " + std::string(e.what()));
         }
+    }
+
+    std::string tryString(YAML::Node node, std::string message) {
+        try {
+            return node.as<std::string>();
+        } catch (const YAML::Exception& e) {
+            throw std::runtime_error(message + std::string(e.what()));
+        }
+    }
+
+    void startContainers() {
+        startCommunicationServer(frameworkCommunicationPort);
+
+        YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
+        YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
 
         if (!configRoot["image"])
             throw std::runtime_error("Missing 'image' key in YAML file");
 
-        std::string image;
-        try {
-            image = configRoot["image"].as<std::string>();
-        } catch (const YAML::Exception& e) {
-            throw std::runtime_error("'image' must be a string: " + std::string(e.what()));
-        }
+        std::string image = tryString(configRoot["image"], "'image' must be a string: ");
 
         if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
             throw std::runtime_error("'volumes' key missing or not a sequence");
 
         std::vector<std::string> binds;
         for (const auto& v : configRoot["volumes"]) {
-            try {
-                binds.push_back(v.as<std::string>());
-            } catch (const YAML::Exception& e) {
-                throw std::runtime_error("Volume entry must be a string: " + std::string(e.what()));
+            std::string v2 = tryString(v, "Volume entry must be a string: ");
+            if (v2.starts_with("<")) {
+                int end = v2.find('>');
+                std::string name = v2.substr(1, end - 1);
+
+                if (!pathsRoot[name]) {
+                    throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
+                }
+
+                std::string name_str = tryString(pathsRoot[name], "path_constants entries must be strings: ");
+                v2.replace(0, end + 1, name_str);
             }
+            binds.push_back(v2);
         }
 
         for (std::shared_ptr<Robot> r : robots_) {
