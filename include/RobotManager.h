@@ -124,7 +124,7 @@ class RobotManager {
                 if (v2.starts_with("<")) {
                     int end = v2.find('>');
                     std::cout << "And the v2 is " << v2 << std::endl;
-                    std::string name = v2.substr(1, end-1);
+                    std::string name = v2.substr(1, end - 1);
                     std::cout << "And the name is " << name << std::endl;
 
                     if (!pathsRoot[name]) {
@@ -132,7 +132,7 @@ class RobotManager {
                     }
                     std::string name_str = pathsRoot[name].as<std::string>();
 
-                    v2.replace(0, end+1, name_str);
+                    v2.replace(0, end + 1, name_str);
                     std::cout << "And the NEW v2 is " << v2 << std::endl;
                 }
             } catch (const YAML::Exception& e) {
