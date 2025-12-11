@@ -33,7 +33,8 @@ RUN mkdir /opt/booster
 RUN mkdir /opt/booster/configs
 COPY configs/system_settings_config.yaml /opt/booster/configs
 COPY booster.conf /etc/supervisor/conf.d/
+COPY configs/bashrc /root/.bashrc_addendum
 
-RUN echo "source /opt/ros/humble/setup.sh" >> ~/.bashrc
+RUN echo ". ~/.bashrc_addendum" >> ~/.bashrc
 
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/booster.conf"]

@@ -1,0 +1,5 @@
+source /opt/ros/humble/setup.sh
+
+alias loco="/app/sdk/b1_loco_example_client 127.0.0.1"
+alias echocmd="ros2 topic echo /booster/ros2_k2_joint_cmd"
+alias echostate="ros2 topic echo /booster/ros2_k2_joint_states"
