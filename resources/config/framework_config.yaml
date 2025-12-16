@@ -4,4 +4,3 @@ image: spqr:booster
 volumes:
   - "<simbridge>/tools/booster_motion:/app/booster_motion"
   - "<simbridge>/build:/app/bridge"
-  - "<booster_robotics_sdk>/build:/app/sdk"
