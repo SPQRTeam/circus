@@ -2,6 +2,10 @@ source /opt/ros/humble/setup.sh
 source /opt/booster/sdk_ros2/install/setup.bash
 
 alias loco="/opt/booster/sdk/build/b1_loco_example_client 127.0.0.1"
+alias looc="loco"
+alias lcoo="loco"
+alias mw="loco"
+
 alias echocmd="ros2 topic echo /booster/ros2_k2_joint_cmd"
 alias echostate="ros2 topic echo /booster/ros2_k2_joint_states"
 alias echolow="ros2 topic echo /low_state"
