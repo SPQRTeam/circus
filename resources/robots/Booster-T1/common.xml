@@ -2,7 +2,7 @@
     <size njmax="500" nconmax="100" />
 
     <default>
-        <joint limited="true" damping="0.01" armature="0.01" frictionloss="0.0" />
+        <joint limited="true" damping="2" armature="0.01" frictionloss="0.0" />
         <equality solref="0.001 2" />
 
         <default class="visual">
