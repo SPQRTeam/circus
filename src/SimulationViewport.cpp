@@ -1,6 +1,7 @@
 #include "SimulationViewport.h"
 
 #include <mujoco/mjvisualize.h>
+#include <qevent.h>
 #include <qnamespace.h>
 #include <qpoint.h>
 #include <yaml-cpp/node/node.h>
@@ -116,7 +117,7 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
             mju_mulQuat(pert.refquat, qz, pert.refquat);
-        } else if (mouseAction == mjMOUSE_MOVE_H) {
+        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V || mouseAction == mjMOUSE_ROTATE_H) {
             mjv_movePerturb(model, data, mouseAction, reldx, reldy, scene, &pert);
         }
         mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
@@ -125,6 +126,30 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
     }
 
     lastMousePosition = event->position();
+}
+
+// Some blender-like commands in a totally blender-unlike flow
+void SimulationViewport::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_G) {
+        if (selectedRobot >= 0) {
+            pert.active = mjPERT_TRANSLATE;
+            mouseAction = mjMOUSE_MOVE_H;
+        }
+    }
+    if (event->key() == Qt::Key_R) {
+        if (selectedRobot >= 0) {
+            pert.active = mjPERT_ROTATE;
+            mouseAction = mjMOUSE_ROTATE_V;
+        }
+    }
+    if (event->key() == Qt::Key_H) {
+        if (mouseAction == mjMOUSE_MOVE_V)   mouseAction = mjMOUSE_MOVE_H;
+        if (mouseAction == mjMOUSE_ROTATE_V) mouseAction = mjMOUSE_ROTATE_H;
+    }
+    if (event->key() == Qt::Key_V) {
+        if (mouseAction == mjMOUSE_MOVE_H)   mouseAction = mjMOUSE_MOVE_V;
+        if (mouseAction == mjMOUSE_ROTATE_H) mouseAction = mjMOUSE_ROTATE_V;
+    }
 }
 
 int SimulationViewport::findBodyRoot(int bodyId) const {
