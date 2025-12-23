@@ -3,10 +3,12 @@
 #include <mujoco/mjvisualize.h>
 #include <qnamespace.h>
 #include <qpoint.h>
+#include <yaml-cpp/node/node.h>
+#include "Utils.h"
 
 namespace spqr {
 
-SimulationViewport::SimulationViewport(MujocoContext& mujContext)
+SimulationViewport::SimulationViewport(MujocoContext& mujContext, YAML::Node settingsNode)
     : model(mujContext.model),
       data(mujContext.data),
       cam(&mujContext.cam),
@@ -17,6 +19,12 @@ SimulationViewport::SimulationViewport(MujocoContext& mujContext)
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&SimulationViewport::update));
     timer->start(16);
     mjv_defaultPerturb(&pert);
+    if (!settingsNode) {
+        throw std::runtime_error("Missing viewport settings");
+    }
+    viewportSettings = {
+        tryBool(settingsNode["flipZoom"], "flipZoom setting missing or not a bool: "),
+    };
 }
 
 void SimulationViewport::initializeGL() {
@@ -43,7 +51,8 @@ void SimulationViewport::paintGL() {
 }
 
 void SimulationViewport::wheelEvent(QWheelEvent* event) {
-    mjv_moveCamera(model, mjMOUSE_ZOOM, 0, -0.0005 * event->angleDelta().y(), scene, cam);
+    int flipping = viewportSettings.flipZoom ? -1 : 1;
+    mjv_moveCamera(model, mjMOUSE_ZOOM, 0, 0.0005 * flipping * event->angleDelta().y(), scene, cam);
 }
 
 void SimulationViewport::mousePressEvent(QMouseEvent* event) {
@@ -67,13 +76,16 @@ void SimulationViewport::mousePressEvent(QMouseEvent* event) {
                 pert.active = mjPERT_TRANSLATE;
                 mouseAction = mjMOUSE_MOVE_H;  // use horizontal-plane move when moving
             }
+        } else {  // i.e. selected_body < 0
+            if (event->modifiers() & Qt::ShiftModifier) {
+                mouseAction = mjMOUSE_ROTATE_V;
+            } else {
+                mouseAction = mjMOUSE_MOVE_H;
+            }
         }
-
-        if (event->modifiers() & Qt::ShiftModifier) {
-            mouseAction = mjMOUSE_ROTATE_V;
-        } else {
-            mouseAction = mjMOUSE_MOVE_H;
-        }
+    }
+    else if (event->button() == Qt::MiddleButton) {
+        mouseAction = mjMOUSE_ROTATE_V;
     }
 }
 

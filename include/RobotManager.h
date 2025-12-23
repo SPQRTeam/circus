@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "Constants.h"
+#include "Utils.h"
 #include "MujocoContext.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
@@ -81,24 +82,6 @@ class RobotManager {
         if (it != robotFactory.end())
             return it->second(name, type, number, pos, ori, team);
         return nullptr;
-    }
-
-    YAML::Node loadYamlFile(const char* path) {
-        try {
-            return YAML::LoadFile(path);
-        } catch (const YAML::BadFile& e) {
-            throw std::runtime_error("Failed to open YAML file: " + std::string(path));
-        } catch (const YAML::ParserException& e) {
-            throw std::runtime_error("Failed to parse YAML file: " + std::string(e.what()));
-        }
-    }
-
-    std::string tryString(YAML::Node node, std::string message) {
-        try {
-            return node.as<std::string>();
-        } catch (const YAML::Exception& e) {
-            throw std::runtime_error(message + std::string(e.what()));
-        }
     }
 
     void startContainers() {

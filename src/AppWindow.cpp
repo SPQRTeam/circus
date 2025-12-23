@@ -10,6 +10,7 @@
 #include "MujocoContext.h"
 #include "RobotManager.h"
 #include "SceneParser.h"
+#include "Utils.h"
 
 namespace spqr {
 
@@ -73,6 +74,8 @@ void AppWindow::loadScene(const QString& yamlFile) {
         TeamManager::instance().clear();
         RobotManager::instance().stopCommunicationServer();
 
+        YAML::Node settingsRoot = loadYamlFile(circusSettingsPath);
+
         if (sim) {
             sim->stop();
             sim.reset();
@@ -88,7 +91,7 @@ void AppWindow::loadScene(const QString& yamlFile) {
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
-        viewport = std::make_unique<SimulationViewport>(*mujContext);
+        viewport = std::make_unique<SimulationViewport>(*mujContext, settingsRoot["viewport"]);
 
         // Callback to start the simulation
         // Simulation starts when the all the robots are ready
