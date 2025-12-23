@@ -5,6 +5,7 @@ alias loco="/opt/booster/sdk/build/b1_loco_example_client 127.0.0.1"
 alias looc="loco"
 alias lcoo="loco"
 alias mw="loco"
+alias mp="loco"
 
 alias echocmd="ros2 topic echo /booster/ros2_k2_joint_cmd"
 alias echostate="ros2 topic echo /booster/ros2_k2_joint_states"
