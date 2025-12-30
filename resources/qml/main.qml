@@ -25,24 +25,6 @@ ApplicationWindow {
                 onTriggered: saveConfig()
             }
         }
-
-        Menu {
-            title: qsTr("&Simulation")
-            Action {
-                text: qsTr("&Run")
-                // onTriggered: fileDialog.open() TODO: change with placeholder run simulation
-            }
-            MenuSeparator{}
-            Action {
-                text: qsTr("&Pause")
-                // onTriggered: fileDialog.open() TODO: change with placeholder run simulation
-            }
-            MenuSeparator{}
-            Action {
-                text: qsTr("&Quit")
-                onTriggered: Qt.quit()
-            }
-        }
     }
 
     Platform.FileDialog {

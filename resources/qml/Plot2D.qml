@@ -43,6 +43,10 @@ Rectangle {
 
     // Function to add new data point
     function addDataPoint(x, y, z) {
+        if (appWindow.isSimulationPaused() === true) {
+            return; // Do not add data if simulation is running
+        }
+
         // Add new data
         xData.push(x)
         yData.push(y)

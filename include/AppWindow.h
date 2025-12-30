@@ -27,6 +27,9 @@ class AppWindow : public QObject {
     Q_INVOKABLE void updateRobotData();
     Q_INVOKABLE void saveGuiConfig(const QString& yamlFile, const QVariantList& cellData, int numRows, int numColumns);
     Q_INVOKABLE QString getCurrentScenePath() const;
+    Q_INVOKABLE void pauseSimulation();
+    Q_INVOKABLE void playSimulation();
+    Q_INVOKABLE bool isSimulationPaused() const;
 
     QString projectRoot() const {
         return QString::fromStdString(PROJECT_ROOT);

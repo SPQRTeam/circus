@@ -12,6 +12,9 @@ class SimulationThread : public QThread {
     SimulationThread(const mjModel* model, mjData* data);
     void run() override;
     void stop();
+    void pause();
+    void play();
+    bool isPaused();
 
    signals:
     void stepCompleted();
@@ -20,6 +23,7 @@ class SimulationThread : public QThread {
     const mjModel* model_;
     mjData* data_;
     std::atomic<bool> running_;
+    std::atomic<bool> paused_;
 };
 
 }  // namespace spqr

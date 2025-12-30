@@ -18,6 +18,9 @@ Rectangle {
     property var columnWidths: [0.25, 0.25, 0.25, 0.25]
     property var rowHeights: [1.0]
 
+    // Play/Pause state
+    property bool isPlaying: true
+
     // Teams data
     property var teams: []
     property var dataStreamOptions: buildDataStreamOptions()
@@ -227,19 +230,72 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 30
+            Layout.topMargin: 0
+            Layout.bottomMargin: 5
+            Layout.leftMargin: 5
+            Layout.rightMargin: 5
             visible: toolsPanel.isExpanded
-            spacing: 10
+            spacing: 5
 
             Button {
-                text: "+ Add Row"
-                Layout.preferredHeight: 25
+                text: "Play"
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 140
+                enabled: toolsPanel.isPlaying === false
                 background: Rectangle {
                     color: parent.hovered ? "#5c8dbd" : "#464545"
                     radius: 2
                 }
                 contentItem: Label {
                     text: parent.text
-                    font.pixelSize: 11
+                    font.pixelSize: 13
+                    color: parent.enabled ? "#ffffff" : "#888888"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: {
+                    appWindow.playSimulation()
+                    toolsPanel.isPlaying = appWindow.isSimulationPaused() === false
+                }
+            }
+
+            Button {
+                text: "Pause"
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 140
+                enabled: toolsPanel.isPlaying === true
+                background: Rectangle {
+                    color: parent.hovered ? "#5c8dbd" : "#464545"
+                    radius: 2
+                }
+                contentItem: Label {
+                    text: parent.text
+                    font.pixelSize: 13
+                    color: parent.enabled ? "#ffffff" : "#888888"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: {
+                    appWindow.pauseSimulation()
+                    toolsPanel.isPlaying = appWindow.isSimulationPaused() === false
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            Button {
+                text: "+ Add Row"
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 140
+                background: Rectangle {
+                    color: parent.hovered ? "#5c8dbd" : "#464545"
+                    radius: 2
+                }
+                contentItem: Label {
+                    text: parent.text
+                    font.pixelSize: 13
                     color: "#ffffff"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -259,7 +315,8 @@ Rectangle {
 
             Button {
                 text: "- Remove Row"
-                Layout.preferredHeight: 25
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 160
                 enabled: toolsPanel.numRows > 1
                 background: Rectangle {
                     color: parent.enabled ? (parent.hovered ? "#bd5c5c" : "#464545") : "#3a3a3a"
@@ -267,7 +324,7 @@ Rectangle {
                 }
                 contentItem: Label {
                     text: parent.text
-                    font.pixelSize: 11
+                    font.pixelSize: 13
                     color: parent.enabled ? "#ffffff" : "#888888"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -288,14 +345,15 @@ Rectangle {
 
             Button {
                 text: "+ Add Column"
-                Layout.preferredHeight: 25
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 160
                 background: Rectangle {
                     color: parent.hovered ? "#5c8dbd" : "#464545"
                     radius: 2
                 }
                 contentItem: Label {
                     text: parent.text
-                    font.pixelSize: 11
+                    font.pixelSize: 13
                     color: "#ffffff"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -315,7 +373,8 @@ Rectangle {
 
             Button {
                 text: "- Remove Column"
-                Layout.preferredHeight: 25
+                Layout.preferredHeight: 30
+                Layout.preferredWidth: 160
                 enabled: toolsPanel.numColumns > 1
                 background: Rectangle {
                     color: parent.enabled ? (parent.hovered ? "#bd5c5c" : "#464545") : "#3a3a3a"
@@ -323,7 +382,7 @@ Rectangle {
                 }
                 contentItem: Label {
                     text: parent.text
-                    font.pixelSize: 11
+                    font.pixelSize: 13
                     color: parent.enabled ? "#ffffff" : "#888888"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -342,15 +401,6 @@ Rectangle {
                 }
             }
 
-            Item {
-                Layout.fillWidth: true
-            }
-
-            Label {
-                text: "Grid: " + toolsPanel.numRows + "×" + toolsPanel.numColumns
-                font.pixelSize: 11
-                color: "#aaaaaa"
-            }
         }
 
         // Content Area - Resizable Grid

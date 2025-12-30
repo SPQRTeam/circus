@@ -324,6 +324,27 @@ void AppWindow::saveGuiConfig(const QString& yamlFile, const QVariantList& cellD
     }
 }
 
+void AppWindow::pauseSimulation() {
+    if (sim && sim->isRunning()) {
+        sim->pause();
+        qDebug() << "Simulation paused";
+    }
+}
+
+void AppWindow::playSimulation() {
+    if (sim && sim->isRunning()) {
+        sim->play();
+        qDebug() << "Simulation playd";
+    }
+}
+
+bool AppWindow::isSimulationPaused() const {
+    if (sim && sim->isRunning()) {
+        return sim->isPaused();
+    }
+    return false;
+}
+
 void AppWindow::signalHandler(int signal) {
     TeamManager::instance().clear();
     RobotManager::instance().stopCommunicationServer();
