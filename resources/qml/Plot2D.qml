@@ -145,10 +145,13 @@ Rectangle {
             id: axisTime
             titleText: "Time (s)"
             labelFormat: "%.1f"
-            labelsColor: "#aaaaaa"
+            labelsColor: "#ffffff"
             gridLineColor: "#555555"
-            color: "#aaaaaa"
+            color: "#ffffff"
             labelsFont.pixelSize: 10
+            titleFont.pixelSize: 11
+            titleFont.bold: true
+            tickCount: Math.floor(root.windowSeconds) + 1
         }
 
         ValueAxis {
@@ -156,9 +159,9 @@ Rectangle {
             min: root.minValue
             max: root.maxValue
             labelFormat: "%.1f"
-            labelsColor: "#aaaaaa"
+            labelsColor: "#ffffff"
             gridLineColor: "#555555"
-            color: "#aaaaaa"
+            color: "#ffffff"
             labelsFont.pixelSize: 10
         }
 
@@ -196,9 +199,9 @@ Rectangle {
     // Settings popup dialog
     Popup {
         id: settingsPopup
-        modal: true
-        focus: true
-        closePolicy: Popup.NoAutoClose
+        modal: false
+        focus: false
+        closePolicy: Popup.CloseOnPressOutside
         x: 0
         y: 0
         width: parent.width
@@ -557,10 +560,6 @@ Rectangle {
                 Button {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 35
-                    // Layout.bottomMargin: 10
-                    // Layout.topMargin: 0
-                    // Layout.leftMargin: 10
-                    // Layout.rightMargin: 10
                     text: "Save"
 
                     background: Rectangle {
