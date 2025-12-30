@@ -16,8 +16,7 @@ Rectangle {
     property real maxValue: 20.0
 
     // Settings properties
-    property bool windowModeIsSeconds: true  // true = seconds, false = frames
-    property real windowValue: 10.0  // Default: last 10 seconds or 50 frames
+    property real windowSeconds: 10.0  // Default: last 10 seconds
     property bool autoThresholds: true  // true = automatic, false = manual
     property real manualMinValue: -20.0
     property real manualMaxValue: 20.0
@@ -51,26 +50,13 @@ Rectangle {
         timeData.push(currentTime)
         currentTime += 0.1  // Increment time (adjust based on your update rate)
 
-        // Calculate window size based on mode
-        var windowSize
-        if (windowModeIsSeconds) {
-            // Remove data older than windowValue seconds
-            var cutoffTime = currentTime - windowValue
-            while (timeData.length > 0 && timeData[0] < cutoffTime) {
-                xData.shift()
-                yData.shift()
-                zData.shift()
-                timeData.shift()
-            }
-        } else {
-            // Remove old data if we exceed windowValue frames
-            windowSize = Math.max(1, Math.floor(windowValue))
-            while (xData.length > windowSize) {
-                xData.shift()
-                yData.shift()
-                zData.shift()
-                timeData.shift()
-            }
+        // Remove data older than windowSeconds
+        var cutoffTime = currentTime - windowSeconds
+        while (timeData.length > 0 && timeData[0] < cutoffTime) {
+            xData.shift()
+            yData.shift()
+            zData.shift()
+            timeData.shift()
         }
 
         // Update all series
@@ -161,8 +147,8 @@ Rectangle {
             labelFormat: "%.1f"
             labelsColor: "#aaaaaa"
             gridLineColor: "#555555"
-            color: "#666666"
-            labelsFont.pixelSize: 9
+            color: "#aaaaaa"
+            labelsFont.pixelSize: 10
         }
 
         ValueAxis {
@@ -172,8 +158,8 @@ Rectangle {
             labelFormat: "%.1f"
             labelsColor: "#aaaaaa"
             gridLineColor: "#555555"
-            color: "#666666"
-            labelsFont.pixelSize: 9
+            color: "#aaaaaa"
+            labelsFont.pixelSize: 10
         }
 
         LineSeries {
@@ -233,160 +219,61 @@ Rectangle {
             ScrollBar.horizontal.policy: ScrollBar.AsNeeded
             ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-            ColumnLayout {
-                width: settingsPopup.width - 30
-                spacing: 15
-                anchors.margins: 20
+            Item {
+                implicitWidth: settingsPopup.width - 10
+                implicitHeight: settingsColumn.implicitHeight + 40
 
-                Label {
-                    text: "Plot Settings"
-                    font.pixelSize: 16
-                    font.bold: true
-                    color: "#ffffff"
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 10
-                }
+                ColumnLayout {
+                    id: settingsColumn
+                    anchors.fill: parent
+                    anchors.leftMargin: 20
+                    anchors.rightMargin: 20
+                    anchors.topMargin: 20
+                    anchors.bottomMargin: 20
+                    spacing: 15
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: "#555555"
-                }
-
-                // Window mode section
-                Label {
-                    text: "Window Mode"
+                    // Window mode section
+                    Label {
+                    text: "Window (seconds)"
                     font.pixelSize: 12
                     font.bold: true
                     color: "#cccccc"
                 }
 
-                ButtonGroup {
-                    id: windowModeGroup
-                    exclusive: true
-                }
-
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 10
 
-                    RadioButton {
-                        id: radioSeconds
-                        text: "Last X seconds"
-                        checked: root.windowModeIsSeconds
+                    Label {
+                        text: "Last"
                         font.pixelSize: 11
-                        ButtonGroup.group: windowModeGroup
-
-                    indicator: Rectangle {
-                        implicitWidth: 18
-                        implicitHeight: 18
-                        x: radioSeconds.leftPadding
-                        y: parent.height / 2 - height / 2
-                        radius: 9
-                        border.color: radioSeconds.checked ? "#5c8dbd" : "#666666"
-                        border.width: 2
-                        color: "#3a3a3a"
-
-                        Rectangle {
-                            width: 10
-                            height: 10
-                            x: 4
-                            y: 4
-                            radius: 5
-                            color: "#5c8dbd"
-                            visible: radioSeconds.checked
-                        }
-                    }
-
-                    contentItem: Text {
-                        text: radioSeconds.text
-                        font: radioSeconds.font
                         color: "#aaaaaa"
-                        verticalAlignment: Text.AlignVCenter
-                        leftPadding: radioSeconds.indicator.width + radioSeconds.spacing
-                    }
-                }
-
-                TextField {
-                    id: windowSecondsField
-                    Layout.preferredWidth: 80
-                    text: root.windowValue.toString()
-                    enabled: radioSeconds.checked
-                    font.pixelSize: 11
-                    horizontalAlignment: TextInput.AlignHCenter
-                    validator: DoubleValidator { bottom: 0.1; decimals: 1 }
-
-                    background: Rectangle {
-                        color: parent.enabled ? "#464545" : "#3a3a3a"
-                        border.color: parent.activeFocus ? "#5c8dbd" : "#555555"
-                        border.width: 1
-                        radius: 2
                     }
 
-                    color: "#ffffff"
-                }
-            }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 10
-
-                    RadioButton {
-                        id: radioFrames
-                        text: "Last X frames"
-                        checked: !root.windowModeIsSeconds
+                    TextField {
+                        id: windowSecondsField
+                        Layout.preferredWidth: 100
+                        text: root.windowSeconds.toString()
                         font.pixelSize: 11
-                        ButtonGroup.group: windowModeGroup
+                        horizontalAlignment: TextInput.AlignHCenter
+                        validator: DoubleValidator { bottom: 0.1; decimals: 1 }
 
-                        indicator: Rectangle {
-                        implicitWidth: 18
-                        implicitHeight: 18
-                        x: radioFrames.leftPadding
-                        y: parent.height / 2 - height / 2
-                        radius: 9
-                        border.color: radioFrames.checked ? "#5c8dbd" : "#666666"
-                        border.width: 2
-                        color: "#3a3a3a"
-
-                        Rectangle {
-                            width: 10
-                            height: 10
-                            x: 4
-                            y: 4
-                            radius: 5
-                            color: "#5c8dbd"
-                            visible: radioFrames.checked
+                        background: Rectangle {
+                            color: "#464545"
+                            border.color: parent.activeFocus ? "#5c8dbd" : "#555555"
+                            border.width: 1
+                            radius: 2
                         }
+
+                        color: "#ffffff"
                     }
 
-                    contentItem: Text {
-                        text: radioFrames.text
-                        font: radioFrames.font
+                    Label {
+                        text: "seconds"
+                        font.pixelSize: 11
                         color: "#aaaaaa"
-                        verticalAlignment: Text.AlignVCenter
-                        leftPadding: radioFrames.indicator.width + radioFrames.spacing
                     }
                 }
-
-                TextField {
-                    id: windowFramesField
-                    Layout.preferredWidth: 80
-                    text: root.windowModeIsSeconds ? "50" : root.windowValue.toString()
-                    enabled: radioFrames.checked
-                    font.pixelSize: 11
-                    horizontalAlignment: TextInput.AlignHCenter
-                    validator: IntValidator { bottom: 1 }
-
-                    background: Rectangle {
-                        color: parent.enabled ? "#464545" : "#3a3a3a"
-                        border.color: parent.activeFocus ? "#5c8dbd" : "#555555"
-                        border.width: 1
-                        radius: 2
-                    }
-
-                    color: "#ffffff"
-                }
-            }
 
                 Rectangle {
                     Layout.fillWidth: true
@@ -415,35 +302,35 @@ Rectangle {
                     Layout.fillWidth: true
                     ButtonGroup.group: thresholdModeGroup
 
-                indicator: Rectangle {
-                    implicitWidth: 18
-                    implicitHeight: 18
-                    x: radioAutoThresholds.leftPadding
-                    y: parent.height / 2 - height / 2
-                    radius: 9
-                    border.color: radioAutoThresholds.checked ? "#5c8dbd" : "#666666"
-                    border.width: 2
-                    color: "#3a3a3a"
+                    indicator: Rectangle {
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        x: radioAutoThresholds.leftPadding
+                        y: parent.height / 2 - height / 2
+                        radius: 9
+                        border.color: radioAutoThresholds.checked ? "#5c8dbd" : "#666666"
+                        border.width: 2
+                        color: "#3a3a3a"
 
-                    Rectangle {
-                        width: 10
-                        height: 10
-                        x: 4
-                        y: 4
-                        radius: 5
-                        color: "#5c8dbd"
-                        visible: radioAutoThresholds.checked
+                        Rectangle {
+                            width: 10
+                            height: 10
+                            x: 4
+                            y: 4
+                            radius: 5
+                            color: "#5c8dbd"
+                            visible: radioAutoThresholds.checked
+                        }
+                    }
+
+                    contentItem: Text {
+                        text: radioAutoThresholds.text
+                        font: radioAutoThresholds.font
+                        color: "#aaaaaa"
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: radioAutoThresholds.indicator.width + radioAutoThresholds.spacing
                     }
                 }
-
-                contentItem: Text {
-                    text: radioAutoThresholds.text
-                    font: radioAutoThresholds.font
-                    color: "#aaaaaa"
-                    verticalAlignment: Text.AlignVCenter
-                    leftPadding: radioAutoThresholds.indicator.width + radioAutoThresholds.spacing
-                }
-            }
 
                 RadioButton {
                     id: radioManualThresholds
@@ -454,34 +341,34 @@ Rectangle {
                     ButtonGroup.group: thresholdModeGroup
 
                     indicator: Rectangle {
-                    implicitWidth: 18
-                    implicitHeight: 18
-                    x: radioManualThresholds.leftPadding
-                    y: parent.height / 2 - height / 2
-                    radius: 9
-                    border.color: radioManualThresholds.checked ? "#5c8dbd" : "#666666"
-                    border.width: 2
-                    color: "#3a3a3a"
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        x: radioManualThresholds.leftPadding
+                        y: parent.height / 2 - height / 2
+                        radius: 9
+                        border.color: radioManualThresholds.checked ? "#5c8dbd" : "#666666"
+                        border.width: 2
+                        color: "#3a3a3a"
 
-                    Rectangle {
-                        width: 10
-                        height: 10
-                        x: 4
-                        y: 4
-                        radius: 5
-                        color: "#5c8dbd"
-                        visible: radioManualThresholds.checked
+                        Rectangle {
+                            width: 10
+                            height: 10
+                            x: 4
+                            y: 4
+                            radius: 5
+                            color: "#5c8dbd"
+                            visible: radioManualThresholds.checked
+                        }
+                    }
+
+                    contentItem: Text {
+                        text: radioManualThresholds.text
+                        font: radioManualThresholds.font
+                        color: "#aaaaaa"
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: radioManualThresholds.indicator.width + radioManualThresholds.spacing
                     }
                 }
-
-                contentItem: Text {
-                    text: radioManualThresholds.text
-                    font: radioManualThresholds.font
-                    color: "#aaaaaa"
-                    verticalAlignment: Text.AlignVCenter
-                    leftPadding: radioManualThresholds.indicator.width + radioManualThresholds.spacing
-                }
-            }
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -670,7 +557,10 @@ Rectangle {
                 Button {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 35
-                    Layout.margins: 20
+                    // Layout.bottomMargin: 10
+                    // Layout.topMargin: 0
+                    // Layout.leftMargin: 10
+                    // Layout.rightMargin: 10
                     text: "Save"
 
                     background: Rectangle {
@@ -690,13 +580,8 @@ Rectangle {
                     }
 
                     onClicked: {
-                        // Save window mode settings
-                        root.windowModeIsSeconds = radioSeconds.checked
-                        if (radioSeconds.checked) {
-                            root.windowValue = parseFloat(windowSecondsField.text) || 10.0
-                        } else {
-                            root.windowValue = parseInt(windowFramesField.text) || 50
-                        }
+                        // Save window settings (in seconds)
+                        root.windowSeconds = parseFloat(windowSecondsField.text) || 10.0
 
                         // Save threshold settings
                         root.autoThresholds = radioAutoThresholds.checked
@@ -716,6 +601,7 @@ Rectangle {
                         // Close dialog
                         settingsPopup.close()
                     }
+                }
                 }
             }
         }
