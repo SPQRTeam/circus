@@ -4,7 +4,6 @@
 #include <QVariantMap>
 #include <QString>
 #include <QVariantList>
-#include <memory>
 
 #include "RobotQmlWrapper.h"
 

@@ -487,39 +487,31 @@ Rectangle {
                                                     color: "#888888"
                                                 }
 
-                                                CheckBox {
-                                                    id: showPlotCheckbox
-                                                    text: "Show Plot"
-                                                    checked: false
-                                                    font.pixelSize: 9
+                                                Button {
+                                                    id: settingsButton
+                                                    Layout.preferredWidth: 25
+                                                    Layout.preferredHeight: 25
+                                                    enabled: plotLoader.item !== null
 
-                                                    indicator: Rectangle {
-                                                        implicitWidth: 16
-                                                        implicitHeight: 16
-                                                        x: showPlotCheckbox.leftPadding
-                                                        y: parent.height / 2 - height / 2
-                                                        radius: 2
-                                                        border.color: showPlotCheckbox.checked ? "#5c8dbd" : "#666666"
+                                                    background: Rectangle {
+                                                        color: parent.hovered ? "#5c8dbd" : "#464545"
+                                                        border.color: "#5c8dbd"
                                                         border.width: 1
-                                                        color: "#3a3a3a"
-
-                                                        Rectangle {
-                                                            width: 10
-                                                            height: 10
-                                                            x: 3
-                                                            y: 3
-                                                            radius: 1
-                                                            color: "#5c8dbd"
-                                                            visible: showPlotCheckbox.checked
-                                                        }
+                                                        radius: 2
                                                     }
 
                                                     contentItem: Text {
-                                                        text: showPlotCheckbox.text
-                                                        font: showPlotCheckbox.font
-                                                        color: "#aaaaaa"
+                                                        text: "⚙"
+                                                        font.pixelSize: 14
+                                                        color: "#ffffff"
+                                                        horizontalAlignment: Text.AlignHCenter
                                                         verticalAlignment: Text.AlignVCenter
-                                                        leftPadding: showPlotCheckbox.indicator.width + showPlotCheckbox.spacing
+                                                    }
+
+                                                    onClicked: {
+                                                        if (plotLoader.item && plotLoader.item.settingsDialog) {
+                                                            plotLoader.item.settingsDialog.open()
+                                                        }
                                                     }
                                                 }
 
@@ -702,8 +694,7 @@ Rectangle {
                                             // Data display area - always visible below ComboBox
                                             Rectangle {
                                                 Layout.fillWidth: true
-                                                Layout.fillHeight: !showPlotCheckbox.checked
-                                                Layout.preferredHeight: showPlotCheckbox.checked ? 40 : -1
+                                                Layout.preferredHeight: 40
                                                 Layout.minimumHeight: 30
                                                 color: "#5c5b5b"
                                                 radius: 3
@@ -769,19 +760,17 @@ Rectangle {
                                                 Layout.fillWidth: true
                                                 Layout.fillHeight: true
                                                 Layout.minimumHeight: 100
-                                                visible: showPlotCheckbox.checked
                                                 color: "#1a1a1a"
                                                 border.color: "#ff0000"
                                                 border.width: 2
 
                                                 Label {
                                                     anchors.centerIn: parent
-                                                    text: "Plot area - Loading: " + (plotLoader.status === Loader.Loading ? "Yes" : "No") + 
+                                                    text: "Plot area - Loading: " + (plotLoader.status === Loader.Loading ? "Yes" : "No") +
                                                           "\nReady: " + (plotLoader.status === Loader.Ready ? "Yes" : "No") +
                                                           "\nItem: " + (plotLoader.item ? "Loaded" : "Null") +
-                                                          "\nCheckbox: " + showPlotCheckbox.checked +
                                                           "\nStream: " + dataStreamCombo.selectedStream +
-                                                          "\nHas IMU/Pose: " + (dataStreamCombo.selectedStream && 
+                                                          "\nHas IMU/Pose: " + (dataStreamCombo.selectedStream &&
                                                                                 (dataStreamCombo.selectedStream.indexOf("IMU") >= 0 ||
                                                                                  dataStreamCombo.selectedStream.indexOf("Pose") >= 0))
                                                     color: "#ffffff"
@@ -791,7 +780,7 @@ Rectangle {
                                                 Loader {
                                                     id: plotLoader
                                                     anchors.fill: parent
-                                                    active: showPlotCheckbox.checked
+                                                    active: true
 
                                                     sourceComponent: plot2DComponent
 
@@ -867,13 +856,6 @@ Rectangle {
                                                                 // Clear old data when switching streams
                                                                 plotLoader.item.clearData()
                                                             }
-                                                        }
-                                                    }
-
-                                                    Connections {
-                                                        target: showPlotCheckbox
-                                                        function onCheckedChanged() {
-                                                            plotLoader.sourceComponent = plotLoader.sourceComponent
                                                         }
                                                     }
 

@@ -15,6 +15,16 @@ Rectangle {
     property real minValue: -20.0
     property real maxValue: 20.0
 
+    // Settings properties
+    property bool windowModeIsSeconds: true  // true = seconds, false = frames
+    property real windowValue: 10.0  // Default: last 10 seconds or 50 frames
+    property bool autoThresholds: true  // true = automatic, false = manual
+    property real manualMinValue: -20.0
+    property real manualMaxValue: 20.0
+
+    // Property to expose settings dialog
+    property alias settingsDialog: settingsPopup
+
     // Properties for axis labels
     property string xAxisLabel: "X"
     property string yAxisLabel: "Y"
@@ -41,12 +51,26 @@ Rectangle {
         timeData.push(currentTime)
         currentTime += 0.1  // Increment time (adjust based on your update rate)
 
-        // Remove old data if we exceed maxDataPoints
-        if (xData.length > maxDataPoints) {
-            xData.shift()
-            yData.shift()
-            zData.shift()
-            timeData.shift()
+        // Calculate window size based on mode
+        var windowSize
+        if (windowModeIsSeconds) {
+            // Remove data older than windowValue seconds
+            var cutoffTime = currentTime - windowValue
+            while (timeData.length > 0 && timeData[0] < cutoffTime) {
+                xData.shift()
+                yData.shift()
+                zData.shift()
+                timeData.shift()
+            }
+        } else {
+            // Remove old data if we exceed windowValue frames
+            windowSize = Math.max(1, Math.floor(windowValue))
+            while (xData.length > windowSize) {
+                xData.shift()
+                yData.shift()
+                zData.shift()
+                timeData.shift()
+            }
         }
 
         // Update all series
@@ -60,11 +84,43 @@ Rectangle {
         seriesY.clear()
         seriesZ.clear()
 
+        // Calculate automatic thresholds if enabled
+        if (autoThresholds && xData.length > 0) {
+            var minVal = Infinity
+            var maxVal = -Infinity
+
+            for (var i = 0; i < xData.length; i++) {
+                if (showX) {
+                    minVal = Math.min(minVal, xData[i])
+                    maxVal = Math.max(maxVal, xData[i])
+                }
+                if (showY) {
+                    minVal = Math.min(minVal, yData[i])
+                    maxVal = Math.max(maxVal, yData[i])
+                }
+                if (showZ) {
+                    minVal = Math.min(minVal, zData[i])
+                    maxVal = Math.max(maxVal, zData[i])
+                }
+            }
+
+            // Add 10% padding to the range
+            var range = maxVal - minVal
+            if (range < 0.001) range = 1.0  // Minimum range to avoid division by zero
+            var padding = range * 0.1
+            axisValue.min = minVal - padding
+            axisValue.max = maxVal + padding
+        } else {
+            // Use manual thresholds
+            axisValue.min = manualMinValue
+            axisValue.max = manualMaxValue
+        }
+
         // Add all points if visible
-        for (var i = 0; i < xData.length; i++) {
-            if (showX) seriesX.append(timeData[i], xData[i])
-            if (showY) seriesY.append(timeData[i], yData[i])
-            if (showZ) seriesZ.append(timeData[i], zData[i])
+        for (var j = 0; j < xData.length; j++) {
+            if (showX) seriesX.append(timeData[j], xData[j])
+            if (showY) seriesY.append(timeData[j], yData[j])
+            if (showZ) seriesZ.append(timeData[j], zData[j])
         }
 
         // Update axis ranges
@@ -86,219 +142,580 @@ Rectangle {
         updateSeries()
     }
 
-    RowLayout {
+    // Main chart
+    ChartView {
+        id: chart
         anchors.fill: parent
         anchors.margins: 5
-        spacing: 5
+        backgroundColor: "#3a3a3a"
+        legend.visible: false
+        antialiasing: true
+        margins.top: 10
+        margins.bottom: 10
+        margins.left: 10
+        margins.right: 10
 
-        // Main chart
-        ChartView {
-            id: chart
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            backgroundColor: "#3a3a3a"
-            legend.visible: false
-            antialiasing: true
-            margins.top: 10
-            margins.bottom: 10
-            margins.left: 10
-            margins.right: 10
-
-            ValueAxis {
-                id: axisTime
-                titleText: "Time (s)"
-                labelFormat: "%.1f"
-                labelsColor: "#aaaaaa"
-                gridLineColor: "#555555"
-                color: "#666666"
-                labelsFont.pixelSize: 9
-            }
-
-            ValueAxis {
-                id: axisValue
-                min: root.minValue
-                max: root.maxValue
-                labelFormat: "%.1f"
-                labelsColor: "#aaaaaa"
-                gridLineColor: "#555555"
-                color: "#666666"
-                labelsFont.pixelSize: 9
-            }
-
-            LineSeries {
-                id: seriesX
-                name: root.xAxisLabel
-                color: "#ff5555"
-                width: 2
-                axisX: axisTime
-                axisY: axisValue
-                visible: root.showX
-            }
-
-            LineSeries {
-                id: seriesY
-                name: root.yAxisLabel
-                color: "#55ff55"
-                width: 2
-                axisX: axisTime
-                axisY: axisValue
-                visible: root.showY
-            }
-
-            LineSeries {
-                id: seriesZ
-                name: root.zAxisLabel
-                color: "#5555ff"
-                width: 2
-                axisX: axisTime
-                axisY: axisValue
-                visible: root.showZ
-            }
+        ValueAxis {
+            id: axisTime
+            titleText: "Time (s)"
+            labelFormat: "%.1f"
+            labelsColor: "#aaaaaa"
+            gridLineColor: "#555555"
+            color: "#666666"
+            labelsFont.pixelSize: 9
         }
 
-        // Control panel with checkboxes in column
-        Rectangle {
-            Layout.preferredWidth: 60
-            Layout.fillHeight: true
+        ValueAxis {
+            id: axisValue
+            min: root.minValue
+            max: root.maxValue
+            labelFormat: "%.1f"
+            labelsColor: "#aaaaaa"
+            gridLineColor: "#555555"
+            color: "#666666"
+            labelsFont.pixelSize: 9
+        }
+
+        LineSeries {
+            id: seriesX
+            name: root.xAxisLabel
+            color: "#ff5555"
+            width: 2
+            axisX: axisTime
+            axisY: axisValue
+            visible: root.showX
+        }
+
+        LineSeries {
+            id: seriesY
+            name: root.yAxisLabel
+            color: "#55ff55"
+            width: 2
+            axisX: axisTime
+            axisY: axisValue
+            visible: root.showY
+        }
+
+        LineSeries {
+            id: seriesZ
+            name: root.zAxisLabel
+            color: "#5555ff"
+            width: 2
+            axisX: axisTime
+            axisY: axisValue
+            visible: root.showZ
+        }
+    }
+
+    // Settings popup dialog
+    Popup {
+        id: settingsPopup
+        modal: true
+        focus: true
+        closePolicy: Popup.NoAutoClose
+        x: 0
+        y: 0
+        width: parent.width
+        height: parent.height
+        padding: 0
+
+        background: Rectangle {
             color: "#3a3a3a"
-            border.color: "#555555"
-            border.width: 1
-            radius: 3
+            border.color: "#5c8dbd"
+            border.width: 2
+            radius: 5
+        }
+
+        ScrollView {
+            anchors.fill: parent
+            anchors.margins: 5
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AsNeeded
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
             ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 10
+                width: settingsPopup.width - 30
                 spacing: 15
+                anchors.margins: 20
 
-                Item {
-                    Layout.fillHeight: true
+                Label {
+                    text: "Plot Settings"
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: "#ffffff"
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: 10
                 }
 
-                // X-axis checkbox
-                CheckBox {
-                    id: checkboxX
-                    text: root.xAxisLabel
-                    checked: root.showX
-                    Layout.alignment: Qt.AlignLeft
-                    onCheckedChanged: {
-                        root.showX = checked
-                        updateSeries()
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: "#555555"
+                }
+
+                // Window mode section
+                Label {
+                    text: "Window Mode"
+                    font.pixelSize: 12
+                    font.bold: true
+                    color: "#cccccc"
+                }
+
+                ButtonGroup {
+                    id: windowModeGroup
+                    exclusive: true
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    RadioButton {
+                        id: radioSeconds
+                        text: "Last X seconds"
+                        checked: root.windowModeIsSeconds
+                        font.pixelSize: 11
+                        ButtonGroup.group: windowModeGroup
+
+                    indicator: Rectangle {
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        x: radioSeconds.leftPadding
+                        y: parent.height / 2 - height / 2
+                        radius: 9
+                        border.color: radioSeconds.checked ? "#5c8dbd" : "#666666"
+                        border.width: 2
+                        color: "#3a3a3a"
+
+                        Rectangle {
+                            width: 10
+                            height: 10
+                            x: 4
+                            y: 4
+                            radius: 5
+                            color: "#5c8dbd"
+                            visible: radioSeconds.checked
+                        }
                     }
 
                     contentItem: Text {
-                        text: checkboxX.text
-                        font.pixelSize: 11
-                        color: "#cccccc"
-                        leftPadding: checkboxX.indicator.width + checkboxX.spacing
+                        text: radioSeconds.text
+                        font: radioSeconds.font
+                        color: "#aaaaaa"
                         verticalAlignment: Text.AlignVCenter
+                        leftPadding: radioSeconds.indicator.width + radioSeconds.spacing
+                    }
+                }
+
+                TextField {
+                    id: windowSecondsField
+                    Layout.preferredWidth: 80
+                    text: root.windowValue.toString()
+                    enabled: radioSeconds.checked
+                    font.pixelSize: 11
+                    horizontalAlignment: TextInput.AlignHCenter
+                    validator: DoubleValidator { bottom: 0.1; decimals: 1 }
+
+                    background: Rectangle {
+                        color: parent.enabled ? "#464545" : "#3a3a3a"
+                        border.color: parent.activeFocus ? "#5c8dbd" : "#555555"
+                        border.width: 1
+                        radius: 2
                     }
 
+                    color: "#ffffff"
+                }
+            }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    RadioButton {
+                        id: radioFrames
+                        text: "Last X frames"
+                        checked: !root.windowModeIsSeconds
+                        font.pixelSize: 11
+                        ButtonGroup.group: windowModeGroup
+
+                        indicator: Rectangle {
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        x: radioFrames.leftPadding
+                        y: parent.height / 2 - height / 2
+                        radius: 9
+                        border.color: radioFrames.checked ? "#5c8dbd" : "#666666"
+                        border.width: 2
+                        color: "#3a3a3a"
+
+                        Rectangle {
+                            width: 10
+                            height: 10
+                            x: 4
+                            y: 4
+                            radius: 5
+                            color: "#5c8dbd"
+                            visible: radioFrames.checked
+                        }
+                    }
+
+                    contentItem: Text {
+                        text: radioFrames.text
+                        font: radioFrames.font
+                        color: "#aaaaaa"
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: radioFrames.indicator.width + radioFrames.spacing
+                    }
+                }
+
+                TextField {
+                    id: windowFramesField
+                    Layout.preferredWidth: 80
+                    text: root.windowModeIsSeconds ? "50" : root.windowValue.toString()
+                    enabled: radioFrames.checked
+                    font.pixelSize: 11
+                    horizontalAlignment: TextInput.AlignHCenter
+                    validator: IntValidator { bottom: 1 }
+
+                    background: Rectangle {
+                        color: parent.enabled ? "#464545" : "#3a3a3a"
+                        border.color: parent.activeFocus ? "#5c8dbd" : "#555555"
+                        border.width: 1
+                        radius: 2
+                    }
+
+                    color: "#ffffff"
+                }
+            }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: "#555555"
+                }
+
+                // Thresholds section
+                Label {
+                    text: "Thresholds"
+                    font.pixelSize: 12
+                    font.bold: true
+                    color: "#cccccc"
+                }
+
+                ButtonGroup {
+                    id: thresholdModeGroup
+                    exclusive: true
+                }
+
+                RadioButton {
+                    id: radioAutoThresholds
+                    text: "Automatic thresholds"
+                    checked: root.autoThresholds
+                    font.pixelSize: 11
+                    Layout.fillWidth: true
+                    ButtonGroup.group: thresholdModeGroup
+
+                indicator: Rectangle {
+                    implicitWidth: 18
+                    implicitHeight: 18
+                    x: radioAutoThresholds.leftPadding
+                    y: parent.height / 2 - height / 2
+                    radius: 9
+                    border.color: radioAutoThresholds.checked ? "#5c8dbd" : "#666666"
+                    border.width: 2
+                    color: "#3a3a3a"
+
+                    Rectangle {
+                        width: 10
+                        height: 10
+                        x: 4
+                        y: 4
+                        radius: 5
+                        color: "#5c8dbd"
+                        visible: radioAutoThresholds.checked
+                    }
+                }
+
+                contentItem: Text {
+                    text: radioAutoThresholds.text
+                    font: radioAutoThresholds.font
+                    color: "#aaaaaa"
+                    verticalAlignment: Text.AlignVCenter
+                    leftPadding: radioAutoThresholds.indicator.width + radioAutoThresholds.spacing
+                }
+            }
+
+                RadioButton {
+                    id: radioManualThresholds
+                    text: "Manual thresholds"
+                    checked: !root.autoThresholds
+                    font.pixelSize: 11
+                    Layout.fillWidth: true
+                    ButtonGroup.group: thresholdModeGroup
+
                     indicator: Rectangle {
-                        implicitWidth: 16
-                        implicitHeight: 16
-                        x: checkboxX.leftPadding
+                    implicitWidth: 18
+                    implicitHeight: 18
+                    x: radioManualThresholds.leftPadding
+                    y: parent.height / 2 - height / 2
+                    radius: 9
+                    border.color: radioManualThresholds.checked ? "#5c8dbd" : "#666666"
+                    border.width: 2
+                    color: "#3a3a3a"
+
+                    Rectangle {
+                        width: 10
+                        height: 10
+                        x: 4
+                        y: 4
+                        radius: 5
+                        color: "#5c8dbd"
+                        visible: radioManualThresholds.checked
+                    }
+                }
+
+                contentItem: Text {
+                    text: radioManualThresholds.text
+                    font: radioManualThresholds.font
+                    color: "#aaaaaa"
+                    verticalAlignment: Text.AlignVCenter
+                    leftPadding: radioManualThresholds.indicator.width + radioManualThresholds.spacing
+                }
+            }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+                    enabled: radioManualThresholds.checked
+
+                    Label {
+                        text: "Min:"
+                        font.pixelSize: 11
+                        color: "#aaaaaa"
+                    }
+
+                    TextField {
+                        id: minValueField
+                        Layout.preferredWidth: 100
+                        text: root.manualMinValue.toString()
+                        enabled: radioManualThresholds.checked
+                        font.pixelSize: 11
+                        horizontalAlignment: TextInput.AlignHCenter
+                        validator: DoubleValidator { decimals: 2 }
+
+                        background: Rectangle {
+                            color: parent.enabled ? "#464545" : "#3a3a3a"
+                            border.color: parent.activeFocus ? "#5c8dbd" : "#555555"
+                            border.width: 1
+                            radius: 2
+                        }
+
+                        color: "#ffffff"
+                    }
+
+                    Label {
+                        text: "Max:"
+                        font.pixelSize: 11
+                        color: "#aaaaaa"
+                    }
+
+                    TextField {
+                        id: maxValueField
+                        Layout.preferredWidth: 100
+                        text: root.manualMaxValue.toString()
+                        enabled: radioManualThresholds.checked
+                        font.pixelSize: 11
+                        horizontalAlignment: TextInput.AlignHCenter
+                        validator: DoubleValidator { decimals: 2 }
+
+                        background: Rectangle {
+                            color: parent.enabled ? "#464545" : "#3a3a3a"
+                            border.color: parent.activeFocus ? "#5c8dbd" : "#555555"
+                            border.width: 1
+                            radius: 2
+                        }
+
+                        color: "#ffffff"
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: "#555555"
+                }
+
+                // Visible plots section
+                Label {
+                    text: "Visible Plots"
+                    font.pixelSize: 12
+                    font.bold: true
+                    color: "#cccccc"
+                }
+
+                CheckBox {
+                    id: showXCheckbox
+                    text: root.xAxisLabel
+                    checked: root.showX
+                    font.pixelSize: 11
+
+                    indicator: Rectangle {
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        x: showXCheckbox.leftPadding
                         y: parent.height / 2 - height / 2
                         radius: 3
                         border.color: "#ff5555"
                         border.width: 2
-                        color: checkboxX.checked ? "#ff5555" : "transparent"
+                        color: showXCheckbox.checked ? "#ff5555" : "transparent"
 
                         Rectangle {
-                            width: 8
-                            height: 8
+                            width: 10
+                            height: 10
                             x: 4
                             y: 4
                             radius: 2
                             color: "#ffffff"
-                            visible: checkboxX.checked
+                            visible: showXCheckbox.checked
                         }
-                    }
-                }
-
-                // Y-axis checkbox
-                CheckBox {
-                    id: checkboxY
-                    text: root.yAxisLabel
-                    checked: root.showY
-                    Layout.alignment: Qt.AlignLeft
-                    onCheckedChanged: {
-                        root.showY = checked
-                        updateSeries()
                     }
 
                     contentItem: Text {
-                        text: checkboxY.text
-                        font.pixelSize: 11
-                        color: "#cccccc"
-                        leftPadding: checkboxY.indicator.width + checkboxY.spacing
+                        text: showXCheckbox.text
+                        font: showXCheckbox.font
+                        color: "#aaaaaa"
                         verticalAlignment: Text.AlignVCenter
+                        leftPadding: showXCheckbox.indicator.width + showXCheckbox.spacing
                     }
+                }
+
+                CheckBox {
+                    id: showYCheckbox
+                    text: root.yAxisLabel
+                    checked: root.showY
+                    font.pixelSize: 11
 
                     indicator: Rectangle {
-                        implicitWidth: 16
-                        implicitHeight: 16
-                        x: checkboxY.leftPadding
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        x: showYCheckbox.leftPadding
                         y: parent.height / 2 - height / 2
                         radius: 3
                         border.color: "#55ff55"
                         border.width: 2
-                        color: checkboxY.checked ? "#55ff55" : "transparent"
+                        color: showYCheckbox.checked ? "#55ff55" : "transparent"
 
                         Rectangle {
-                            width: 8
-                            height: 8
+                            width: 10
+                            height: 10
                             x: 4
                             y: 4
                             radius: 2
                             color: "#ffffff"
-                            visible: checkboxY.checked
+                            visible: showYCheckbox.checked
                         }
-                    }
-                }
-
-                // Z-axis checkbox
-                CheckBox {
-                    id: checkboxZ
-                    text: root.zAxisLabel
-                    checked: root.showZ
-                    Layout.alignment: Qt.AlignLeft
-                    onCheckedChanged: {
-                        root.showZ = checked
-                        updateSeries()
                     }
 
                     contentItem: Text {
-                        text: checkboxZ.text
-                        font.pixelSize: 11
-                        color: "#cccccc"
-                        leftPadding: checkboxZ.indicator.width + checkboxZ.spacing
+                        text: showYCheckbox.text
+                        font: showYCheckbox.font
+                        color: "#aaaaaa"
                         verticalAlignment: Text.AlignVCenter
+                        leftPadding: showYCheckbox.indicator.width + showYCheckbox.spacing
                     }
+                }
+
+                CheckBox {
+                    id: showZCheckbox
+                    text: root.zAxisLabel
+                    checked: root.showZ
+                    font.pixelSize: 11
 
                     indicator: Rectangle {
-                        implicitWidth: 16
-                        implicitHeight: 16
-                        x: checkboxZ.leftPadding
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        x: showZCheckbox.leftPadding
                         y: parent.height / 2 - height / 2
                         radius: 3
                         border.color: "#5555ff"
                         border.width: 2
-                        color: checkboxZ.checked ? "#5555ff" : "transparent"
+                        color: showZCheckbox.checked ? "#5555ff" : "transparent"
 
                         Rectangle {
-                            width: 8
-                            height: 8
+                            width: 10
+                            height: 10
                             x: 4
                             y: 4
                             radius: 2
                             color: "#ffffff"
-                            visible: checkboxZ.checked
+                            visible: showZCheckbox.checked
                         }
+                    }
+
+                    contentItem: Text {
+                        text: showZCheckbox.text
+                        font: showZCheckbox.font
+                        color: "#aaaaaa"
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: showZCheckbox.indicator.width + showZCheckbox.spacing
                     }
                 }
 
                 Item {
                     Layout.fillHeight: true
+                    Layout.preferredHeight: 20
+                }
+
+                // Save button
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 35
+                    Layout.margins: 20
+                    text: "Save"
+
+                    background: Rectangle {
+                        color: parent.hovered ? "#5c8dbd" : "#464545"
+                        radius: 3
+                        border.color: "#5c8dbd"
+                        border.width: 1
+                    }
+
+                    contentItem: Label {
+                        text: parent.text
+                        font.pixelSize: 12
+                        font.bold: true
+                        color: "#ffffff"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    onClicked: {
+                        // Save window mode settings
+                        root.windowModeIsSeconds = radioSeconds.checked
+                        if (radioSeconds.checked) {
+                            root.windowValue = parseFloat(windowSecondsField.text) || 10.0
+                        } else {
+                            root.windowValue = parseInt(windowFramesField.text) || 50
+                        }
+
+                        // Save threshold settings
+                        root.autoThresholds = radioAutoThresholds.checked
+                        if (!root.autoThresholds) {
+                            root.manualMinValue = parseFloat(minValueField.text) || -20.0
+                            root.manualMaxValue = parseFloat(maxValueField.text) || 20.0
+                        }
+
+                        // Save visibility settings
+                        root.showX = showXCheckbox.checked
+                        root.showY = showYCheckbox.checked
+                        root.showZ = showZCheckbox.checked
+
+                        // Update the plot
+                        updateSeries()
+
+                        // Close dialog
+                        settingsPopup.close()
+                    }
                 }
             }
         }
