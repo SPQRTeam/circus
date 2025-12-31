@@ -20,16 +20,3 @@ teams:
       number: 3
       position: [1.0, 0.0, 0.7]
       orientation: [0.0, 0.0, 3.14]
-gui_config:
-  - tools_panel:
-      - 1
-      - 2
-  - cell_data:
-      - cell:
-          - 0
-          - 0
-        stream: Team 1 - red_Booster-K1_0 (R1) - IMU Linear Acceleration
-      - cell:
-          - 0
-          - 1
-        stream: Team 1 - red_Booster-K1_0 (R1) - IMU Linear Acceleration
