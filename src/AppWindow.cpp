@@ -244,7 +244,8 @@ QString AppWindow::getCurrentScenePath() const {
     return currentScenePath_;
 }
 
-void AppWindow::saveGuiConfig(const QString& yamlFile, const QVariantList& cellData, int numRows, int numColumns) {
+void AppWindow::saveGuiConfig(const QString& yamlFile, const QVariantList& cellData, int numRows,
+                              int numColumns) {
     try {
         qDebug() << "Saving GUI config to:" << yamlFile;
 

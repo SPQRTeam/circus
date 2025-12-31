@@ -9,7 +9,6 @@
 #define DELETE "DELETE"
 #define PUT "PUT"
 
-
 /*
 Endpoints and parameters:
 https://docs.docker.com/reference/api/engine/version/v1.39/
@@ -21,8 +20,6 @@ https://docs.docker.com/reference/api/engine/version/v1.39/
 #define DELETE_OK_RESPONSE 204
 
 namespace spqr {
-
-
 
 inline std::string create_container_endpoint(const std::string& name) {
     return "/containers/create?name=" + name;
@@ -133,7 +130,6 @@ void Container::remove() {
     request(DELETE, endpoint, DELETE_OK_RESPONSE);
     state = ContainerState::REMOVED;
 }
-
 
 std::string Container::request(const std::string& method, const std::string& endpoint,
                                const long expected_response, const nlohmann::json* body) {

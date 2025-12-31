@@ -37,18 +37,19 @@ SceneParser::SceneParser(const string& yamlPath) {
     // Load GUI configuration parameters
     if (sceneRoot["gui_config"]) {
         const YAML::Node& guiConfigNode = sceneRoot["gui_config"];
-        if (!guiConfigNode.IsSequence()  || guiConfigNode.size() == 0) {
+        if (!guiConfigNode.IsSequence() || guiConfigNode.size() == 0) {
             throw runtime_error("The GUI configuration must be a sequence and contain at least one element.");
         }
         const YAML::Node& toolsPanelNode = guiConfigNode[0]["tools_panel"];
         if (toolsPanelNode && toolsPanelNode.IsSequence() && toolsPanelNode.size() >= 2) {
-                scene.guiConfig.rows = toolsPanelNode[0].as<int>();
-                scene.guiConfig.columns = toolsPanelNode[1].as<int>();
-            }
+            scene.guiConfig.rows = toolsPanelNode[0].as<int>();
+            scene.guiConfig.columns = toolsPanelNode[1].as<int>();
+        }
         const YAML::Node& cellDataNode = guiConfigNode[1]["cell_data"];
         if (cellDataNode && cellDataNode.IsSequence()) {
             if (cellDataNode.size() > scene.guiConfig.rows * scene.guiConfig.columns) {
-                throw runtime_error("The number of cell data entries must be less than or equal to the total number of GUI cells.");
+                throw runtime_error("The number of cell data entries must be less than or equal to the total "
+                                    "number of GUI cells.");
             }
             for (const YAML::Node& cellNode : cellDataNode) {
                 CellData cellData;

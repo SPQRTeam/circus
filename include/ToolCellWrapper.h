@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QObject>
-#include <QVariantMap>
 #include <QString>
 #include <QVariantList>
+#include <QVariantMap>
 
 #include "RobotQmlWrapper.h"
 
@@ -176,12 +176,11 @@ class ToolCellWrapper : public QObject {
             QVariantList robots = teamMap["robots"].toList();
             for (const QVariant& robotVariant : robots) {
                 RobotQmlWrapper* robot = robotVariant.value<RobotQmlWrapper*>();
-                if (!robot) continue;
+                if (!robot)
+                    continue;
 
-                QString robotPrefix = QString("%1 - %2 (R%3)")
-                                          .arg(teamPrefix)
-                                          .arg(robot->name())
-                                          .arg(robot->number());
+                QString robotPrefix
+                    = QString("%1 - %2 (R%3)").arg(teamPrefix).arg(robot->name()).arg(robot->number());
 
                 if (streamName.startsWith(robotPrefix)) {
                     return robot;

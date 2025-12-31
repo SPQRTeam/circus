@@ -25,7 +25,8 @@ void SimulationThread::run() {
             // Emit signal to update QML
             emit stepCompleted();
 
-            next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
+            next_step_time
+                += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
             std::this_thread::sleep_until(next_step_time);
 
             if (clock::now() > next_step_time)

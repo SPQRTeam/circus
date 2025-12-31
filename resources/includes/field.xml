@@ -4,14 +4,14 @@
     <texture name="grid_tex" type="2d" builtin="checker" rgb1="0.2 0.2 0.2" rgb2="0.25 0.25 0.25" width="512" height="512"/>
     <material name="grid_mat" texture="grid_tex" texrepeat="50 50"/>
 
-    <texture name="field" type="2d" file="../textures/field.png"/>    
+    <texture name="field" type="2d" file="../textures/field.png"/>
     <material name="grass" texture="field" texrepeat="1 1" specular="0.2" shininess="0.1" reflectance="0.0"/>
     <mesh name="goal_mesh" file="../meshes/goal/goal.obj"/>
 </asset>
 
 <worldbody>
     <geom name="infinite_grid" type="plane" size="30 30 0.1" material="grid_mat" pos="0 0 -0.05" friction="10 10 10"/>
-    
+
     <geom name="ground" type="plane" size="8 5.5 0.1" material="grass" pos="0 0 0" condim="3" friction="0.01 0.01 0.01"/>
     <geom name="goal_left" type="mesh" mesh="goal_mesh"  pos="-7.65 0 0" euler="1.57 0 0"/>
     <geom name="goal_right" type="mesh" mesh="goal_mesh" pos="7.65 0 0" euler="1.57 3.14 0"/>
