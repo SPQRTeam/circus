@@ -29,7 +29,19 @@
 
 </asset>
 
+<visual>
+    <!-- <quality shadowsize="4096"/> -->
+    <!-- <map shadowclip="1.0" znear="0.01"/> -->
+</visual>
+
 <worldbody>
+
+    <!-- <light name="spot1" castshadow="true" pos="-8 -5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
+    <light name="spot2" castshadow="true" pos="8 -5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
+    <light name="spot3" castshadow="true" pos="-8 5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
+    <light name="spot4" castshadow="true" pos="8 5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/> -->
+    <light name="center" castshadow="false" pos="0 0 100" dir="0 0 -1" ambient="1 1 1"/>
+
     <!-- Grid -->
     <geom name="infinite_grid" type="plane" size="30 30 0.1" material="grid_mat" pos="0 0 -0.05" friction="10 10 10"/>
 

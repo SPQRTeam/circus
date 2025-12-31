@@ -139,7 +139,7 @@ string SceneParser::buildMuJoCoXml() {
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");
-    map.append_attribute("shadowsize") = "0";
+    // map.append_attribute("shadowsize") = "0";
 
     include_node = mujoco.append_child("include");
     include_node.append_attribute("file")
@@ -163,12 +163,12 @@ string SceneParser::buildMuJoCoXml() {
     xml_node actuator = mujoco.append_child("actuator");
     xml_node sensor = mujoco.append_child("sensor");
 
-    xml_node light = worldbody.append_child("light");
-    light.append_attribute("ambient") = "1.0 1.0 1.0";
-    light.append_attribute("diffuse") = "0.0 0.0 0.0";
-    light.append_attribute("specular") = "0.0 0.0 0.0";
-    light.append_attribute("pos") = "0 0 100";
-    light.append_attribute("dir") = "0 0 -1";
+    // xml_node light = worldbody.append_child("light");
+    // light.append_attribute("ambient") = "1.0 1.0 1.0";
+    // light.append_attribute("diffuse") = "0.0 0.0 0.0";
+    // light.append_attribute("specular") = "0.0 0.0 0.0";
+    // light.append_attribute("pos") = "0 0 100";
+    // light.append_attribute("dir") = "0 0 -1";
 
     for (const shared_ptr<Team>& team : scene.teams) {
         for (const shared_ptr<Robot>& robot : team->robots) {
