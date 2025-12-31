@@ -2,7 +2,12 @@
     <asset>
         <!-- Ball textures and materials -->
         <texture name="ball_diffuse" file="../meshes/ball/Cafusa_Diffuse.png" type="2d"/>
-        <material name="ball_mat" texture="ball_diffuse" texrepeat="1 1" rgba="1 1 1 1"/>
+        <material name="ball_mat" texture="ball_diffuse" 
+                  texrepeat="1 1" 
+                  specular="0.3" 
+                  shininess="0.5" 
+                  reflectance="0.05"
+                  rgba="0.5 0.5 0.5 1"/>
         <mesh name="ball_mesh" file="../meshes/ball/ball.obj"/>
     </asset>
     <worldbody>
