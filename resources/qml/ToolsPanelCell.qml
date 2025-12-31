@@ -311,12 +311,75 @@ Item {
 
             // Plot area - shows Plot2D for data streams
             Rectangle {
+                id: plotArea
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 100
                 color: "#1a1a1a"
                 border.color: "#ff0000"
                 border.width: 2
+
+                // Function to configure streams based on data type
+                function configureStreamsForDataType(streamName) {
+                    var streamConfigs = []
+
+                    console.log("Configuring streams for data type:", streamName)
+
+                    // Determine stream configuration based on data type
+                    if (streamName.indexOf("IMU Linear Acceleration") >= 0) {
+                        console.log("Configuring IMU Linear Acceleration streams")
+                        streamConfigs = [
+                            { name: "X", color: "#ff5555", visible: true },
+                            { name: "Y", color: "#55ff55", visible: true },
+                            { name: "Z", color: "#5555ff", visible: true }
+                        ]
+                        plotLoader.item.manualMinValue = -20.0
+                        plotLoader.item.manualMaxValue = 20.0
+                    }
+                    else if (streamName.indexOf("IMU Angular Velocity") >= 0) {
+                        streamConfigs = [
+                            { name: "Roll", color: "#ff5555", visible: true },
+                            { name: "Pitch", color: "#55ff55", visible: true },
+                            { name: "Yaw", color: "#5555ff", visible: true }
+                        ]
+                        plotLoader.item.manualMinValue = -10.0
+                        plotLoader.item.manualMaxValue = 10.0
+                    }
+                    else if (streamName.indexOf("Pose Position") >= 0) {
+                        streamConfigs = [
+                            { name: "X", color: "#ff5555", visible: true },
+                            { name: "Y", color: "#55ff55", visible: true },
+                            { name: "Z", color: "#5555ff", visible: true }
+                        ]
+                        plotLoader.item.manualMinValue = -5.0
+                        plotLoader.item.manualMaxValue = 5.0
+                    }
+                    else if (streamName.indexOf("Pose Orientation") >= 0) {
+                        streamConfigs = [
+                            { name: "Roll", color: "#ff5555", visible: true },
+                            { name: "Pitch", color: "#55ff55", visible: true },
+                            { name: "Yaw", color: "#5555ff", visible: true }
+                        ]
+                        plotLoader.item.manualMinValue = -3.5
+                        plotLoader.item.manualMaxValue = 3.5
+                    }
+                    else {
+                        // Default: 3 streams for unknown types
+                        console.log("Using default stream configuration for:", streamName)
+                        streamConfigs = [
+                            { name: "Value 1", color: "#ff5555", visible: true },
+                            { name: "Value 2", color: "#55ff55", visible: true },
+                            { name: "Value 3", color: "#5555ff", visible: true }
+                        ]
+                        plotLoader.item.manualMinValue = -20.0
+                        plotLoader.item.manualMaxValue = 20.0
+                    }
+
+                    console.log("Stream configs:", JSON.stringify(streamConfigs))
+                    if (plotLoader.item) {
+                        plotLoader.item.initializeStreams(streamConfigs)
+                    }
+                }
 
                 Label {
                     anchors.centerIn: parent
@@ -347,32 +410,7 @@ Item {
                         if (item) {
                             item.title = dataStreamCombo.selectedStream
                             console.log("Setting plot title:", dataStreamCombo.selectedStream)
-                            // Adjust min/max and labels based on stream type
-                            if (dataStreamCombo.selectedStream.indexOf("IMU Linear Acceleration") >= 0) {
-                                item.minValue = -20.0
-                                item.maxValue = 20.0
-                                item.xAxisLabel = "X"
-                                item.yAxisLabel = "Y"
-                                item.zAxisLabel = "Z"
-                            } else if (dataStreamCombo.selectedStream.indexOf("IMU Angular Velocity") >= 0) {
-                                item.minValue = -10.0
-                                item.maxValue = 10.0
-                                item.xAxisLabel = "roll"
-                                item.yAxisLabel = "pitch"
-                                item.zAxisLabel = "yaw"
-                            } else if (dataStreamCombo.selectedStream.indexOf("Pose Position") >= 0) {
-                                item.minValue = -5.0
-                                item.maxValue = 5.0
-                                item.xAxisLabel = "X"
-                                item.yAxisLabel = "Y"
-                                item.zAxisLabel = "Z"
-                            } else if (dataStreamCombo.selectedStream.indexOf("Pose Orientation") >= 0) {
-                                item.minValue = -3.5
-                                item.maxValue = 3.5
-                                item.xAxisLabel = "roll"
-                                item.yAxisLabel = "pitch"
-                                item.zAxisLabel = "yaw"
-                            }
+                            plotArea.configureStreamsForDataType(dataStreamCombo.selectedStream)
                         }
                     }
 
@@ -381,33 +419,7 @@ Item {
                         function onSelectedStreamChanged() {
                             if (plotLoader.item) {
                                 plotLoader.item.title = dataStreamCombo.selectedStream
-                                // Update labels and ranges based on stream type
-                                if (dataStreamCombo.selectedStream.indexOf("IMU Linear Acceleration") >= 0) {
-                                    plotLoader.item.minValue = -20.0
-                                    plotLoader.item.maxValue = 20.0
-                                    plotLoader.item.xAxisLabel = "X"
-                                    plotLoader.item.yAxisLabel = "Y"
-                                    plotLoader.item.zAxisLabel = "Z"
-                                } else if (dataStreamCombo.selectedStream.indexOf("IMU Angular Velocity") >= 0) {
-                                    plotLoader.item.minValue = -10.0
-                                    plotLoader.item.maxValue = 10.0
-                                    plotLoader.item.xAxisLabel = "roll"
-                                    plotLoader.item.yAxisLabel = "pitch"
-                                    plotLoader.item.zAxisLabel = "yaw"
-                                } else if (dataStreamCombo.selectedStream.indexOf("Pose Position") >= 0) {
-                                    plotLoader.item.minValue = -5.0
-                                    plotLoader.item.maxValue = 5.0
-                                    plotLoader.item.xAxisLabel = "X"
-                                    plotLoader.item.yAxisLabel = "Y"
-                                    plotLoader.item.zAxisLabel = "Z"
-                                } else if (dataStreamCombo.selectedStream.indexOf("Pose Orientation") >= 0) {
-                                    plotLoader.item.minValue = -3.5
-                                    plotLoader.item.maxValue = 3.5
-                                    plotLoader.item.xAxisLabel = "roll"
-                                    plotLoader.item.yAxisLabel = "pitch"
-                                    plotLoader.item.zAxisLabel = "yaw"
-                                }
-                                // Clear old data when switching streams
+                                plotArea.configureStreamsForDataType(dataStreamCombo.selectedStream)
                                 plotLoader.item.clearData()
                             }
                         }
@@ -422,7 +434,8 @@ Item {
                             if (plotLoader.item && cellWrapper.hasData) {
                                 var data = cellWrapper.data
                                 if (data && data.x !== undefined) {
-                                    plotLoader.item.addDataPoint(data.x, data.y, data.z)
+                                    // Pass data as array to new Plot2D API
+                                    plotLoader.item.addDataPoint([data.x, data.y, data.z])
                                 }
                             }
                         }
