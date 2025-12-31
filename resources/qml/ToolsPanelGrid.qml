@@ -77,7 +77,7 @@ Item {
                                 y: 0
                                 width: 4
                                 height: parent.height
-                                color: columnResizeArea.containsMouse || columnResizeArea.pressed ? "#5c8dbd" : "transparent"
+                                color: columnResizeArea.containsMouse || columnResizeArea.pressed ? "#5c8dbd" : "#5c5b5b"
                                 z: 10
 
                                 MouseArea {
@@ -128,7 +128,7 @@ Item {
                         y: parent.height - 2
                         width: parent.width
                         height: 4
-                        color: rowResizeArea.containsMouse || rowResizeArea.pressed ? "#5c8dbd" : "transparent"
+                        color: rowResizeArea.containsMouse || rowResizeArea.pressed ? "#5c8dbd" : "#5c5b5b"
                         z: 10
 
                         MouseArea {

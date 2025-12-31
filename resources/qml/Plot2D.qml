@@ -181,14 +181,9 @@ Rectangle {
     ChartView {
         id: chart
         anchors.fill: parent
-        anchors.margins: 5
         backgroundColor: "#3a3a3a"
         legend.visible: false
         antialiasing: true
-        margins.top: 10
-        margins.bottom: 10
-        margins.left: 10
-        margins.right: 10
 
         ValueAxis {
             id: axisTime
@@ -197,9 +192,10 @@ Rectangle {
             labelsColor: "#ffffff"
             gridLineColor: "#555555"
             color: "#ffffff"
-            labelsFont.pixelSize: 10
-            titleFont.pixelSize: 11
+            labelsFont.pixelSize: 11
+            titleFont.pixelSize: 12
             titleFont.bold: true
+            titleBrush: Qt.rgba(1.0, 1.0, 1.0, 1.0)  // Explicitly set title color to white
             tickCount: Math.floor(root.windowSeconds) + 1
         }
 
@@ -212,6 +208,7 @@ Rectangle {
             gridLineColor: "#555555"
             color: "#ffffff"
             labelsFont.pixelSize: 10
+            titleBrush: Qt.rgba(1.0, 1.0, 1.0, 1.0)  // Explicitly set title color to white
         }
     }
 
@@ -220,12 +217,11 @@ Rectangle {
         id: settingsPopup
         modal: false
         focus: false
+        x: 10
+        y: 10
+        width: parent.width - 20
+        height: parent.height - 20
         closePolicy: Popup.CloseOnPressOutside
-        x: 0
-        y: 0
-        width: parent.width
-        height: parent.height
-        padding: 0
 
         background: Rectangle {
             color: "#3a3a3a"

@@ -12,6 +12,9 @@ Item {
     required property var panel
     required property Component plot2DComponent
 
+    // Stream labels for current data type
+    property var streamLabels: ["Value 1", "Value 2", "Value 3"]
+
     // ToolCellWrapper instance for this cell
     ToolCellWrapper {
         id: cellWrapper
@@ -20,10 +23,10 @@ Item {
     // Cell Content
     Rectangle {
         anchors.fill: parent
-        anchors.margins: 2
-        color: "#3a3a3a"
-        border.color: "#5c8dbd"
-        border.width: 1
+        // anchors.margins: 10
+        color: "#2a2a2a"
+        // border.color: "#5c8dbd"
+        // border.width: 1
         radius: 2
 
         MouseArea {
@@ -75,14 +78,18 @@ Item {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 5
-            spacing: 3
+            anchors.margins: 0
+            spacing: 0                
 
             // Header with cell info and stream selector
             RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 28
-                spacing: 5
+                Layout.topMargin: 10
+                Layout.bottomMargin: 5
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+                spacing: 0
 
                 Label {
                     font.pixelSize: 9
@@ -93,11 +100,12 @@ Item {
                     id: settingsButton
                     Layout.preferredWidth: 25
                     Layout.preferredHeight: 25
+                    Layout.rightMargin: 10
                     enabled: plotLoader.item !== null
 
                     background: Rectangle {
                         color: parent.hovered ? "#5c8dbd" : "#464545"
-                        border.color: "#5c8dbd"
+                        border.color: parent.hovered ? "#5c8dbd" : "#464545"
                         border.width: 1
                         radius: 2
                     }
@@ -250,15 +258,20 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 Layout.minimumHeight: 30
+                Layout.topMargin: 5
+                Layout.bottomMargin: 5
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
                 color: "#5c5b5b"
                 radius: 3
-                border.color: "#5c8dbd"
-                border.width: 1
+                // border.color: "#5c8dbd"
+                // border.width: 1
+
 
                 Label {
                     anchors.fill: parent
                     anchors.margins: 6
-                    font.pixelSize: 11
+                    font.pixelSize: 13
                     font.family: "monospace"
                     font.bold: true
                     color: "#ffffff"
@@ -270,27 +283,45 @@ Item {
                         if (cellWrapper.hasData) {
                             var data = cellWrapper.data
                             if (data && data.x !== undefined) {
-                                // Determine labels based on stream type
-                                var label1 = "X"
-                                var label2 = "Y"
-                                var label3 = "Z"
-                                if (dataStreamCombo.selectedStream.indexOf("Angular Velocity") >= 0 ||
-                                    dataStreamCombo.selectedStream.indexOf("Orientation") >= 0) {
-                                    label1 = "R"
-                                    label2 = "P"
-                                    label3 = "Y"
+                                // Build dynamic text based on number of streams
+                                var dataValues = [data.x, data.y, data.z]
+                                var lines = []
+
+                                // Helper function to format number with fixed width
+                                function formatValue(val) {
+                                    var numStr = val.toFixed(4)  // Always 4 decimal places
+                                    var parts = numStr.split('.')
+                                    var intPart = parts[0]
+                                    var decPart = parts[1]
+
+                                    // Handle negative sign
+                                    var isNegative = intPart.charAt(0) === '-'
+                                    var absIntPart = isNegative ? intPart.substring(1) : intPart
+
+                                    // Pre-allocate 3 digits for integer part (supports -999 to 999)
+                                    var paddedInt = absIntPart.padStart(3, ' ')
+
+                                    // Add sign or space
+                                    var sign = isNegative ? '-' : ' '
+
+                                    return sign + paddedInt + '.' + decPart
+                                }
+
+                                for (var i = 0; i < cellContainer.streamLabels.length; i++) {
+                                    var label = cellContainer.streamLabels[i] || ("V" + (i + 1))
+                                    var value = dataValues[i] !== undefined ? dataValues[i] : 0
+
+                                    // Pad label to fixed width (longest common label is "Pitch" = 5 chars + colon + space)
+                                    var paddedLabel = (label + ":").padEnd(7, ' ')
+                                    lines.push(paddedLabel + formatValue(value))
                                 }
 
                                 // If height is small, show on one line
                                 if (parent.height < 55) {
-                                    return label1 + ":" + data.x.toFixed(3) + " " +
-                                           label2 + ":" + data.y.toFixed(3) + " " +
-                                           label3 + ":" + data.z.toFixed(3)
+                                    return lines.join("    ")
                                 } else {
-                                    // Show on three lines when there's space
-                                    return label1 + ": " + data.x.toFixed(4) + "\n" +
-                                           label2 + ": " + data.y.toFixed(4) + "\n" +
-                                           label3 + ": " + data.z.toFixed(4)
+                                    // Show on multiple lines when there's space
+                                    return lines.join("\n")
                                 }
                             }
                         }
@@ -333,33 +364,40 @@ Item {
                             { name: "Y", color: "#55ff55", visible: true },
                             { name: "Z", color: "#5555ff", visible: true }
                         ]
+                        cellContainer.streamLabels = ["X", "Y", "Z"]
                         plotLoader.item.manualMinValue = -20.0
                         plotLoader.item.manualMaxValue = 20.0
                     }
                     else if (streamName.indexOf("IMU Angular Velocity") >= 0) {
+                        console.log("Configuring IMU Angular Velocity streams")
                         streamConfigs = [
                             { name: "Roll", color: "#ff5555", visible: true },
                             { name: "Pitch", color: "#55ff55", visible: true },
                             { name: "Yaw", color: "#5555ff", visible: true }
                         ]
+                        cellContainer.streamLabels = ["Roll", "Pitch", "Yaw"]
                         plotLoader.item.manualMinValue = -10.0
                         plotLoader.item.manualMaxValue = 10.0
                     }
                     else if (streamName.indexOf("Pose Position") >= 0) {
+                        console.log("Configuring Pose Position streams")
                         streamConfigs = [
                             { name: "X", color: "#ff5555", visible: true },
                             { name: "Y", color: "#55ff55", visible: true },
                             { name: "Z", color: "#5555ff", visible: true }
                         ]
+                        cellContainer.streamLabels = ["X", "Y", "Z"]
                         plotLoader.item.manualMinValue = -5.0
                         plotLoader.item.manualMaxValue = 5.0
                     }
                     else if (streamName.indexOf("Pose Orientation") >= 0) {
+                        console.log("Configuring Pose Orientation streams")
                         streamConfigs = [
                             { name: "Roll", color: "#ff5555", visible: true },
                             { name: "Pitch", color: "#55ff55", visible: true },
                             { name: "Yaw", color: "#5555ff", visible: true }
                         ]
+                        cellContainer.streamLabels = ["Roll", "Pitch", "Yaw"]
                         plotLoader.item.manualMinValue = -3.5
                         plotLoader.item.manualMaxValue = 3.5
                     }
@@ -371,11 +409,13 @@ Item {
                             { name: "Value 2", color: "#55ff55", visible: true },
                             { name: "Value 3", color: "#5555ff", visible: true }
                         ]
+                        cellContainer.streamLabels = ["Value 1", "Value 2", "Value 3"]
                         plotLoader.item.manualMinValue = -20.0
                         plotLoader.item.manualMaxValue = 20.0
                     }
 
                     console.log("Stream configs:", JSON.stringify(streamConfigs))
+                    console.log("Stream labels:", cellContainer.streamLabels)
                     if (plotLoader.item) {
                         plotLoader.item.initializeStreams(streamConfigs)
                     }
