@@ -30,8 +30,7 @@ class Camera : public Sensor {
 
             image.resize(w * h * 3);
 
-            // Create output directory
-            std::filesystem::create_directories("output");
+            // std::filesystem::create_directories("output");
         }
 
         void doUpdate() override {
