@@ -5,7 +5,10 @@ Standard: Auto
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 110
+ColumnLimit: 200
+
+IndentAccessModifiers: true
+AccessModifierOffset: 0
 
 AlignEscapedNewlinesLeft: false
 AlignTrailingComments: true
@@ -25,11 +28,8 @@ PenaltyBreakFirstLessLess: 1000
 PenaltyExcessCharacter: 1000
 PenaltyReturnTypeOnItsOwnLine: 90
 
-# Configure each individual brace in BraceWrapping
 BreakBeforeBraces: Custom
 
-
-# Control of individual brace wrapping cases
 BraceWrapping: {
     AfterClass: false,
     AfterControlStatement: Never,

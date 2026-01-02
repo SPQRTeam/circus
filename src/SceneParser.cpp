@@ -58,8 +58,7 @@ SceneParser::SceneParser(const string& yamlPath) {
 
             string robotType = robotNode["type"].as<string>();  // complete name <Brand>-<Model>
             uint8_t robotNumber = robotNode["number"].as<uint8_t>();
-            string robotName = robotNode["name"] ? robotNode["name"].as<string>() :
-                                                   teamName + "_" + robotType + "_" + to_string(typeIndex++);
+            string robotName = robotNode["name"] ? robotNode["name"].as<string>() : teamName + "_" + robotType + "_" + to_string(typeIndex++);
             Vector3d pos = Vector3d::Zero();
             Vector3d ori = Vector3d::Zero();
 
@@ -73,8 +72,7 @@ SceneParser::SceneParser(const string& yamlPath) {
                     ori[i] = robotNode["orientation"][i].as<double>();
             }
 
-            shared_ptr<Robot> robot
-                = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamSpec);
+            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamSpec);
 
             robotTypes.insert(robotType);
             teamSpec->robots.push_back(std::move(robot));
@@ -104,16 +102,14 @@ string SceneParser::buildMuJoCoXml() {
     compiler.append_attribute("meshdir") = "resources/meshes/";
 
     xml_node include_node = mujoco.append_child("include");
-    include_node.append_attribute("file")
-        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.field + ".xml")).c_str();
+    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.field + ".xml")).c_str();
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");
     map.append_attribute("shadowsize") = "0";
 
     include_node = mujoco.append_child("include");
-    include_node.append_attribute("file")
-        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "ball.xml").c_str();
+    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "ball.xml").c_str();
 
     for (const string& robotType : robotTypes)
         buildRobotCommon(robotType, mujoco);
@@ -154,8 +150,7 @@ string SceneParser::buildMuJoCoXml() {
 }
 
 void SceneParser::buildRobotCommon(const string& robotType, xml_node& mujoco) {
-    filesystem::path commonPath
-        = filesystem::path(PROJECT_ROOT) / "resources" / "robots" / robotType / "common.xml";
+    filesystem::path commonPath = filesystem::path(PROJECT_ROOT) / "resources" / "robots" / robotType / "common.xml";
     if (!filesystem::exists(commonPath)) {
         throw runtime_error("Robot common file does not exist: " + commonPath.string());
     }
@@ -176,8 +171,7 @@ void SceneParser::prefixSubtree(xml_node& root, const string& robotName) {
             string current_attr(attr.name());
             // Not the cleanest solution, but tracking all the changed names would require O(n²). I hope this
             // heuristic is general enough.
-            if (current_attr == "name" || current_attr == "joint" || current_attr == "objname"
-                || current_attr == "site") {
+            if (current_attr == "name" || current_attr == "joint" || current_attr == "objname" || current_attr == "site") {
                 string original = attr.value();
                 if (original.rfind(robotName, 0) != 0) {
                     attr.set_value((robotName + "_" + original).c_str());
@@ -191,10 +185,8 @@ void SceneParser::prefixSubtree(xml_node& root, const string& robotName) {
     }
 }
 
-void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody,
-                                     xml_node& actuator, xml_node& sensor) {
-    filesystem::path instancePath
-        = filesystem::path(PROJECT_ROOT) / "resources" / "robots" / robotSpec->type / "instance.xml";
+void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor) {
+    filesystem::path instancePath = filesystem::path(PROJECT_ROOT) / "resources" / "robots" / robotSpec->type / "instance.xml";
 
     if (!filesystem::exists(instancePath)) {
         throw runtime_error("Robot instance file does not exist: " + instancePath.string());
@@ -226,8 +218,7 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
     xml_node robotNode = *worldbodyModel.begin();
 
     std::ostringstream posStream;
-    posStream << robotSpec->initPosition.x() << " " << robotSpec->initPosition.y() << " "
-              << robotSpec->initPosition.z();
+    posStream << robotSpec->initPosition.x() << " " << robotSpec->initPosition.y() << " " << robotSpec->initPosition.z();
     xml_attribute posAttr = robotNode.attribute("pos");
     if (posAttr) {
         posAttr.set_value(posStream.str().c_str());
@@ -236,8 +227,7 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
     }
 
     std::ostringstream oriStream;
-    oriStream << robotSpec->initOrientation.x() << " " << robotSpec->initOrientation.y() << " "
-              << robotSpec->initOrientation.z();
+    oriStream << robotSpec->initOrientation.x() << " " << robotSpec->initOrientation.y() << " " << robotSpec->initOrientation.z();
     xml_attribute eulerAttr = robotNode.attribute("euler");
     if (eulerAttr) {
         eulerAttr.set_value(oriStream.str().c_str());

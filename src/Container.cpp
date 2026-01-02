@@ -30,17 +30,15 @@ inline std::string start_container_endpoint(const std::string& id) {
 }
 
 inline std::string stop_container_endpoint(const std::string& id) {
-    return "/containers/" + id
-           + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround. If the application
-                           // is well behaved, this shouldn't be necessary
+    return "/containers/" + id + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround. If the application
+                                               // is well behaved, this shouldn't be necessary
 }
 
 inline std::string remove_container_endpoint(const std::string& id) {
     return "/containers/" + id;
 }
 
-Container::Container(const std::string& name, const std::string& sockPath)
-    : name(name), sockPath(sockPath), state(ContainerState::NONE) {
+Container::Container(const std::string& name, const std::string& sockPath) : name(name), sockPath(sockPath), state(ContainerState::NONE) {
     curl_handle = curl_easy_init();
     if (!curl_handle)
         throw std::runtime_error("Failed to init curl handle");
@@ -65,8 +63,7 @@ Container::~Container() {
         curl_easy_cleanup(curl_handle);
 }
 
-void Container::create(const std::string& robot_name, const std::string& image,
-                       const std::vector<std::string>& binds) {
+void Container::create(const std::string& robot_name, const std::string& image, const std::vector<std::string>& binds) {
     nlohmann::json payload;
     payload["Image"] = image;
 
@@ -74,8 +71,7 @@ void Container::create(const std::string& robot_name, const std::string& image,
     // container.
     payload["HostConfig"] = {{"NetworkMode", "host"}, {"Binds", binds}};
 
-    payload["Env"]
-        = {"ROBOT_NAME=" + robot_name, "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort)};
+    payload["Env"] = {"ROBOT_NAME=" + robot_name, "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort)};
 
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);
@@ -115,8 +111,7 @@ void Container::remove() {
     state = ContainerState::REMOVED;
 }
 
-std::string Container::request(const std::string& method, const std::string& endpoint,
-                               const long expected_response, const nlohmann::json* body) {
+std::string Container::request(const std::string& method, const std::string& endpoint, const long expected_response, const nlohmann::json* body) {
     curl_easy_reset(curl_handle);
     std::string url = "http://localhost" + endpoint;
 
@@ -154,8 +149,7 @@ std::string Container::request(const std::string& method, const std::string& end
         throw std::runtime_error(std::string("Curl error: ") + curl_easy_strerror(res));
 
     if (expected_response && response_code != expected_response)
-        throw std::runtime_error("Docker API request to " + endpoint + " failed: HTTP "
-                                 + std::to_string(response_code) + ". " + response);
+        throw std::runtime_error("Docker API request to " + endpoint + " failed: HTTP " + std::to_string(response_code) + ". " + response);
 
     return response;
 }
