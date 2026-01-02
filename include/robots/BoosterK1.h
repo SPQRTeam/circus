@@ -108,6 +108,8 @@ class BoosterK1 : public Robot {
         pose->update();
         imu->update();
         joints->update();
+        cameras[0]->update();
+        cameras[1]->update();
     }
 
     ~BoosterK1() = default;
