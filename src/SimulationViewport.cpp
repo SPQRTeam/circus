@@ -52,8 +52,8 @@ void SimulationViewport::paintGL() {
             continue;
 
         // Render and capture camera images (save every 60 frames)
-        leftCamera->renderAndCapture();
-        rightCamera->renderAndCapture();
+        leftCamera->render();
+        rightCamera->render();
     }
 
     // Restore main viewport scene

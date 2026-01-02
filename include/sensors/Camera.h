@@ -39,33 +39,7 @@ class Camera : public Sensor {
             // This method is called from the simulation thread which has no GL context
         }
 
-        void renderAndCapture() {
-            renderOffscreen();
-
-            frameCounter_++;
-            if (frameCounter_ >= 60) {
-                // saveImage("output/" + cameraName_ + "_" + std::to_string(imageCounter_++) + ".png");
-                frameCounter_ = 0;
-            }
-        }
-
-        void saveImage(const std::string& filename) {
-            QImage qimg(image.data(), w, h, w * 3, QImage::Format_RGB888);
-            QImage flipped = qimg.flipped(Qt::Vertical);
-            flipped.save(QString::fromStdString(filename));
-        }
-
-        const mjvCamera& getCamera() const {
-            return cam;
-        }
-
-        msgpack::object doSerialize(msgpack::zone& z) override {
-            std::vector<uint8_t> img_copy(image.begin(), image.end());
-            return msgpack::object(img_copy, z);
-        }
-
-    private:
-        void renderOffscreen() {
+        void render() {
             // Create temporary scene for this camera to avoid modifying the main scene
             mjvScene tempScene;
             mjv_defaultScene(&tempScene);
@@ -115,15 +89,37 @@ class Camera : public Sensor {
 
             // Free temporary scene
             mjv_freeScene(&tempScene);
+
+            // frameCounter_++;
+            // if (frameCounter_ >= 60) {
+            //     saveImage("output/" + cameraName_ + "_" + std::to_string(imageCounter_++) + ".png");
+            //     frameCounter_ = 0;
+            // }
         }
 
+        void saveImage(const std::string& filename) {
+            QImage qimg(image.data(), w, h, w * 3, QImage::Format_RGB888);
+            QImage flipped = qimg.flipped(Qt::Vertical);
+            flipped.save(QString::fromStdString(filename));
+        }
+
+        const mjvCamera& getCamera() const {
+            return cam;
+        }
+
+        msgpack::object doSerialize(msgpack::zone& z) override {
+            std::vector<uint8_t> img_copy(image.begin(), image.end());
+            return msgpack::object(img_copy, z);
+        }
+
+    private:
         int w, h;
         MujocoContext* mujContext;
         std::vector<uint8_t> image;
         mjvCamera cam{};
         std::string cameraName_;
-        int frameCounter_ = 0;
-        int imageCounter_ = 0;
+        // int frameCounter_ = 0;
+        // int imageCounter_ = 0;
 };
 
 }  // namespace spqr
