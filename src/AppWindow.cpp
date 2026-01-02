@@ -70,13 +70,12 @@ AppWindow::AppWindow(int& argc, char** argv) {
     const QUrl qrcUrl = QUrl(QStringLiteral("resources/qml/main.qml"));
 
     // Connect to objectCreated to detect if QML failed to load
-    QObject::connect(qmlEngine.get(), &QQmlApplicationEngine::objectCreated,
-                     [](QObject* obj, const QUrl& objUrl) {
-                         if (!obj) {
-                             qCritical() << "Failed to load QML:" << objUrl;
-                             QCoreApplication::exit(-1);
-                         }
-                     });
+    QObject::connect(qmlEngine.get(), &QQmlApplicationEngine::objectCreated, [](QObject* obj, const QUrl& objUrl) {
+        if (!obj) {
+            qCritical() << "Failed to load QML:" << objUrl;
+            QCoreApplication::exit(-1);
+        }
+    });
 
     qmlEngine->load(qrcUrl);
 
@@ -168,8 +167,7 @@ void AppWindow::loadScene(const QString& yamlFile) {
                     QPointF scenePos = qmlContainer->mapToScene(QPointF(0, 0));
                     QPoint globalPos = quickWindow->mapToGlobal(scenePos.toPoint());
 
-                    this->viewportContainer->setGeometry(scenePos.x(), scenePos.y(), qmlContainer->width(),
-                                                         qmlContainer->height());
+                    this->viewportContainer->setGeometry(scenePos.x(), scenePos.y(), qmlContainer->width(), qmlContainer->height());
                 };
 
                 updateGeometry();
@@ -194,8 +192,7 @@ void AppWindow::loadScene(const QString& yamlFile) {
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
 
         // Connect simulation step to update robot data
-        connect(sim.get(), &SimulationThread::stepCompleted, this, &AppWindow::updateRobotData,
-                Qt::QueuedConnection);
+        connect(sim.get(), &SimulationThread::stepCompleted, this, &AppWindow::updateRobotData, Qt::QueuedConnection);
 
         sim->start();
 

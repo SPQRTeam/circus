@@ -48,7 +48,7 @@
     <!-- Field -->
     <geom name="left_ground" type="plane" size="4 5.5 0.1" material="grass" pos="-4 0 0" euler="0 0 0" condim="3" friction="0.01 0.01 0.01"/>
     <geom name="right_ground" type="plane" size="4 5.5 0.1" material="grass" pos="4 0 0" euler="0 0 3.141592653589793" condim="3" friction="0.01 0.01 0.01"/>
-    
+
     <!-- Lines -->
     <geom name="lines" type="mesh" mesh="lines_mesh"  pos="0 0 0.0001" euler="1.570796327 0 0"/>
 

@@ -4,9 +4,9 @@
 namespace spqr {
 
 class CircusApplication : public QApplication {
-   public:
-    CircusApplication(int& argc, char** argv);
-    ~CircusApplication();
+    public:
+        CircusApplication(int& argc, char** argv);
+        ~CircusApplication();
 };
 
 }  // namespace spqr

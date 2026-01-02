@@ -6,8 +6,7 @@
 
 namespace spqr {
 
-SimulationThread::SimulationThread(const mjModel* model, mjData* data)
-    : model_(model), data_(data), running_(true), paused_(false) {}
+SimulationThread::SimulationThread(const mjModel* model, mjData* data) : model_(model), data_(data), running_(true), paused_(false) {}
 
 void SimulationThread::run() {
     if (!model_)
@@ -25,8 +24,7 @@ void SimulationThread::run() {
             // Emit signal to update QML
             emit stepCompleted();
 
-            next_step_time
-                += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
+            next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
             std::this_thread::sleep_until(next_step_time);
 
             if (clock::now() > next_step_time)

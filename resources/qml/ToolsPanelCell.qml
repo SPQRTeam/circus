@@ -79,7 +79,7 @@ Item {
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 0
-            spacing: 0                
+            spacing: 0
 
             // Header with cell info and stream selector
             RowLayout {

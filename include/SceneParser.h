@@ -18,45 +18,44 @@ using namespace Eigen;
 namespace spqr {
 
 struct BallSpec {
-    Vector3d position;
+        Vector3d position;
 };
 
 struct CellData {
-    int row;
-    int column;
-    string stream;
+        int row;
+        int column;
+        string stream;
 };
 
 struct GuiConfig {
-    int rows = 1;
-    int columns = 4;
-    std::vector<CellData> cellData;
+        int rows = 1;
+        int columns = 4;
+        std::vector<CellData> cellData;
 };
 
 struct SceneSpec {
-    std::string field;
-    std::vector<std::shared_ptr<Team>> teams;
-    GuiConfig guiConfig;
+        std::string field;
+        std::vector<std::shared_ptr<Team>> teams;
+        GuiConfig guiConfig;
 };
 
 class SceneParser {
-   public:
-    SceneParser(const string& yamlPath);
-    string buildMuJoCoXml();
-    const SceneSpec& getSceneInfo() const {
-        return scene;
-    }
+    public:
+        SceneParser(const string& yamlPath);
+        string buildMuJoCoXml();
+        const SceneSpec& getSceneInfo() const {
+            return scene;
+        }
 
-   private:
-    void buildRobotCommon(const string& robotType, xml_node& mujoco);
-    void buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator,
-                            xml_node& sensor);
-    void prefixSubtree(xml_node& root, const std::string& robotName);
+    private:
+        void buildRobotCommon(const string& robotType, xml_node& mujoco);
+        void buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor);
+        void prefixSubtree(xml_node& root, const std::string& robotName);
 
-    unordered_set<string> robotTypes;
-    YAML::Node sceneRoot;
-    SceneSpec scene;
-    BallSpec ballSpec;
+        unordered_set<string> robotTypes;
+        YAML::Node sceneRoot;
+        SceneSpec scene;
+        BallSpec ballSpec;
 };
 
 }  // namespace spqr

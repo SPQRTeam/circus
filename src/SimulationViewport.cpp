@@ -3,18 +3,14 @@
 #include <mujoco/mjvisualize.h>
 #include <qnamespace.h>
 #include <qpoint.h>
+
 #include "RobotManager.h"
 #include "sensors/Sensor.h"
 
 namespace spqr {
 
 SimulationViewport::SimulationViewport(MujocoContext& mujContext)
-    : model(mujContext.model),
-      data(mujContext.data),
-      cam(&mujContext.cam),
-      opt(&mujContext.opt),
-      scene(&mujContext.scene),
-      context(&mujContext.ctx) {
+    : model(mujContext.model), data(mujContext.data), cam(&mujContext.cam), opt(&mujContext.opt), scene(&mujContext.scene), context(&mujContext.ctx) {
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&SimulationViewport::update));
     timer->start(16);
@@ -45,14 +41,15 @@ void SimulationViewport::paintGL() {
     mjr_render(viewport, scene, context);
 
     // Render cameras offscreen and save images
-    for(int i = 0; i < RobotManager::instance().getRobots().size(); ++i) {
+    for (int i = 0; i < RobotManager::instance().getRobots().size(); ++i) {
         auto robot = RobotManager::instance().getRobots()[i];
 
         std::map<std::string, Sensor*> sensors = robot->getSensors();
         Camera* leftCamera = dynamic_cast<Camera*>(sensors["left_camera"]);
         Camera* rightCamera = dynamic_cast<Camera*>(sensors["right_camera"]);
 
-        if (!leftCamera || !rightCamera) continue;
+        if (!leftCamera || !rightCamera)
+            continue;
 
         // Render and capture camera images (save every 60 frames)
         leftCamera->renderAndCapture();
@@ -119,8 +116,7 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum axis[3] = {0, 0, 1};
 
             mjtNum amp = mju_sqrt(reldx * reldx + reldy * reldy);
-            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) :
-                                                                                     -mju_sign(reldy);
+            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) : -mju_sign(reldy);
 
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
@@ -150,8 +146,7 @@ int SimulationViewport::selectBody(float relx, float rely) const {
     mjtNum selpnt[3];
     int geomid = -1, flexid = -1, skinid = -1;
     mjtNum aspect = (mjtNum)width / (mjtNum)height;
-    int bodyid = mjv_select(model, data, opt, aspect, (mjtNum)relx, (mjtNum)rely, scene, selpnt, &geomid,
-                            &flexid, &skinid);
+    int bodyid = mjv_select(model, data, opt, aspect, (mjtNum)relx, (mjtNum)rely, scene, selpnt, &geomid, &flexid, &skinid);
 
     return bodyid;
 }
