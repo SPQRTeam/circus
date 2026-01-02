@@ -10,6 +10,8 @@
 #include "MujocoContext.h"
 #include "sensors/Sensor.h"
 
+#include <fstream>
+
 namespace spqr {
 
 class Camera : public Sensor {
@@ -28,10 +30,21 @@ class Camera : public Sensor {
     }
 
     void doUpdate() override {
-        mjrRect viewport = {0, 0, 100, 100};
+        // mjrRect viewport = {0, 0, w, h};
+        // mjv_updateScene(mujContext->model, mujContext->data, &mujContext->opt, nullptr, &cam, mjCAT_ALL, &mujContext->scene);
+        // mjr_render(viewport, &mujContext->scene, &mujContext->ctx);
+        // mjr_readPixels(image.data(), nullptr, viewport, &mujContext->ctx);
+    }
+
+    void updateCamera(int mainWidth, int mainHeight, int index) {
+        mjrRect viewport = {mainWidth*index, mainHeight, w, h};
         mjv_updateScene(mujContext->model, mujContext->data, &mujContext->opt, nullptr, &cam, mjCAT_ALL, &mujContext->scene);
         mjr_render(viewport, &mujContext->scene, &mujContext->ctx);
         mjr_readPixels(image.data(), nullptr, viewport, &mujContext->ctx);
+    }
+
+    void saveImage(const std::string& filename) {
+        
     }
 
     msgpack::object doSerialize(msgpack::zone& z) override {
