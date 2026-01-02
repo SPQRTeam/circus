@@ -1,8 +1,11 @@
 #pragma once
+#include <mujoco/mjrender.h>
+#include <mujoco/mjvisualize.h>
 #include <mujoco/mujoco.h>
 
 #include <msgpack.hpp>
 #include <vector>
+#include <string>
 
 #include "MujocoContext.h"
 #include "sensors/Sensor.h"
@@ -25,7 +28,8 @@ class Camera : public Sensor {
     }
 
     void doUpdate() override {
-        mjrRect viewport = {0, 0, w, h};
+        mjrRect viewport = {0, 0, 100, 100};
+        mjv_updateScene(mujContext->model, mujContext->data, &mujContext->opt, nullptr, &cam, mjCAT_ALL, &mujContext->scene);
         mjr_render(viewport, &mujContext->scene, &mujContext->ctx);
         mjr_readPixels(image.data(), nullptr, viewport, &mujContext->ctx);
     }

@@ -15,6 +15,7 @@
 
 #include "Container.h"
 #include "MujocoContext.h"
+#include "sensors/Sensor.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -37,6 +38,7 @@ class Robot {
     virtual void update() = 0;
     virtual void receiveMessage(const std::map<std::string, msgpack::object>& message) = 0;
     virtual std::map<std::string, msgpack::object> sendMessage() = 0;
+    virtual std::map<std::string, Sensor*> getSensors() = 0;
 
     std::string name;
     std::string type;

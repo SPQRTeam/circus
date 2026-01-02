@@ -107,14 +107,20 @@ class BoosterT1 : public Robot {
         return msg;
     }
 
+    std::map<std::string, Sensor*> getSensors() override {
+        std::map<std::string, Sensor*> sensors;
+        sensors["pose"] = pose;
+        sensors["imu"] = imu;
+        sensors["joints"] = joints;
+        sensors["left_camera"] = cameras[0];
+        sensors["right_camera"] = cameras[1];
+        return sensors;
+    }
+
     void update() override {
         pose->update();
         imu->update();
         joints->update();
-        /*
-        cameras[0]->update();
-        cameras[1]->update();
-        */
     }
 
     ~BoosterT1() = default;

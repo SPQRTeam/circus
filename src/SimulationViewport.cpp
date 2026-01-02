@@ -3,6 +3,8 @@
 #include <mujoco/mjvisualize.h>
 #include <qnamespace.h>
 #include <qpoint.h>
+#include "RobotManager.h"
+#include "sensors/Sensor.h"
 
 namespace spqr {
 
@@ -39,6 +41,20 @@ void SimulationViewport::paintGL() {
     mjrRect viewport = {0, 0, width, height};
     mjr_setBuffer(mjFB_WINDOW, context);
     mjr_render(viewport, scene, context);
+    // mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
+        
+    for(int i = 0; i < RobotManager::instance().getRobots().size(); ++i) {
+        auto robot = RobotManager::instance().getRobots()[i];
+
+        std::map<std::string, Sensor*> sensors = robot->getSensors();
+        Camera* leftCamera = dynamic_cast<Camera*>(sensors["left_camera"]);
+        Camera* rightCamera = dynamic_cast<Camera*>(sensors["right_camera"]);
+        
+        if (!leftCamera || !rightCamera) continue;        
+        leftCamera->update();
+        rightCamera->update();
+    }
+
     mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
 }
 
