@@ -191,7 +191,10 @@ class ToolCellWrapper : public QObject {
         void updateStreamType() {
             QString oldType = streamType_;
 
-            if (streamName_.contains("Linear Acceleration") || streamName_.contains("Angular Velocity")) {
+            if (streamName_.isEmpty()) {
+                streamType_ = "";
+            }
+            else if (streamName_.contains("Linear Acceleration") || streamName_.contains("Angular Velocity")) {
                 streamType_ = "imu";
             }
             else if (streamName_.contains("Position") || streamName_.contains("Orientation")) {

@@ -143,9 +143,10 @@ Item {
 
                     // Update wrapper when stream selection changes
                     onSelectedStreamChanged: {
-                        if (selectedStream) {
-                            cellWrapper.setStream(selectedStream, panel.teams)
-                        }
+                        // Always call setStream, even for empty string
+                        cellWrapper.setStream(selectedStream, panel.teams)
+                        // Force update the loader component
+                        plotLoader.updateLoaderComponent()
                     }
 
                     background: Rectangle {
@@ -440,6 +441,27 @@ Item {
                     anchors.fill: parent
                     active: false  // Will be set by stream type change handler
 
+                    Component.onCompleted: {
+                        console.log("Loader initialized with streamType:", cellWrapper.streamType)
+                        // Initialize loader state based on current stream type
+                        updateLoaderComponent()
+                    }
+
+                    function updateLoaderComponent() {
+                        console.log("updateLoaderComponent called, streamType:", cellWrapper.streamType)
+
+                        // Update loader based on stream type
+                        if (!cellWrapper.streamType || cellWrapper.streamType === "" || cellWrapper.streamType === "unknown") {
+                            plotLoader.active = false
+                            plotLoader.sourceComponent = null
+                        } else {
+                            var component = streamToolMap[cellWrapper.streamType]
+                            console.log("Loading component for type:", cellWrapper.streamType, "component:", component)
+                            plotLoader.sourceComponent = component
+                            plotLoader.active = component !== null
+                        }
+                    }
+
                     onStatusChanged: {
                         console.log("Plot loader status:", status, "item:", item, "streamType:", cellWrapper.streamType)
                     }
@@ -458,17 +480,7 @@ Item {
                         target: cellWrapper
                         function onStreamTypeChanged() {
                             console.log("Stream type changed to:", cellWrapper.streamType)
-
-                            // Update loader based on new stream type
-                            if (!cellWrapper.streamType || cellWrapper.streamType === "" || cellWrapper.streamType === "unknown") {
-                                plotLoader.active = false
-                                plotLoader.sourceComponent = null
-                            } else {
-                                var component = streamToolMap[cellWrapper.streamType]
-                                console.log("Loading component for type:", cellWrapper.streamType, "component:", component)
-                                plotLoader.sourceComponent = component
-                                plotLoader.active = component !== null
-                            }
+                            plotLoader.updateLoaderComponent()
                         }
                     }
 
