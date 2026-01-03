@@ -68,6 +68,16 @@ Rectangle {
                         options.push(robotPrefix + ": Orientation")
                     }
                 }
+
+                // Add Camera Image stream
+                if (robot.image) {
+                    if (robot.image.left_camera) {
+                        options.push(robotPrefix + ": Left Camera Image")
+                    }
+                    if (robot.image.right_camera) {
+                        options.push(robotPrefix + ": Right Camera Image")
+                    }
+                }
             }
         }
 

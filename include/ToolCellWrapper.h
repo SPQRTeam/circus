@@ -190,9 +190,14 @@ class ToolCellWrapper : public QObject {
         void updateStreamType() {
             if (streamName_.contains("Linear Acceleration") || streamName_.contains("Angular Velocity")) {
                 streamType_ = "imu";
-            } else if (streamName_.contains("Position") || streamName_.contains("Orientation")) {
+            } 
+            else if (streamName_.contains("Position") || streamName_.contains("Orientation")) {
                 streamType_ = "pose";
-            } else {
+            } 
+            else if (streamName_.contains("Camera Image")) {
+                streamType_ = "image";
+            }
+            else {
                 streamType_ = "unknown";
             }
         }
