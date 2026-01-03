@@ -1,5 +1,4 @@
 FROM ros:humble-ros-base
-
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install dependencies
@@ -29,8 +28,6 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libdecor-0-0 \
     ament-cmake \
-    # ros-humble-rosidl-default-generators \
-    # ros-humble-rosidl-default-runtime \
     && rm -rf /var/lib/apt/lists/*
 
 # copy configs
@@ -42,15 +39,20 @@ COPY booster.conf /etc/supervisor/conf.d/
 # copy and install booster sdk
 COPY booster_robotics_sdk /opt/booster/sdk
 RUN /opt/booster/sdk/install.sh
+
 # compile examples too (loco client in particular)
 RUN mkdir opt/booster/sdk/build
 RUN cd opt/booster/sdk/build && cmake .. && make
 
 # copy, compile and install booster ros sdk
 COPY booster_robotics_sdk_ros2 /opt/booster/sdk_ros2
-# https://stackoverflow.com/questions/72727733/how-to-use-colcon-build-in-a-dockerfile
+
+# Build with minimal optimization and sequential execution
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash; cd /opt/booster/sdk_ros2 && colcon build"
 
+COPY LocoApiPackage /opt/booster/LocoApiPackage
+# RUN /bin/bash -c "source /opt/ros/humble/setup.bash; cd /opt/booster/LocoApiPackage && colcon build --packages-select booster_msgs 
+      
 # add custom bashrc
 COPY configs/bashrc /root/.bashrc_addendum
 RUN echo ". ~/.bashrc_addendum" >> ~/.bashrc

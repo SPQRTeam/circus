@@ -75,7 +75,8 @@ void Container::create(const std::string& robot_name, const std::string& image,
            {"IpcMode", "host"},
            {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
            {"SecurityOpt", {"seccomp=unconfined"}},
-           {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})}};
+           {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
+           {"Privileged", true}};
 
     payload["Env"] = {"ROBOT_NAME=" + robot_name, "SERVER_IP=172.17.0.1",
                       "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
