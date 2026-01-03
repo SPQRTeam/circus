@@ -51,10 +51,14 @@ COPY booster_robotics_sdk_ros2 /opt/booster/sdk_ros2
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash; cd /opt/booster/sdk_ros2 && colcon build"
 
 COPY LocoApiPackage /opt/booster/LocoApiPackage
-# RUN /bin/bash -c "source /opt/ros/humble/setup.bash; cd /opt/booster/LocoApiPackage && colcon build --packages-select booster_msgs 
-      
+# RUN /bin/bash -c "source /opt/ros/humble/setup.bash; cd /opt/booster/LocoApiPackage && colcon build --packages-select booster_msgs
+
 # add custom bashrc
 COPY configs/bashrc /root/.bashrc_addendum
 RUN echo ". ~/.bashrc_addendum" >> ~/.bashrc
 
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/booster.conf"]
+RUN mkdir /app
+COPY entrypoint.sh /app
+RUN chmod +x /app/entrypoint.sh
+
+CMD ["/app/entrypoint.sh"]

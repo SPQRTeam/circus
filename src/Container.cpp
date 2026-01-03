@@ -79,10 +79,7 @@ void Container::create(const std::string& robot_name, const std::string& image,
            {"Privileged", true}};
 
     payload["Env"] = {"ROBOT_NAME=" + robot_name, "SERVER_IP=172.17.0.1",
-                      "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
-                      "LD_LIBRARY_PATH=/app/booster_motion/lib:/app/booster_motion/lib-usr-local:/app/"
-                      "booster_motion/lib-x86_64-linux-gnu",
-                      "FASTRTPS_DEFAULT_PROFILES_FILE=/app/booster_motion/fastdds_profile.xml"};
+                      "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort)};
 
     payload["Tty"] = true;
     payload["OpenStdin"] = true;

@@ -5,6 +5,7 @@
 #include <qnamespace.h>
 #include <qpoint.h>
 #include <yaml-cpp/node/node.h>
+
 #include "Utils.h"
 
 namespace spqr {
@@ -84,8 +85,7 @@ void SimulationViewport::mousePressEvent(QMouseEvent* event) {
                 mouseAction = mjMOUSE_MOVE_H;
             }
         }
-    }
-    else if (event->button() == Qt::MiddleButton) {
+    } else if (event->button() == Qt::MiddleButton) {
         mouseAction = mjMOUSE_ROTATE_V;
     }
 }
@@ -117,7 +117,8 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
             mju_mulQuat(pert.refquat, qz, pert.refquat);
-        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V || mouseAction == mjMOUSE_ROTATE_H) {
+        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V
+                   || mouseAction == mjMOUSE_ROTATE_H) {
             mjv_movePerturb(model, data, mouseAction, reldx, reldy, scene, &pert);
         }
         mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
@@ -143,12 +144,16 @@ void SimulationViewport::keyPressEvent(QKeyEvent* event) {
         }
     }
     if (event->key() == Qt::Key_H) {
-        if (mouseAction == mjMOUSE_MOVE_V)   mouseAction = mjMOUSE_MOVE_H;
-        if (mouseAction == mjMOUSE_ROTATE_V) mouseAction = mjMOUSE_ROTATE_H;
+        if (mouseAction == mjMOUSE_MOVE_V)
+            mouseAction = mjMOUSE_MOVE_H;
+        if (mouseAction == mjMOUSE_ROTATE_V)
+            mouseAction = mjMOUSE_ROTATE_H;
     }
     if (event->key() == Qt::Key_V) {
-        if (mouseAction == mjMOUSE_MOVE_H)   mouseAction = mjMOUSE_MOVE_V;
-        if (mouseAction == mjMOUSE_ROTATE_H) mouseAction = mjMOUSE_ROTATE_V;
+        if (mouseAction == mjMOUSE_MOVE_H)
+            mouseAction = mjMOUSE_MOVE_V;
+        if (mouseAction == mjMOUSE_ROTATE_H)
+            mouseAction = mjMOUSE_ROTATE_V;
     }
 }
 

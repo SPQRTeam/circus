@@ -18,8 +18,8 @@
 #include <vector>
 
 #include "Constants.h"
-#include "Utils.h"
 #include "MujocoContext.h"
+#include "Utils.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
