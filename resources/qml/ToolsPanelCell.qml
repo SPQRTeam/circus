@@ -349,8 +349,13 @@ Item {
                 Layout.fillHeight: true
                 Layout.minimumHeight: 100
                 color: "#1a1a1a"
-                border.color: "#ff0000"
+                border.color: "#650404"
                 border.width: 2
+                Layout.topMargin: 5
+                Layout.bottomMargin: 10
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+                radius: 3
 
                 // Function to configure streams based on data type
                 function configureStreamsForDataType(streamName) {
