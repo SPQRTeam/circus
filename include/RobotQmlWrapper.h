@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qcontainerfwd.h>
+#include <qtmetamacros.h>
 
 #include <QObject>
 #include <QVariantList>
@@ -10,6 +11,7 @@
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
+#include "sensors/Sensor.h"
 
 namespace spqr {
 class RobotQmlWrapper : public QObject {
@@ -18,7 +20,9 @@ class RobotQmlWrapper : public QObject {
         Q_PROPERTY(QString type READ type CONSTANT)
         Q_PROPERTY(uint8_t number READ number CONSTANT)
         Q_PROPERTY(QVariantMap imu READ imu NOTIFY imuChanged)
-        Q_PROPERTY(QVariantMap pose READ pose NOTIFY poseChanged)
+        Q_PROPERTY(QVariantMap pose READ pose NOTIFY poseChanged) 
+        Q_PROPERTY(QVariantMap image READ image NOTIFY imageChanged)
+        
 
     public:
         RobotQmlWrapper(const std::shared_ptr<Robot>& robot, QObject* parent = nullptr) : QObject(parent), robot_(robot) {}
@@ -81,15 +85,49 @@ class RobotQmlWrapper : public QObject {
             return poseMap;
         }
 
+        QVariantMap image() const {
+            QVariantMap imageMap;
+
+            if (!robot_)
+                return imageMap;
+
+            std::map<std::string, Sensor*> sensors = robot_->getSensors();
+            // left_camera, right_camera
+            Camera* leftCamera = dynamic_cast<Camera*>(sensors["left_camera"]);
+            Camera* rightCamera = dynamic_cast<Camera*>(sensors["right_camera"]);
+
+            if (leftCamera) {
+                QVariantList leftImage;
+                const std::vector<uint8_t>& imgData = leftCamera->getImage();
+                for (uint8_t byte : imgData) {
+                    leftImage.append(byte);
+                }
+                imageMap["left_camera"] = leftImage;
+            }
+
+            if (rightCamera) {
+                QVariantList rightImage;
+                const std::vector<uint8_t>& imgData = rightCamera->getImage();
+                for (uint8_t byte : imgData) {
+                    rightImage.append(byte);
+                }
+                imageMap["right_camera"] = rightImage;
+            }
+
+            return imageMap;
+        }
+
         // Call this to notify QML that values have changed
         void update() {
             emit poseChanged();
             emit imuChanged();
+            emit imageChanged();
         }
 
     signals:
         void poseChanged();
         void imuChanged();
+        void imageChanged();
 
     private:
         std::shared_ptr<Robot> robot_;

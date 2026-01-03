@@ -47,25 +47,25 @@ Rectangle {
                 var robot = team.robots[robotIdx]
                 if (!robot) continue
 
-                var robotPrefix = teamName + " - " + robot.name + " (R" + robot.number + ")"
+                var robotPrefix = teamName + " - Robot " + robot.number
 
-                // Add IMU data streams if available
+                // Add IMU data streams
                 if (robot.imu) {
                     if (robot.imu.linearAcceleration) {
-                        options.push(robotPrefix + " - IMU Linear Acceleration")
+                        options.push(robotPrefix + ": Linear Acceleration")
                     }
                     if (robot.imu.angularVelocity) {
-                        options.push(robotPrefix + " - IMU Angular Velocity")
+                        options.push(robotPrefix + ": Angular Velocity")
                     }
                 }
 
                 // Add Pose data streams
                 if (robot.pose) {
                     if (robot.pose.position) {
-                        options.push(robotPrefix + " - Pose Position")
+                        options.push(robotPrefix + ": Position")
                     }
                     if (robot.pose.orientation) {
-                        options.push(robotPrefix + " - Pose Orientation")
+                        options.push(robotPrefix + ": Orientation")
                     }
                 }
             }

@@ -6,7 +6,6 @@
 #include <QImage>
 #include <QOpenGLFunctions>
 #include <cstring>
-#include <filesystem>
 #include <msgpack.hpp>
 #include <string>
 #include <vector>
@@ -29,8 +28,6 @@ class Camera : public Sensor {
             h = mujContext->model->cam_resolution[2 * cam.fixedcamid + 1];
 
             image.resize(w * h * 3);
-
-            // std::filesystem::create_directories("output");
         }
 
         void doUpdate() override {
@@ -88,12 +85,6 @@ class Camera : public Sensor {
 
             // Free temporary scene
             mjv_freeScene(&tempScene);
-
-            // frameCounter_++;
-            // if (frameCounter_ >= 60) {
-            //     saveImage("output/" + cameraName_ + "_" + std::to_string(imageCounter_++) + ".png");
-            //     frameCounter_ = 0;
-            // }
         }
 
         void saveImage(const std::string& filename) {
@@ -104,6 +95,10 @@ class Camera : public Sensor {
 
         const mjvCamera& getCamera() const {
             return cam;
+        }
+
+        const std::vector<uint8_t>& getImage() const {
+            return image;
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
@@ -117,8 +112,6 @@ class Camera : public Sensor {
         std::vector<uint8_t> image;
         mjvCamera cam{};
         std::string cameraName_;
-        // int frameCounter_ = 0;
-        // int imageCounter_ = 0;
 };
 
 }  // namespace spqr

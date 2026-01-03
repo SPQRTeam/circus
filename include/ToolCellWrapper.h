@@ -87,7 +87,7 @@ class ToolCellWrapper : public QObject {
             QVariantMap newData;
             bool found = false;
 
-            if (streamName_.contains("IMU Linear Acceleration")) {
+            if (streamName_.contains("Linear Acceleration")) {
                 QVariantMap imuData = robot_->imu();
                 if (imuData.contains("linearAcceleration")) {
                     QVariantList acc = imuData["linearAcceleration"].toList();
@@ -98,7 +98,7 @@ class ToolCellWrapper : public QObject {
                         found = true;
                     }
                 }
-            } else if (streamName_.contains("IMU Angular Velocity")) {
+            } else if (streamName_.contains("Angular Velocity")) {
                 QVariantMap imuData = robot_->imu();
                 if (imuData.contains("angularVelocity")) {
                     QVariantList vel = imuData["angularVelocity"].toList();
@@ -109,7 +109,7 @@ class ToolCellWrapper : public QObject {
                         found = true;
                     }
                 }
-            } else if (streamName_.contains("Pose Position")) {
+            } else if (streamName_.contains("Position")) {
                 QVariantMap poseData = robot_->pose();
                 if (poseData.contains("position")) {
                     QVariantList pos = poseData["position"].toList();
@@ -120,7 +120,7 @@ class ToolCellWrapper : public QObject {
                         found = true;
                     }
                 }
-            } else if (streamName_.contains("Pose Orientation")) {
+            } else if (streamName_.contains("Orientation")) {
                 QVariantMap poseData = robot_->pose();
                 if (poseData.contains("orientation")) {
                     QVariantList ori = poseData["orientation"].toList();
@@ -163,37 +163,34 @@ class ToolCellWrapper : public QObject {
                 return nullptr;
             }
 
-            // Stream name format: "Team X - RobotName (RY) - DataType"
-            // Parse to find team and robot
+            // Stream name format: "Team X - Robot Y: DataType"
             for (int teamIdx = 0; teamIdx < teams.size(); ++teamIdx) {
                 QVariantMap teamMap = teams[teamIdx].toMap();
                 QString teamPrefix = QString("Team %1").arg(teamIdx + 1);
-
                 if (!streamName.startsWith(teamPrefix)) {
                     continue;
-                }
-
+                }   
                 QVariantList robots = teamMap["robots"].toList();
                 for (const QVariant& robotVariant : robots) {
                     RobotQmlWrapper* robot = robotVariant.value<RobotQmlWrapper*>();
-                    if (!robot)
-                        continue;
-
-                    QString robotPrefix = QString("%1 - %2 (R%3)").arg(teamPrefix).arg(robot->name()).arg(robot->number());
-
+                    qDebug() << "Checking robot for stream" << streamName << ":" << (robot ? robot->name() : "null");
+                    if (!robot) continue;
+                    QString robotPrefix = QString("%1 - Robot %2").arg(teamPrefix).arg(robot->number());
+                    qDebug() << "Robot prefix:" << robotPrefix;
                     if (streamName.startsWith(robotPrefix)) {
+                        qDebug() << "Found robot for stream" << streamName << ":" << robot->name();
                         return robot;
                     }
                 }
             }
-
+                
             return nullptr;
         }
 
         void updateStreamType() {
-            if (streamName_.contains("IMU")) {
+            if (streamName_.contains("Linear Acceleration") || streamName_.contains("Angular Velocity")) {
                 streamType_ = "imu";
-            } else if (streamName_.contains("Pose")) {
+            } else if (streamName_.contains("Position") || streamName_.contains("Orientation")) {
                 streamType_ = "pose";
             } else {
                 streamType_ = "unknown";
