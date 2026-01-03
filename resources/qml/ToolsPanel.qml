@@ -33,9 +33,18 @@ Rectangle {
         }
     }
 
+    // Map stream types to their corresponding components
+    property var streamToolMap: {
+        "imu": plot2DComponent,
+        "pose": plot2DComponent,
+        "image": null,  // TODO: Add image viewer component
+        "unknown": null,
+        "": null  // Empty/unselected
+    }
+
     // Build list of available data streams from all robots
     function buildDataStreamOptions() {
-        var options = []
+        var options = [""]  // Start with empty option
 
         for (var teamIdx = 0; teamIdx < teams.length; teamIdx++) {
             var team = teams[teamIdx]
@@ -199,7 +208,7 @@ Rectangle {
         // Content Area - Resizable Grid
         ToolsPanelGrid {
             panel: toolsPanel
-            plot2DComponent: plot2DComponent
+            streamToolMap: toolsPanel.streamToolMap
         }
     }
 }

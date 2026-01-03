@@ -10,7 +10,7 @@ Item {
     required property int rowIndex
     required property int colIndex
     required property var panel
-    required property Component plot2DComponent
+    required property var streamToolMap
 
     // Stream labels for current data type
     property var streamLabels: ["Value 1", "Value 2", "Value 3"]
@@ -132,6 +132,7 @@ Item {
                     editable: true
 
                     model: panel.dataStreamOptions
+                    currentIndex: 0  // Start with empty option
 
                     property string selectedStream: {
                         if (currentIndex >= 0 && currentIndex < model.length) {
@@ -159,7 +160,7 @@ Item {
                             anchors.fill: parent
                             leftPadding: 8
                             rightPadding: dataStreamCombo.indicator.width + 8
-                            text: dataStreamCombo.displayText || "Select or type..."
+                            text: dataStreamCombo.displayText || "Select data source"
                             font: dataStreamCombo.font
                             color: dataStreamCombo.displayText ? "#ffffff" : "#666666"
                             verticalAlignment: Text.AlignVCenter
@@ -423,26 +424,24 @@ Item {
 
                 Label {
                     anchors.centerIn: parent
-                    text: "Plot area - Loading: " + (plotLoader.status === Loader.Loading ? "Yes" : "No") +
-                          "\nReady: " + (plotLoader.status === Loader.Ready ? "Yes" : "No") +
-                          "\nItem: " + (plotLoader.item ? "Loaded" : "Null") +
-                          "\nStream: " + dataStreamCombo.selectedStream +
-                          "\nHas IMU/Pose: " + (dataStreamCombo.selectedStream &&
-                                                (dataStreamCombo.selectedStream.indexOf("IMU") >= 0 ||
-                                                 dataStreamCombo.selectedStream.indexOf("Pose") >= 0))
-                    color: "#ffffff"
-                    font.pixelSize: 10
+                    visible: !plotLoader.item
+                    text: {
+                        if (!cellWrapper.streamType || cellWrapper.streamType === "" || cellWrapper.streamType === "unknown") {
+                            return "No data source selected"
+                        }
+                        return "Loading component for: " + cellWrapper.streamType
+                    }
+                    color: "#888888"
+                    font.pixelSize: 12
                 }
 
                 Loader {
                     id: plotLoader
                     anchors.fill: parent
-                    active: true
-
-                    sourceComponent: plot2DComponent
+                    active: false  // Will be set by stream type change handler
 
                     onStatusChanged: {
-                        console.log("Plot loader status:", status, "item:", item)
+                        console.log("Plot loader status:", status, "item:", item, "streamType:", cellWrapper.streamType)
                     }
 
                     onLoaded: {
@@ -451,6 +450,25 @@ Item {
                             item.title = dataStreamCombo.selectedStream
                             console.log("Setting plot title:", dataStreamCombo.selectedStream)
                             plotArea.configureStreamsForDataType(dataStreamCombo.selectedStream)
+                        }
+                    }
+
+                    // React to stream type changes from cellWrapper
+                    Connections {
+                        target: cellWrapper
+                        function onStreamTypeChanged() {
+                            console.log("Stream type changed to:", cellWrapper.streamType)
+
+                            // Update loader based on new stream type
+                            if (!cellWrapper.streamType || cellWrapper.streamType === "" || cellWrapper.streamType === "unknown") {
+                                plotLoader.active = false
+                                plotLoader.sourceComponent = null
+                            } else {
+                                var component = streamToolMap[cellWrapper.streamType]
+                                console.log("Loading component for type:", cellWrapper.streamType, "component:", component)
+                                plotLoader.sourceComponent = component
+                                plotLoader.active = component !== null
+                            }
                         }
                     }
 

@@ -9,7 +9,7 @@ Item {
 
     // Properties to access parent panel
     required property var panel
-    required property Component plot2DComponent
+    required property var streamToolMap
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -67,7 +67,7 @@ Item {
                                 rowIndex: rowContainer.rowIndex
                                 colIndex: cellContainerWrapper.colIndex
                                 panel: gridRoot.panel
-                                plot2DComponent: gridRoot.plot2DComponent
+                                streamToolMap: gridRoot.streamToolMap
                             }
 
                             // Right border resize handle (for columns)

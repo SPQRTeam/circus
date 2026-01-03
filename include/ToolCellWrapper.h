@@ -12,7 +12,7 @@ namespace spqr {
 class ToolCellWrapper : public QObject {
         Q_OBJECT
         Q_PROPERTY(QVariantMap data READ data NOTIFY dataChanged)
-        Q_PROPERTY(QString streamType READ streamType CONSTANT)
+        Q_PROPERTY(QString streamType READ streamType NOTIFY streamTypeChanged)
         Q_PROPERTY(bool hasData READ hasData NOTIFY hasDataChanged)
 
     public:
@@ -155,6 +155,7 @@ class ToolCellWrapper : public QObject {
     signals:
         void dataChanged();
         void hasDataChanged();
+        void streamTypeChanged();
 
     private:
         // Parse stream name and find the corresponding robot
@@ -188,17 +189,24 @@ class ToolCellWrapper : public QObject {
         }
 
         void updateStreamType() {
+            QString oldType = streamType_;
+
             if (streamName_.contains("Linear Acceleration") || streamName_.contains("Angular Velocity")) {
                 streamType_ = "imu";
-            } 
+            }
             else if (streamName_.contains("Position") || streamName_.contains("Orientation")) {
                 streamType_ = "pose";
-            } 
+            }
             else if (streamName_.contains("Camera Image")) {
                 streamType_ = "image";
             }
             else {
                 streamType_ = "unknown";
+            }
+
+            // Emit signal if stream type changed
+            if (oldType != streamType_) {
+                emit streamTypeChanged();
             }
         }
 
