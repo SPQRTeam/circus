@@ -349,7 +349,7 @@ Item {
                 Layout.fillHeight: true
                 Layout.minimumHeight: 100
                 color: "#1a1a1a"
-                border.color: "#650404"
+                border.color: "#888888"
                 border.width: 2
                 Layout.topMargin: 5
                 Layout.bottomMargin: 10
