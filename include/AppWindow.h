@@ -4,19 +4,17 @@
 #include <qqmlapplicationengine.h>
 #include <qtmetamacros.h>
 
-#include <QObject>
-#include <QVariantList>
-#include <QVariantMap>
-
 #include <QLabel>
 #include <QMainWindow>
+#include <QObject>
 #include <QVBoxLayout>
+#include <QVariantList>
+#include <QVariantMap>
 #include <memory>
 
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
-
 #include "frontend/ToolsPanel.h"
 
 namespace spqr {
@@ -58,9 +56,8 @@ namespace spqr {
 //         QList<QObject*> robotWrappers_;
 // };
 
-
 class AppWindow : public QMainWindow {
-    Q_OBJECT
+        Q_OBJECT
 
     public:
         AppWindow(int& argc, char** argv);

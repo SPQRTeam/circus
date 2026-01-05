@@ -244,8 +244,8 @@
 // }
 // }  // namespace spqr
 
-
 #include "AppWindow.h"
+
 #include <qaction.h>
 
 #include <QFileDialog>
@@ -281,14 +281,12 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     // Create viewport placeholder
     viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
     viewportPlaceholder->setAlignment(Qt::AlignCenter);
-    viewportPlaceholder->setStyleSheet(
-        "QLabel { "
-        "  color: #666666; "
-        "  font-size: 24px; "
-        "  font-weight: bold; "
-        "  background-color: #0a0a0a; "
-        "}"
-    );
+    viewportPlaceholder->setStyleSheet("QLabel { "
+                                       "  color: #666666; "
+                                       "  font-size: 24px; "
+                                       "  font-weight: bold; "
+                                       "  background-color: #0a0a0a; "
+                                       "}");
     mainLayout->addWidget(viewportPlaceholder);
 
     // Create ToolsPanel at startup
@@ -312,8 +310,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
 }
 
 void AppWindow::openScene() {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "resources/scenes/",
-                                                    tr("YAML Files (*.yaml)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "resources/scenes/", tr("YAML Files (*.yaml)"));
     if (!fileName.isEmpty()) {
         loadScene(fileName);
     }
@@ -321,7 +318,6 @@ void AppWindow::openScene() {
 
 void AppWindow::loadScene(const QString& yaml_file) {
     try {
-
         TeamManager::instance().clear();
         RobotManager::instance().stopCommunicationServer();
 
@@ -350,7 +346,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
-        if(toolsPanel){
+        if (toolsPanel) {
             mainLayout->removeWidget(toolsPanel);
             toolsPanel->deleteLater();
             toolsPanel = nullptr;
@@ -415,4 +411,4 @@ AppWindow::~AppWindow() {
     RobotManager::instance().stopCommunicationServer();
 }
 
-}
+}  // namespace spqr

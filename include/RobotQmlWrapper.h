@@ -20,9 +20,8 @@ class RobotQmlWrapper : public QObject {
         Q_PROPERTY(QString type READ type CONSTANT)
         Q_PROPERTY(uint8_t number READ number CONSTANT)
         Q_PROPERTY(QVariantMap imu READ imu NOTIFY imuChanged)
-        Q_PROPERTY(QVariantMap pose READ pose NOTIFY poseChanged) 
+        Q_PROPERTY(QVariantMap pose READ pose NOTIFY poseChanged)
         Q_PROPERTY(QVariantMap image READ image NOTIFY imageChanged)
-        
 
     public:
         RobotQmlWrapper(const std::shared_ptr<Robot>& robot, QObject* parent = nullptr) : QObject(parent), robot_(robot) {}

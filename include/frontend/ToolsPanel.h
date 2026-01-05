@@ -7,17 +7,16 @@
 #include <QWidget>
 #include <vector>
 
+#include "frontend/ToolsPanelHeader.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
 
-#include "frontend/ToolsPanelHeader.h"
-
 namespace spqr {
-    
+
 class ToolsPanel : public QWidget {
-    Q_OBJECT
-    
+        Q_OBJECT
+
     public:
         ToolsPanel(QWidget* parent) : QWidget(parent) {
             // setStyleSheet("QWidget { background-color: rgba(30, 30, 30, 230); }");
@@ -88,7 +87,6 @@ class ToolsPanel : public QWidget {
     private:
         ToolsPanelHeader* header_;
         QWidget* container_;
-
 };
 
-}
+}  // namespace spqr

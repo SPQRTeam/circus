@@ -170,12 +170,13 @@ class ToolCellWrapper : public QObject {
                 QString teamPrefix = QString("Team %1").arg(teamIdx + 1);
                 if (!streamName.startsWith(teamPrefix)) {
                     continue;
-                }   
+                }
                 QVariantList robots = teamMap["robots"].toList();
                 for (const QVariant& robotVariant : robots) {
                     RobotQmlWrapper* robot = robotVariant.value<RobotQmlWrapper*>();
                     qDebug() << "Checking robot for stream" << streamName << ":" << (robot ? robot->name() : "null");
-                    if (!robot) continue;
+                    if (!robot)
+                        continue;
                     QString robotPrefix = QString("%1 - Robot %2").arg(teamPrefix).arg(robot->number());
                     qDebug() << "Robot prefix:" << robotPrefix;
                     if (streamName.startsWith(robotPrefix)) {
@@ -184,7 +185,7 @@ class ToolCellWrapper : public QObject {
                     }
                 }
             }
-                
+
             return nullptr;
         }
 
@@ -193,17 +194,13 @@ class ToolCellWrapper : public QObject {
 
             if (streamName_.isEmpty()) {
                 streamType_ = "";
-            }
-            else if (streamName_.contains("Linear Acceleration") || streamName_.contains("Angular Velocity")) {
+            } else if (streamName_.contains("Linear Acceleration") || streamName_.contains("Angular Velocity")) {
                 streamType_ = "imu";
-            }
-            else if (streamName_.contains("Position") || streamName_.contains("Orientation")) {
+            } else if (streamName_.contains("Position") || streamName_.contains("Orientation")) {
                 streamType_ = "pose";
-            }
-            else if (streamName_.contains("Camera Image")) {
+            } else if (streamName_.contains("Camera Image")) {
                 streamType_ = "image";
-            }
-            else {
+            } else {
                 streamType_ = "unknown";
             }
 
