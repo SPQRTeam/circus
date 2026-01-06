@@ -14,6 +14,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "tools/Tool.h"
+
 namespace spqr {
 
 class GridCell : public QWidget {
@@ -88,13 +90,16 @@ class GridCell : public QWidget {
             });
             layout->addWidget(combo, 0, Qt::AlignTop);
 
-            layout->addStretch(1);
+            // Add the tool widget that fills the remaining space
+            tool_ = new Tool(this);
+            layout->addWidget(tool_, 1);
         }
-        
+
         QString selectedItem() const { return selectedItem_; }
-    
+
     private:
         QString selectedItem_;
+        Tool* tool_;
 };
 
 class ToolsPanelGrid : public QWidget {
