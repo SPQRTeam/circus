@@ -26,10 +26,8 @@ class ToolsPanel : public QWidget {
 
     public:
         ToolsPanel(QWidget* parent) : QWidget(parent) {
-            // setStyleSheet("QWidget { background-color: rgba(30, 30, 30, 230); }");
-
             QVBoxLayout* mainLayout = new QVBoxLayout(this);
-            mainLayout->setContentsMargins(0, 0, 0, 0);
+            mainLayout->setContentsMargins(5, 0, 5, 0);
             mainLayout->setSpacing(0);
 
             header_ = new ToolsPanelHeader(this);
@@ -125,6 +123,10 @@ class ToolsPanel : public QWidget {
         }
 
         void onResizeRequested(int deltaY) {
+            if (isCollapsed_) {
+                return;
+            }
+
             int newHeight = height() + deltaY;
             newHeight = std::max(minExpandedHeight_, std::min(maxExpandedHeight_, newHeight));
 

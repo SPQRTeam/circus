@@ -20,8 +20,17 @@ class ToolsPanelHeader : public QWidget {
 
     public:
         ToolsPanelHeader(QWidget* parent) : QWidget(parent) {
+            // Create background widget
+            background_ = new QWidget(this);
+            background_->setStyleSheet("QWidget { "
+                                      "  background-color: #333333; "
+                                      "  border: 1px solid #555555; "
+                                      "  border-radius: 3px; "
+                                      "}");
+            background_->lower(); // Send to back
+
             QHBoxLayout* layout = new QHBoxLayout(this);
-            layout->setContentsMargins(5, 0, 5, 5);
+            layout->setContentsMargins(5, 5, 5, 5);
             layout->setSpacing(5);
 
             // Open button
@@ -32,8 +41,8 @@ class ToolsPanelHeader : public QWidget {
                                        "  border: 1px solid #666666; "
                                        "  border-radius: 3px; "
                                        "  padding: 2px 2px 2px 2px; "
-                                       "  width: 100px; "
-                                       "  height: 20px; "
+                                       "  width: 80px; "
+                                       "  height: 25px; "
                                        "  font-size: 12px; "
                                        "  font-weight: bold; "
                                        "} "
@@ -52,8 +61,8 @@ class ToolsPanelHeader : public QWidget {
                                        "  border: 1px solid #666666; "
                                        "  border-radius: 3px; "
                                        "  padding: 2px 2px 2px 2px; "
-                                       "  width: 100px; "
-                                       "  height: 20px; "
+                                       "  width: 80px; "
+                                       "  height: 25px; "
                                        "  font-size: 12px; "
                                        "  font-weight: bold; "
                                        "} "
@@ -72,8 +81,8 @@ class ToolsPanelHeader : public QWidget {
                                         "  border: 1px solid #666666; "
                                         "  border-radius: 3px; "
                                         "  padding: 2px 2px 2px 2px; "
-                                        "  width: 100px; "
-                                        "  height: 20px; "
+                                        "  width: 80px; "
+                                        "  height: 25px; "
                                         "  font-size: 12px; "
                                         "  font-weight: bold; "
                                         "} "
@@ -86,7 +95,7 @@ class ToolsPanelHeader : public QWidget {
             
             layout->addStretch();
             setLayout(layout);
-            setFixedHeight(30);
+            setFixedHeight(35);
         }
 
         void setSimulationPlaying(bool playing) {
@@ -99,8 +108,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border: 1px solid #7e1e1e; "
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 100px; "
-                                                  "  height: 20px; "
+                                                  "  width: 80px; "
+                                                  "  height: 25px; "
                                                   "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
@@ -114,8 +123,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border: 1px solid #666666; "
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 100px; "
-                                                  "  height: 20px; "
+                                                  "  width: 80px; "
+                                                  "  height: 25px; "
                                                   "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
@@ -130,8 +139,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border: 1px solid #1e7e34; "
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 100px; "
-                                                  "  height: 20px; "
+                                                  "  width: 80px; "
+                                                  "  height: 25px; "
                                                   "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
@@ -145,8 +154,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border: 1px solid #666666; "
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 100px; "
-                                                  "  height: 20px; "
+                                                  "  width: 80px; "
+                                                  "  height: 25px; "
                                                   "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
@@ -208,7 +217,15 @@ class ToolsPanelHeader : public QWidget {
             }
         }
 
+        void resizeEvent(QResizeEvent* event) override {
+            QWidget::resizeEvent(event);
+            if (background_) {
+                background_->setGeometry(0, 0, width(), height());
+            }
+        }
+
     private:
+        QWidget* background_;
         QPushButton* openButton_;
         QPushButton* playButton_;
         QPushButton* pauseButton_;

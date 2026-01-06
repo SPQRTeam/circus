@@ -271,7 +271,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
 
     mainLayout = new QVBoxLayout();
-    mainLayout->setContentsMargins(5, 5, 5, 0);
+    mainLayout->setContentsMargins(0, 0, 0, 5);
 
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setStyleSheet("background-color: #1a1a1a;");
