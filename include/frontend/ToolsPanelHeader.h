@@ -19,7 +19,7 @@ class ToolsPanelHeader : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanelHeader(QWidget* parent) : QWidget(parent) {
+        ToolsPanelHeader(bool initial, QWidget* parent) : QWidget(parent) {
             // Create background widget
             background_ = new QWidget(this);
             background_->setStyleSheet("QWidget { "
@@ -78,6 +78,15 @@ class ToolsPanelHeader : public QWidget {
 
             setLayout(layout);
             setFixedHeight(40);
+
+            if (initial) {
+                playButton_->setVisible(false);
+                pauseButton_->setVisible(false);
+                addRowButton_->setVisible(false);
+                removeRowButton_->setVisible(false);
+                addColumnButton_->setVisible(false);
+                removeColumnButton_->setVisible(false);
+            }
         }
 
         void updateGridButtonStates(int numRows, int numCols) {

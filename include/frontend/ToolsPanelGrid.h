@@ -1,11 +1,16 @@
 #pragma once
 
+#include <qobject.h>
+#include <QComboBox>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
+#include <QListView>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QSplitter>
+#include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -15,7 +20,7 @@ class GridCell : public QWidget {
         Q_OBJECT
 
     public:
-        GridCell(QWidget* parent = nullptr) : QWidget(parent) {
+        GridCell(QStringList streams, QWidget* parent = nullptr) : QWidget(parent) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                             "  background-color: #2a2a2a; "
@@ -27,14 +32,78 @@ class GridCell : public QWidget {
                             "  border: 2px solid #1e667e; "
                             "}");
             setMinimumSize(100, 100);
+
+            QVBoxLayout* layout = new QVBoxLayout(this);
+            layout->setContentsMargins(6, 6, 6, 6);
+            layout->setSpacing(6);
+
+            QComboBox* combo = new QComboBox(this);
+            combo->setMaxVisibleItems(6);
+            combo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+            combo->setEditable(true);
+
+            QListView* popupView = new QListView(combo);
+            popupView->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            popupView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            popupView->setFrameShape(QFrame::NoFrame);
+            popupView->setSpacing(0);
+            popupView->setUniformItemSizes(true);
+            popupView->setContentsMargins(0, 0, 0, 0);
+            popupView->setStyleSheet("QListView { "
+                                     "  background-color: #2a2a2a; "
+                                     "  color: white; "
+                                     "  border: 1px solid #1e667e; "
+                                     "  padding: 0; "
+                                     "  margin: 0; "
+                                     "  outline: 0; "
+                                     "} "
+                                     "QListView::item { "
+                                     "  padding: 6px 10px; "
+                                     "  margin: 0; "
+                                     "} "
+                                     "QListView::item:selected { "
+                                     "  background-color: #1e667e; "
+                                     "  color: white; "
+                                     "}");
+            combo->setView(popupView);
+
+            combo->setStyleSheet("QComboBox { "
+                                "  background-color: #444444; "
+                                "  color: white; "
+                                "  border: 1px solid #666666; "
+                                "  border-radius: 3px; "
+                                "  padding: 5px 10px 5px 10px; "
+                                "  font-size: 13px; "
+                                "} "
+                                "QComboBox:hover { "
+                                "  background-color: #595959; "
+                                "  border: 1px solid #1e667e; "
+                                "} "
+                            );
+
+            combo->addItems(streams);
+            selectedItem_ = combo->currentText();
+            connect(combo, &QComboBox::currentTextChanged, this, [this](const QString& text) {
+                selectedItem_ = text;
+            });
+            layout->addWidget(combo, 0, Qt::AlignTop);
+
+            layout->addStretch(1);
         }
+        
+        QString selectedItem() const { return selectedItem_; }
+    
+    private:
+        QString selectedItem_;
 };
 
 class ToolsPanelGrid : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanelGrid(QWidget* parent = nullptr) : QWidget(parent) {
+        ToolsPanelGrid(QStringList streams, QWidget* parent = nullptr) : QWidget(parent) {
+            streams_ = streams;
+
             QVBoxLayout* mainLayout = new QVBoxLayout(this);
             mainLayout->setContentsMargins(0, 0, 0, 0);
             mainLayout->setSpacing(0);
@@ -107,7 +176,7 @@ class ToolsPanelGrid : public QWidget {
                 QVBoxLayout* layout = new QVBoxLayout(gridContainer_);
                 layout->setContentsMargins(0, 0, 0, 0);
                 layout->setSpacing(0);
-                GridCell* cell = new GridCell(gridContainer_);
+                GridCell* cell = new GridCell(streams_, gridContainer_);
                 layout->addWidget(cell);
             } else if (numRows_ == 1) {
                 // Single row: horizontal splitter
@@ -120,7 +189,7 @@ class ToolsPanelGrid : public QWidget {
                 splitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                 for (int col = 0; col < numCols_; col++) {
-                    GridCell* cell = new GridCell(splitter);
+                    GridCell* cell = new GridCell(streams_, splitter);
                     splitter->addWidget(cell);
                 }
 
@@ -136,7 +205,7 @@ class ToolsPanelGrid : public QWidget {
                 splitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                 for (int row = 0; row < numRows_; row++) {
-                    GridCell* cell = new GridCell(splitter);
+                    GridCell* cell = new GridCell(streams_, splitter);
                     splitter->addWidget(cell);
                 }
 
@@ -157,7 +226,7 @@ class ToolsPanelGrid : public QWidget {
                     horizontalSplitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                     for (int col = 0; col < numCols_; col++) {
-                        GridCell* cell = new GridCell(horizontalSplitter);
+                        GridCell* cell = new GridCell(streams_, horizontalSplitter);
                         horizontalSplitter->addWidget(cell);
                     }
 
@@ -171,6 +240,7 @@ class ToolsPanelGrid : public QWidget {
         QWidget* gridContainer_;
         int numRows_;
         int numCols_;
+        QStringList streams_;
 };
 
 }  // namespace spqr

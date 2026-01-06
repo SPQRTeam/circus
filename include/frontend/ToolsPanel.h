@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qcontainerfwd.h>
 #include <QApplication>
 #include <QEvent>
 #include <QHBoxLayout>
@@ -10,6 +11,8 @@
 #include <QTimer>
 #include <QWidget>
 #include <QWindow>
+#include <memory>
+#include <string>
 #include <vector>
 #include <algorithm>
 
@@ -19,6 +22,7 @@
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
+#include "Team.h"
 
 namespace spqr {
 
@@ -26,12 +30,14 @@ class ToolsPanel : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanel(QWidget* parent) : QWidget(parent) {
+        ToolsPanel(bool initial, QWidget* parent) : QWidget(parent) {            
+            initial_ = initial;
+            
             QVBoxLayout* mainLayout = new QVBoxLayout(this);
             mainLayout->setContentsMargins(5, 0, 5, 5);
             mainLayout->setSpacing(0);
 
-            header_ = new ToolsPanelHeader(this);
+            header_ = new ToolsPanelHeader(initial, this);
             mainLayout->addWidget(header_);
 
             container_ = new QWidget(this);
@@ -41,7 +47,7 @@ class ToolsPanel : public QWidget {
             containerLayout->setContentsMargins(0, 10, 0, 0);
 
             // Add the grid to the container
-            grid_ = new ToolsPanelGrid(container_);
+            grid_ = new ToolsPanelGrid(getStreams(), container_);
             containerLayout->addWidget(grid_);
 
             container_->setLayout(containerLayout);
@@ -118,6 +124,10 @@ class ToolsPanel : public QWidget {
 
     private slots:
         void onCollapseToggled() {
+            if (initial_) {
+                return;
+            }
+
             isCollapsed_ = !isCollapsed_;
             if (isCollapsed_) {
                 container_->hide();
@@ -198,10 +208,38 @@ class ToolsPanel : public QWidget {
             }
         }
 
+        QStringList getStreams(){
+            std::vector<std::string> available_streams = {
+                "Position",
+                "Orientation",
+                "Linear Acceleration",
+                "Angular Velocity",
+                "Image Left Camera",
+                "Image Right Camera",
+            };
+
+            QStringList streams;
+            streams.append(QString::fromStdString("Select stream"));
+            for(std::shared_ptr<spqr::Team> team : TeamManager::instance().getTeams()){
+                std::string team_name = team->name;
+                for(std::shared_ptr<spqr::Robot> robot : team->robots){
+                    std::string robot_name = robot->name;
+                    for (const std::string& stream : available_streams){
+                        // QString full_stream_name = QString::fromStdString(team_name) + "/" + QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
+                        QString full_stream_name = QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
+                        streams.append(full_stream_name);
+                    }
+                }
+            }
+            
+            return streams;
+        }
+
         ToolsPanelHeader* header_;
         QWidget* container_;
         ToolsPanelGrid* grid_;
 
+        bool initial_;
         int minExpandedHeight_;
         int maxExpandedHeight_;
         int currentExpandedHeight_;
