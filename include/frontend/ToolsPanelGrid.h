@@ -2,6 +2,7 @@
 
 #include <qcontainerfwd.h>
 #include <qobject.h>
+
 #include <QComboBox>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -18,15 +19,15 @@
 #include <QWidget>
 #include <memory>
 
-#include "tools/Tool.h"
-#include "tools/Plot.h"
-#include "tools/Image.h"
 #include "robots/Robot.h"
-#include "sensors/Sensor.h"
-#include "sensors/Pose.h"
+#include "sensors/Camera.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
-#include "sensors/Camera.h"
+#include "sensors/Pose.h"
+#include "sensors/Sensor.h"
+#include "tools/Image.h"
+#include "tools/Plot.h"
+#include "tools/Tool.h"
 
 namespace spqr {
 
@@ -37,14 +38,14 @@ class GridCell : public QWidget {
         GridCell(QMap<QString, ToolType> streams, QWidget* parent = nullptr) : QWidget(parent) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
-                            "  background-color: #2a2a2a; "
-                            "  border: 1px solid #444444; "
-                            "  border-radius: 3px;"
-                            "}"
-                            "QWidget:hover { "
-                            "  background-color: #3a3a3a; "
-                            "  border: 2px solid #1e667e; "
-                            "}");
+                          "  background-color: #2a2a2a; "
+                          "  border: 1px solid #444444; "
+                          "  border-radius: 3px;"
+                          "}"
+                          "QWidget:hover { "
+                          "  background-color: #3a3a3a; "
+                          "  border: 2px solid #1e667e; "
+                          "}");
             setMinimumSize(400, 300);
 
             QVBoxLayout* layout = new QVBoxLayout(this);
@@ -82,18 +83,17 @@ class GridCell : public QWidget {
             combo->setView(popupView);
 
             combo->setStyleSheet("QComboBox { "
-                                "  background-color: #444444; "
-                                "  color: white; "
-                                "  border: 1px solid #666666; "
-                                "  border-radius: 3px; "
-                                "  padding: 5px 10px 5px 10px; "
-                                "  font-size: 13px; "
-                                "} "
-                                "QComboBox:hover { "
-                                "  background-color: #595959; "
-                                "  border: 1px solid #1e667e; "
-                                "} "
-                            );
+                                 "  background-color: #444444; "
+                                 "  color: white; "
+                                 "  border: 1px solid #666666; "
+                                 "  border-radius: 3px; "
+                                 "  padding: 5px 10px 5px 10px; "
+                                 "  font-size: 13px; "
+                                 "} "
+                                 "QComboBox:hover { "
+                                 "  background-color: #595959; "
+                                 "  border: 1px solid #1e667e; "
+                                 "} ");
 
             combo->addItems(streams.keys());
             selectedItem_ = combo->currentText();
@@ -111,9 +111,13 @@ class GridCell : public QWidget {
             streams_ = streams;
         }
 
-        QString selectedItem() const { return selectedItem_; }
+        QString selectedItem() const {
+            return selectedItem_;
+        }
 
-        Tool* getTool() const { return tool_; }
+        Tool* getTool() const {
+            return tool_;
+        }
 
         void updateTool() {
             if (tool_ && tool_->type() != ToolType::NONE) {
@@ -148,25 +152,22 @@ class GridCell : public QWidget {
                 case ToolType::PLOT:
                     newTool = new Plot(this);
 
-                    if(selectedItem_.contains("/position")) {
+                    if (selectedItem_.contains("/position")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("X", QColor(255, 0, 0));
                         plot->addTimeSeries("Y", QColor(0, 255, 0));
                         plot->addTimeSeries("Z", QColor(0, 0, 255));
-                    }
-                    else if(selectedItem_.contains("/orientation")) {
+                    } else if (selectedItem_.contains("/orientation")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Roll", QColor(255, 0, 0));
                         plot->addTimeSeries("Pitch", QColor(0, 255, 0));
                         plot->addTimeSeries("Yaw", QColor(0, 0, 255));
-                    }
-                    else if(selectedItem_.contains("/linear_acceleration")) {
+                    } else if (selectedItem_.contains("/linear_acceleration")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Ax", QColor(255, 0, 0));
                         plot->addTimeSeries("Ay", QColor(0, 255, 0));
                         plot->addTimeSeries("Az", QColor(0, 0, 255));
-                    }
-                    else if(selectedItem_.contains("/angular_velocity")) {
+                    } else if (selectedItem_.contains("/angular_velocity")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Wx", QColor(255, 0, 0));
                         plot->addTimeSeries("Wy", QColor(0, 255, 0));
@@ -215,28 +216,28 @@ class ToolsPanelGrid : public QWidget {
             scrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             scrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
             scrollArea_->setStyleSheet("QScrollArea { "
-                                      "  background-color: #1a1a1a; "
-                                      "  border: none; "
-                                      "}"
-                                      "QScrollBar:horizontal, QScrollBar:vertical { "
-                                      "  background-color: #2a2a2a; "
-                                      "  border: none; "
-                                      "  height: 12px; "
-                                      "  width: 12px; "
-                                      "}"
-                                      "QScrollBar::handle:horizontal, QScrollBar::handle:vertical { "
-                                      "  background-color: #555555; "
-                                      "  border-radius: 6px; "
-                                      "  min-width: 20px; "
-                                      "  min-height: 20px; "
-                                      "}"
-                                      "QScrollBar::handle:horizontal:hover, QScrollBar::handle:vertical:hover { "
-                                      "  background-color: #1e667e; "
-                                      "}"
-                                      "QScrollBar::add-line, QScrollBar::sub-line { "
-                                      "  border: none; "
-                                      "  background: none; "
-                                      "}");
+                                       "  background-color: #1a1a1a; "
+                                       "  border: none; "
+                                       "}"
+                                       "QScrollBar:horizontal, QScrollBar:vertical { "
+                                       "  background-color: #2a2a2a; "
+                                       "  border: none; "
+                                       "  height: 12px; "
+                                       "  width: 12px; "
+                                       "}"
+                                       "QScrollBar::handle:horizontal, QScrollBar::handle:vertical { "
+                                       "  background-color: #555555; "
+                                       "  border-radius: 6px; "
+                                       "  min-width: 20px; "
+                                       "  min-height: 20px; "
+                                       "}"
+                                       "QScrollBar::handle:horizontal:hover, QScrollBar::handle:vertical:hover { "
+                                       "  background-color: #1e667e; "
+                                       "}"
+                                       "QScrollBar::add-line, QScrollBar::sub-line { "
+                                       "  border: none; "
+                                       "  background: none; "
+                                       "}");
 
             // Create the grid container
             gridContainer_ = new QWidget();
@@ -256,8 +257,12 @@ class ToolsPanelGrid : public QWidget {
             updateTimer_->start(10);
         }
 
-        int getNumRows() const { return numRows_; }
-        int getNumCols() const { return numCols_; }
+        int getNumRows() const {
+            return numRows_;
+        }
+        int getNumCols() const {
+            return numCols_;
+        }
 
     public slots:
         void addRow() {
@@ -295,7 +300,7 @@ class ToolsPanelGrid : public QWidget {
         void updateAllCells() {
             // Find all GridCell widgets and update their tools
             QList<GridCell*> cells = gridContainer_->findChildren<GridCell*>();
-            
+
             for (GridCell* cell : cells) {
                 // Get the selected stream name for this cell
                 QString selectedStream = cell->selectedItem();
@@ -304,13 +309,13 @@ class ToolsPanelGrid : public QWidget {
                 if (parts.size() == 2) {
                     QString robotName = parts[0];
                     QString sensorType = parts[1];
-                    
+
                     // Find the matching robot
                     for (std::shared_ptr<Robot>& robot : robots_) {
                         if (QString::fromStdString(robot->name) == robotName) {
                             // Get sensor data from the robot
                             std::map<std::string, Sensor*> sensors = robot->getSensors();
-                            
+
                             // Get the tool for this cell
                             Tool* tool = cell->getTool();
 
@@ -325,51 +330,45 @@ class ToolsPanelGrid : public QWidget {
                                         Eigen::Vector3d position = dynamic_cast<Pose*>(poseSensor)->getPosition();
                                         plot->addDataPoint("X", position(0));
                                         plot->addDataPoint("Y", position(1));
-                                        plot->addDataPoint("Z", position(2));    
-                                    }
-                                    else {
+                                        plot->addDataPoint("Z", position(2));
+                                    } else {
                                         qDebug() << "Pose sensor not found!";
                                     }
 
-                                }
-                                else if (sensorType == "orientation") {
+                                } else if (sensorType == "orientation") {
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
                                         Sensor* poseSensor = it->second;
                                         Eigen::Vector3d orientation = dynamic_cast<Pose*>(poseSensor)->getEulerOrientation();
                                         plot->addDataPoint("Roll", orientation(0));
                                         plot->addDataPoint("Pitch", orientation(1));
-                                        plot->addDataPoint("Yaw", orientation(2));    
+                                        plot->addDataPoint("Yaw", orientation(2));
                                     }
-                                }
-                                else if (sensorType == "linear_acceleration") {
+                                } else if (sensorType == "linear_acceleration") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
                                         Sensor* imuSensor = it->second;
                                         Eigen::Vector3d linAcc = dynamic_cast<Imu*>(imuSensor)->getLinearAcceleration();
                                         plot->addDataPoint("Ax", linAcc(0));
                                         plot->addDataPoint("Ay", linAcc(1));
-                                        plot->addDataPoint("Az", linAcc(2));    
+                                        plot->addDataPoint("Az", linAcc(2));
                                     }
-                                }
-                                else if (sensorType == "angular_velocity") {
+                                } else if (sensorType == "angular_velocity") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
                                         Sensor* imuSensor = it->second;
                                         Eigen::Vector3d angVel = dynamic_cast<Imu*>(imuSensor)->getAngularVelocity();
                                         plot->addDataPoint("Wx", angVel(0));
                                         plot->addDataPoint("Wy", angVel(1));
-                                        plot->addDataPoint("Wz", angVel(2));    
+                                        plot->addDataPoint("Wz", angVel(2));
                                     }
                                 }
 
-                            }
-                            else if (tool && tool->type() == ToolType::IMAGE) {
+                            } else if (tool && tool->type() == ToolType::IMAGE) {
                                 Image* imageTool = dynamic_cast<Image*>(tool);
 
                                 // Add image data based on sensor type
                                 if (sensorType == "rgb_left_camera" || sensorType == "rgb_right_camera") {
-
                                     std::string cameraName = (sensorType == "rgb_left_camera") ? "rgb_left_camera" : "rgb_right_camera";
                                     auto it = sensors.find(cameraName);
 
@@ -393,7 +392,7 @@ class ToolsPanelGrid : public QWidget {
                         }
                     }
                 }
-                
+
                 // Call update on the tool
                 cell->updateTool();
             }

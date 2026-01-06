@@ -2,6 +2,7 @@
 
 #include <qcolor.h>
 #include <qcontainerfwd.h>
+
 #include <QApplication>
 #include <QEvent>
 #include <QHBoxLayout>
@@ -12,19 +13,19 @@
 #include <QTimer>
 #include <QWidget>
 #include <QWindow>
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
-#include <algorithm>
 
 #include "Constants.h"
-#include "frontend/ToolsPanelHeader.h"
+#include "Team.h"
 #include "frontend/ToolsPanelGrid.h"
-#include "tools/Tool.h"
+#include "frontend/ToolsPanelHeader.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
-#include "Team.h"
+#include "tools/Tool.h"
 
 namespace spqr {
 
@@ -32,9 +33,9 @@ class ToolsPanel : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanel(bool initial, QWidget* parent) : QWidget(parent) {            
+        ToolsPanel(bool initial, QWidget* parent) : QWidget(parent) {
             initial_ = initial;
-            
+
             QVBoxLayout* mainLayout = new QVBoxLayout(this);
             mainLayout->setContentsMargins(5, 0, 5, 5);
             mainLayout->setSpacing(0);
@@ -83,7 +84,7 @@ class ToolsPanel : public QWidget {
             // Start collapsed
             isCollapsed_ = true;
             container_->hide();
-            setFixedHeight(header_->height()+5);
+            setFixedHeight(header_->height() + 5);
 
             // Initialize button states (no simulation loaded yet)
             header_->setSimulationPlaying(false);
@@ -133,7 +134,7 @@ class ToolsPanel : public QWidget {
             isCollapsed_ = !isCollapsed_;
             if (isCollapsed_) {
                 container_->hide();
-                setFixedHeight(header_->height()+5);
+                setFixedHeight(header_->height() + 5);
             } else {
                 container_->show();
                 setFixedHeight(currentExpandedHeight_);
@@ -194,7 +195,7 @@ class ToolsPanel : public QWidget {
 
             // Calculate max height for tools panel
             // Reserve space for: min simulation height + header + margins
-            maxExpandedHeight_ = currentWindowHeight - minSimulationHeight - header_->height()+5 - 50;
+            maxExpandedHeight_ = currentWindowHeight - minSimulationHeight - header_->height() + 5 - 50;
 
             // Set fixed minimum window size
             if (topLevel) {
@@ -212,12 +213,7 @@ class ToolsPanel : public QWidget {
 
         QMap<QString, ToolType> getStreams() {
             std::vector<std::string> available_streams = {
-                "position",
-                "orientation",
-                "linear_acceleration",
-                "angular_velocity",
-                "rgb_left_camera",
-                "rgb_right_camera",
+                "position", "orientation", "linear_acceleration", "angular_velocity", "rgb_left_camera", "rgb_right_camera",
             };
 
             QMap<QString, ToolType> streams;
@@ -229,11 +225,9 @@ class ToolsPanel : public QWidget {
                     for (const std::string& stream : available_streams) {
                         QString full_stream_name = QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
 
-                        if (stream == "position" || stream == "orientation" ||
-                            stream == "linear_acceleration" || stream == "angular_velocity") {
+                        if (stream == "position" || stream == "orientation" || stream == "linear_acceleration" || stream == "angular_velocity") {
                             streams.insert(full_stream_name, ToolType::PLOT);
-                        }
-                        else if (stream == "rgb_left_camera" || stream == "rgb_right_camera") {
+                        } else if (stream == "rgb_left_camera" || stream == "rgb_right_camera") {
                             streams.insert(full_stream_name, ToolType::IMAGE);
                         }
                     }
