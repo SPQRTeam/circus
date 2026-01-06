@@ -19,6 +19,7 @@ namespace spqr {
 enum ToolType {
     NONE,
     PLOT,
+    IMAGE,
 };
 
 class Tool : public QWidget {

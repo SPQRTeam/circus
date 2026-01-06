@@ -216,8 +216,8 @@ class ToolsPanel : public QWidget {
                 "orientation",
                 "linear_acceleration",
                 "angular_velocity",
-                "rgb_image_left_camera",
-                "rgb_image_right_camera",
+                "rgb_left_camera",
+                "rgb_right_camera",
             };
 
             QMap<QString, ToolType> streams;
@@ -230,12 +230,11 @@ class ToolsPanel : public QWidget {
                         QString full_stream_name = QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
 
                         if (stream == "position" || stream == "orientation" ||
-                            stream == "linear_acceleration" || stream == "Angular angular_velocity") {
+                            stream == "linear_acceleration" || stream == "angular_velocity") {
                             streams.insert(full_stream_name, ToolType::PLOT);
                         }
-                        else if (stream == "rgb_image_left_camera" || stream == "rgb_image_right_camera") {
-                            // For image streams, use NONE for now (can add IMAGE type later)
-                            streams.insert(full_stream_name, ToolType::NONE);
+                        else if (stream == "rgb_left_camera" || stream == "rgb_right_camera") {
+                            streams.insert(full_stream_name, ToolType::IMAGE);
                         }
                     }
                 }

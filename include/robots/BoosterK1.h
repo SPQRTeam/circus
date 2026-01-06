@@ -96,8 +96,8 @@ class BoosterK1 : public Robot {
             sensors["pose"] = pose;
             sensors["imu"] = imu;
             sensors["joints"] = joints;
-            sensors["left_camera"] = cameras[0];
-            sensors["right_camera"] = cameras[1];
+            sensors["rgb_left_camera"] = cameras[0];
+            sensors["rgb_right_camera"] = cameras[1];
             return sensors;
         }
 

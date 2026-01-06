@@ -45,8 +45,8 @@ void SimulationViewport::paintGL() {
         auto robot = RobotManager::instance().getRobots()[i];
 
         std::map<std::string, Sensor*> sensors = robot->getSensors();
-        Camera* leftCamera = dynamic_cast<Camera*>(sensors["left_camera"]);
-        Camera* rightCamera = dynamic_cast<Camera*>(sensors["right_camera"]);
+        Camera* leftCamera = dynamic_cast<Camera*>(sensors["rgb_left_camera"]);
+        Camera* rightCamera = dynamic_cast<Camera*>(sensors["rgb_right_camera"]);
 
         if (!leftCamera || !rightCamera)
             continue;

@@ -20,6 +20,7 @@
 
 #include "tools/Tool.h"
 #include "tools/Plot.h"
+#include "tools/Image.h"
 #include "robots/Robot.h"
 #include "sensors/Sensor.h"
 #include "sensors/Pose.h"
@@ -174,6 +175,10 @@ class GridCell : public QWidget {
 
                     break;
 
+                case ToolType::IMAGE:
+                    newTool = new Image(this);
+                    break;
+
                 case ToolType::NONE:
                     newTool = new Tool(ToolType::NONE, this);
                     break;
@@ -294,13 +299,11 @@ class ToolsPanelGrid : public QWidget {
             for (GridCell* cell : cells) {
                 // Get the selected stream name for this cell
                 QString selectedStream = cell->selectedItem();
-                qDebug() << "Updating cell with stream:" << selectedStream;
                 // Parse the stream name (format: "robotName/sensorType")
                 QStringList parts = selectedStream.split('/');
                 if (parts.size() == 2) {
                     QString robotName = parts[0];
                     QString sensorType = parts[1];
-                    qDebug() << "Robot:" << robotName << ", Sensor:" << sensorType;
                     
                     // Find the matching robot
                     for (std::shared_ptr<Robot>& robot : robots_) {
@@ -309,19 +312,17 @@ class ToolsPanelGrid : public QWidget {
                             std::map<std::string, Sensor*> sensors = robot->getSensors();
                             
                             // Get the tool for this cell
-                            Tool* tool = cell->getTool(); // You'll need to add a getter
+                            Tool* tool = cell->getTool();
+
                             if (tool && tool->type() == ToolType::PLOT) {
                                 Plot* plot = dynamic_cast<Plot*>(tool);
-                                
+
                                 // Add data based on sensor type
                                 if (sensorType == "position") {
-                                    qDebug() << "Adding position data to plot";
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
-                                        qDebug() << "Found pose sensor";
                                         Sensor* poseSensor = it->second;
                                         Eigen::Vector3d position = dynamic_cast<Pose*>(poseSensor)->getPosition();
-                                        qDebug() << "Position:" << position(0) << position(1) << position(2);
                                         plot->addDataPoint("X", position(0));
                                         plot->addDataPoint("Y", position(1));
                                         plot->addDataPoint("Z", position(2));    
@@ -332,46 +333,61 @@ class ToolsPanelGrid : public QWidget {
 
                                 }
                                 else if (sensorType == "orientation") {
-                                    qDebug() << "Adding orientation data to plot";
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
-                                        qDebug() << "Found pose sensor";
                                         Sensor* poseSensor = it->second;
                                         Eigen::Vector3d orientation = dynamic_cast<Pose*>(poseSensor)->getEulerOrientation();
-                                        qDebug() << "Orientation:" << orientation(0) << orientation(1) << orientation(2);
                                         plot->addDataPoint("Roll", orientation(0));
                                         plot->addDataPoint("Pitch", orientation(1));
                                         plot->addDataPoint("Yaw", orientation(2));    
                                     }
                                 }
                                 else if (sensorType == "linear_acceleration") {
-                                    qDebug() << "Adding linear acceleration data to plot";
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
-                                        qDebug() << "Found imu sensor";
                                         Sensor* imuSensor = it->second;
                                         Eigen::Vector3d linAcc = dynamic_cast<Imu*>(imuSensor)->getLinearAcceleration();
-                                        qDebug() << "Linear Acceleration:" << linAcc(0) << linAcc(1) << linAcc(2);
                                         plot->addDataPoint("Ax", linAcc(0));
                                         plot->addDataPoint("Ay", linAcc(1));
                                         plot->addDataPoint("Az", linAcc(2));    
                                     }
                                 }
                                 else if (sensorType == "angular_velocity") {
-                                    qDebug() << "Adding angular velocity data to plot";
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
-                                        qDebug() << "Found imu sensor";
                                         Sensor* imuSensor = it->second;
-                                        qDebug() << "Angular Velocity:";
                                         Eigen::Vector3d angVel = dynamic_cast<Imu*>(imuSensor)->getAngularVelocity();
-                                        qDebug() << angVel(0) << angVel(1) << angVel(2);
                                         plot->addDataPoint("Wx", angVel(0));
                                         plot->addDataPoint("Wy", angVel(1));
                                         plot->addDataPoint("Wz", angVel(2));    
                                     }
                                 }
 
+                            }
+                            else if (tool && tool->type() == ToolType::IMAGE) {
+                                Image* imageTool = dynamic_cast<Image*>(tool);
+
+                                // Add image data based on sensor type
+                                if (sensorType == "rgb_left_camera" || sensorType == "rgb_right_camera") {
+
+                                    std::string cameraName = (sensorType == "rgb_left_camera") ? "rgb_left_camera" : "rgb_right_camera";
+                                    auto it = sensors.find(cameraName);
+
+                                    if (it != sensors.end()) {
+                                        Camera* camera = dynamic_cast<Camera*>(it->second);
+
+                                        if (camera) {
+                                            const std::vector<uint8_t>& imageData = camera->getImage();
+                                            int width = camera->getWidth();
+                                            int height = camera->getHeight();
+
+                                            if (!imageData.empty() && width > 0 && height > 0) {
+                                                imageTool->setImage(imageData.data(), width, height, 3);
+                                            } else {
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             break;
                         }

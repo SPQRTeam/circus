@@ -87,7 +87,7 @@ class Camera : public Sensor {
             mjv_freeScene(&tempScene);
         }
 
-        void saveImage(const std::string& filename) {
+        void saveImage(const std::string& filename) const {
             QImage qimg(image.data(), w, h, w * 3, QImage::Format_RGB888);
             QImage flipped = qimg.flipped(Qt::Vertical);
             flipped.save(QString::fromStdString(filename));
@@ -99,6 +99,14 @@ class Camera : public Sensor {
 
         const std::vector<uint8_t>& getImage() const {
             return image;
+        }
+
+        int getWidth() const {
+            return w;
+        }
+
+        int getHeight() const {
+            return h;
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
