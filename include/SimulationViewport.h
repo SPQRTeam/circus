@@ -15,6 +15,18 @@ class SimulationViewport : public QOpenGLWindow {
     public:
         SimulationViewport(MujocoContext& mujContext);
 
+        void pauseRendering() {
+            if (timer) {
+                timer->stop();
+            }
+        }
+
+        void resumeRendering() {
+            if (timer) {
+                timer->start(16);
+            }
+        }
+
     protected:
         void initializeGL() override;
         void resizeGL(int w, int h) override;

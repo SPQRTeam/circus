@@ -297,6 +297,16 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     connect(toolsPanel, &ToolsPanel::openRequested, this, &AppWindow::openScene);
     connect(toolsPanel, &ToolsPanel::playRequested, this, &AppWindow::playSimulation);
     connect(toolsPanel, &ToolsPanel::pauseRequested, this, &AppWindow::pauseSimulation);
+    connect(toolsPanel, &ToolsPanel::resizeDragStarted, this, [this]() {
+        if (viewport) {
+            viewport->pauseRendering();
+        }
+    });
+    connect(toolsPanel, &ToolsPanel::resizeDragEnded, this, [this]() {
+        if (viewport) {
+            viewport->resumeRendering();
+        }
+    });
 
     std::optional<std::string> scenePath;
     if (argc >= 2 && std::string(argv[1]).ends_with(".yaml")) {
@@ -364,6 +374,16 @@ void AppWindow::loadScene(const QString& yaml_file) {
         connect(toolsPanel, &ToolsPanel::openRequested, this, &AppWindow::openScene);
         connect(toolsPanel, &ToolsPanel::playRequested, this, &AppWindow::playSimulation);
         connect(toolsPanel, &ToolsPanel::pauseRequested, this, &AppWindow::pauseSimulation);
+        connect(toolsPanel, &ToolsPanel::resizeDragStarted, this, [this]() {
+            if (viewport) {
+                viewport->pauseRendering();
+            }
+        });
+        connect(toolsPanel, &ToolsPanel::resizeDragEnded, this, [this]() {
+            if (viewport) {
+                viewport->resumeRendering();
+            }
+        });
 
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
         sim->start();

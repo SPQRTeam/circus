@@ -99,6 +99,8 @@ class ToolsPanel : public QWidget {
         void openRequested();
         void playRequested();
         void pauseRequested();
+        void resizeDragStarted();
+        void resizeDragEnded();
 
     private slots:
         void onCollapseToggled(bool collapsed) {
@@ -117,6 +119,7 @@ class ToolsPanel : public QWidget {
             if (topLevel) {
                 topLevel->setFixedSize(topLevel->size());
             }
+            emit resizeDragStarted();
         }
 
         void onResizeRequested(int deltaY) {
@@ -137,6 +140,7 @@ class ToolsPanel : public QWidget {
                 topLevel->setMinimumSize(0, 0);
                 topLevel->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
             }
+            emit resizeDragEnded();
         }
 
         void onOpenClicked() {
