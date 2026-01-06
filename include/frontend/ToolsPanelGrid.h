@@ -10,6 +10,7 @@
 #include <QListView>
 #include <QMouseEvent>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSplitter>
 #include <QString>
 #include <QTimer>
@@ -43,7 +44,7 @@ class GridCell : public QWidget {
                             "  background-color: #3a3a3a; "
                             "  border: 2px solid #1e667e; "
                             "}");
-            setMinimumSize(100, 100);
+            setMinimumSize(400, 300);
 
             QVBoxLayout* layout = new QVBoxLayout(this);
             layout->setContentsMargins(6, 6, 6, 6);
@@ -139,52 +140,50 @@ class GridCell : public QWidget {
 
             ToolType newToolType = streams_[selectedItem_];
 
-            // Only change tool if type is different
-            if (!tool_ || tool_->type() != newToolType) {
-                Tool* newTool = nullptr;
+            // ALWAYS create a new tool when source changes (not just when type differs)
+            Tool* newTool = nullptr;
 
-                switch (newToolType) {
-                    case ToolType::PLOT:
-                        newTool = new Plot(this);
-                        
-                        if(selectedItem_.contains("/position")) {
-                            Plot* plot = dynamic_cast<Plot*>(newTool);
-                            plot->addTimeSeries("X", QColor(255, 0, 0));
-                            plot->addTimeSeries("Y", QColor(0, 255, 0));
-                            plot->addTimeSeries("Z", QColor(0, 0, 255));
-                        }
-                        else if(selectedItem_.contains("/orientation")) {
-                            Plot* plot = dynamic_cast<Plot*>(newTool);
-                            plot->addTimeSeries("Roll", QColor(255, 0, 0));
-                            plot->addTimeSeries("Pitch", QColor(0, 255, 0));
-                            plot->addTimeSeries("Yaw", QColor(0, 0, 255));
-                        }
-                        else if(selectedItem_.contains("/linear_acceleration")) {
-                            Plot* plot = dynamic_cast<Plot*>(newTool);
-                            plot->addTimeSeries("Ax", QColor(255, 0, 0));
-                            plot->addTimeSeries("Ay", QColor(0, 255, 0));
-                            plot->addTimeSeries("Az", QColor(0, 0, 255));
-                        }
-                        else if(selectedItem_.contains("/angular_velocity")) {
-                            Plot* plot = dynamic_cast<Plot*>(newTool);
-                            plot->addTimeSeries("Wx", QColor(255, 0, 0));
-                            plot->addTimeSeries("Wy", QColor(0, 255, 0));
-                            plot->addTimeSeries("Wz", QColor(0, 0, 255));
-                        }
+            switch (newToolType) {
+                case ToolType::PLOT:
+                    newTool = new Plot(this);
 
-                        break;
+                    if(selectedItem_.contains("/position")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("X", QColor(255, 0, 0));
+                        plot->addTimeSeries("Y", QColor(0, 255, 0));
+                        plot->addTimeSeries("Z", QColor(0, 0, 255));
+                    }
+                    else if(selectedItem_.contains("/orientation")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("Roll", QColor(255, 0, 0));
+                        plot->addTimeSeries("Pitch", QColor(0, 255, 0));
+                        plot->addTimeSeries("Yaw", QColor(0, 0, 255));
+                    }
+                    else if(selectedItem_.contains("/linear_acceleration")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("Ax", QColor(255, 0, 0));
+                        plot->addTimeSeries("Ay", QColor(0, 255, 0));
+                        plot->addTimeSeries("Az", QColor(0, 0, 255));
+                    }
+                    else if(selectedItem_.contains("/angular_velocity")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("Wx", QColor(255, 0, 0));
+                        plot->addTimeSeries("Wy", QColor(0, 255, 0));
+                        plot->addTimeSeries("Wz", QColor(0, 0, 255));
+                    }
 
-                    case ToolType::NONE:
-                        newTool = new Tool(ToolType::NONE, this);
-                        break;
-                    
-                    default:
-                        newTool = new Tool(ToolType::NONE, this);
-                        break;
-                }
+                    break;
 
-                setTool(newTool);
+                case ToolType::NONE:
+                    newTool = new Tool(ToolType::NONE, this);
+                    break;
+
+                default:
+                    newTool = new Tool(ToolType::NONE, this);
+                    break;
             }
+
+            setTool(newTool);
         }
 
         QString selectedItem_;
@@ -205,9 +204,39 @@ class ToolsPanelGrid : public QWidget {
             mainLayout->setContentsMargins(0, 0, 0, 0);
             mainLayout->setSpacing(0);
 
+            // Create scroll area for the grid
+            scrollArea_ = new QScrollArea(this);
+            scrollArea_->setWidgetResizable(true);  // Allow resize to fill viewport
+            scrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            scrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            scrollArea_->setStyleSheet("QScrollArea { "
+                                      "  background-color: #1a1a1a; "
+                                      "  border: none; "
+                                      "}"
+                                      "QScrollBar:horizontal, QScrollBar:vertical { "
+                                      "  background-color: #2a2a2a; "
+                                      "  border: none; "
+                                      "  height: 12px; "
+                                      "  width: 12px; "
+                                      "}"
+                                      "QScrollBar::handle:horizontal, QScrollBar::handle:vertical { "
+                                      "  background-color: #555555; "
+                                      "  border-radius: 6px; "
+                                      "  min-width: 20px; "
+                                      "  min-height: 20px; "
+                                      "}"
+                                      "QScrollBar::handle:horizontal:hover, QScrollBar::handle:vertical:hover { "
+                                      "  background-color: #1e667e; "
+                                      "}"
+                                      "QScrollBar::add-line, QScrollBar::sub-line { "
+                                      "  border: none; "
+                                      "  background: none; "
+                                      "}");
+
             // Create the grid container
-            gridContainer_ = new QWidget(this);
-            mainLayout->addWidget(gridContainer_);
+            gridContainer_ = new QWidget();
+            scrollArea_->setWidget(gridContainer_);
+            mainLayout->addWidget(scrollArea_);
 
             // Initialize with 1x1 grid
             numRows_ = 1;
@@ -355,28 +384,86 @@ class ToolsPanelGrid : public QWidget {
         }
 
     private:
+        GridCell* getCellAt(int row, int col) {
+            int index = row * prevNumCols_ + col;
+            if (index >= 0 && index < cellGrid_.size()) {
+                return cellGrid_[index];
+            }
+            return nullptr;
+        }
+
         void rebuildGrid() {
+            // Save the previous grid dimensions
+            int oldRows = prevNumRows_;
+            int oldCols = prevNumCols_;
+
+            // Build a 2D representation of existing cells for easier access
+            // cellGrid_ is maintained as a flat array in row-major order
+            QList<GridCell*> oldCellGrid = cellGrid_;
+
+            // Clear the cell grid for rebuilding
+            cellGrid_.clear();
+
+            // Build the new cell grid (row-major order)
+            for (int row = 0; row < numRows_; row++) {
+                for (int col = 0; col < numCols_; col++) {
+                    GridCell* cell = nullptr;
+
+                    // Reuse existing cell if it's within the old grid bounds
+                    if (row < oldRows && col < oldCols) {
+                        int oldIndex = row * oldCols + col;
+                        if (oldIndex < oldCellGrid.size()) {
+                            cell = oldCellGrid[oldIndex];
+                            if (cell && cell->parent()) {
+                                cell->setParent(nullptr);
+                            }
+                        }
+                    }
+
+                    // Create new cell if needed
+                    if (!cell) {
+                        cell = new GridCell(streams_, nullptr);
+                    }
+
+                    cellGrid_.append(cell);
+                }
+            }
+
+            // Delete cells that are no longer needed (those outside the new grid bounds)
+            for (int row = 0; row < oldRows; row++) {
+                for (int col = 0; col < oldCols; col++) {
+                    // If this cell is outside the new grid bounds, delete it
+                    if (row >= numRows_ || col >= numCols_) {
+                        int oldIndex = row * oldCols + col;
+                        if (oldIndex < oldCellGrid.size() && oldCellGrid[oldIndex]) {
+                            delete oldCellGrid[oldIndex];
+                        }
+                    }
+                }
+            }
+
             // Clear existing layout
             if (gridContainer_->layout()) {
                 QLayout* oldLayout = gridContainer_->layout();
                 QLayoutItem* item;
                 while ((item = oldLayout->takeAt(0)) != nullptr) {
                     if (item->widget()) {
-                        delete item->widget();
+                        item->widget()->setParent(nullptr);
                     }
                     delete item;
                 }
                 delete oldLayout;
             }
 
-            // Build nested splitters for resizable grid
+            // Build the UI layout
+            int cellIndex = 0;
+
             if (numRows_ == 1 && numCols_ == 1) {
                 // Simple case: single cell
                 QVBoxLayout* layout = new QVBoxLayout(gridContainer_);
                 layout->setContentsMargins(0, 0, 0, 0);
                 layout->setSpacing(0);
-                GridCell* cell = new GridCell(streams_, gridContainer_);
-                layout->addWidget(cell);
+                layout->addWidget(cellGrid_[cellIndex++]);
             } else if (numRows_ == 1) {
                 // Single row: horizontal splitter
                 QVBoxLayout* layout = new QVBoxLayout(gridContainer_);
@@ -388,8 +475,7 @@ class ToolsPanelGrid : public QWidget {
                 splitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                 for (int col = 0; col < numCols_; col++) {
-                    GridCell* cell = new GridCell(streams_, splitter);
-                    splitter->addWidget(cell);
+                    splitter->addWidget(cellGrid_[cellIndex++]);
                 }
 
                 layout->addWidget(splitter);
@@ -404,8 +490,7 @@ class ToolsPanelGrid : public QWidget {
                 splitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                 for (int row = 0; row < numRows_; row++) {
-                    GridCell* cell = new GridCell(streams_, splitter);
-                    splitter->addWidget(cell);
+                    splitter->addWidget(cellGrid_[cellIndex++]);
                 }
 
                 layout->addWidget(splitter);
@@ -425,8 +510,7 @@ class ToolsPanelGrid : public QWidget {
                     horizontalSplitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                     for (int col = 0; col < numCols_; col++) {
-                        GridCell* cell = new GridCell(streams_, horizontalSplitter);
-                        horizontalSplitter->addWidget(cell);
+                        horizontalSplitter->addWidget(cellGrid_[cellIndex++]);
                     }
 
                     verticalSplitter->addWidget(horizontalSplitter);
@@ -434,11 +518,19 @@ class ToolsPanelGrid : public QWidget {
 
                 layout->addWidget(verticalSplitter);
             }
+
+            // Update the previous dimensions for next rebuild
+            prevNumRows_ = numRows_;
+            prevNumCols_ = numCols_;
         }
 
+        QScrollArea* scrollArea_;
         QWidget* gridContainer_;
         int numRows_;
         int numCols_;
+        int prevNumRows_ = 1;
+        int prevNumCols_ = 1;
+        QList<GridCell*> cellGrid_;
         std::vector<std::shared_ptr<Robot>> robots_;
         QMap<QString, ToolType> streams_;
         QTimer* updateTimer_;
