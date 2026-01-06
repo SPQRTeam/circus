@@ -2,10 +2,12 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMouseEvent>
 #include <QPushButton>
 #include <QTimer>
 #include <QWidget>
 #include <vector>
+#include <cmath>
 
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
@@ -31,8 +33,8 @@ class ToolsPanelHeader : public QWidget {
                                        "  border-radius: 3px; "
                                        "  padding: 2px 2px 2px 2px; "
                                        "  width: 100px; "
-                                       "  height: 25px; "
-                                       "  font-size: 14px; "
+                                       "  height: 20px; "
+                                       "  font-size: 12px; "
                                        "  font-weight: bold; "
                                        "} "
                                        "QPushButton:hover { "
@@ -51,8 +53,8 @@ class ToolsPanelHeader : public QWidget {
                                        "  border-radius: 3px; "
                                        "  padding: 2px 2px 2px 2px; "
                                        "  width: 100px; "
-                                       "  height: 25px; "
-                                       "  font-size: 14px; "
+                                       "  height: 20px; "
+                                       "  font-size: 12px; "
                                        "  font-weight: bold; "
                                        "} "
                                        "QPushButton:hover { "
@@ -71,8 +73,8 @@ class ToolsPanelHeader : public QWidget {
                                         "  border-radius: 3px; "
                                         "  padding: 2px 2px 2px 2px; "
                                         "  width: 100px; "
-                                        "  height: 25px; "
-                                        "  font-size: 14px; "
+                                        "  height: 20px; "
+                                        "  font-size: 12px; "
                                         "  font-weight: bold; "
                                         "} "
                                         "QPushButton:hover { "
@@ -94,8 +96,8 @@ class ToolsPanelHeader : public QWidget {
                                            "  border-radius: 3px; "
                                            "  padding: 2px 2px 2px 2px; "
                                            "  width: 40px; "
-                                           "  height: 25px; "
-                                           "  font-size: 14px; "
+                                           "  height: 20px; "
+                                           "  font-size: 12px; "
                                            "  font-weight: bold; "
                                            "} "
                                            "QPushButton:hover { "
@@ -106,7 +108,7 @@ class ToolsPanelHeader : public QWidget {
             layout->addWidget(collapseButton_);
 
             setLayout(layout);
-            setFixedHeight(40);
+            setFixedHeight(30);
 
             isCollapsed_ = true;
         }
@@ -127,8 +129,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
                                                   "  width: 100px; "
-                                                  "  height: 25px; "
-                                                  "  font-size: 14px; "
+                                                  "  height: 20px; "
+                                                  "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
                                                   "QPushButton:hover { "
@@ -142,8 +144,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
                                                   "  width: 100px; "
-                                                  "  height: 25px; "
-                                                  "  font-size: 14px; "
+                                                  "  height: 20px; "
+                                                  "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
                                                   "QPushButton:hover { "
@@ -158,8 +160,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
                                                   "  width: 100px; "
-                                                  "  height: 25px; "
-                                                  "  font-size: 14px; "
+                                                  "  height: 20px; "
+                                                  "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
                                                   "QPushButton:hover { "
@@ -173,8 +175,8 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
                                                   "  width: 100px; "
-                                                  "  height: 25px; "
-                                                  "  font-size: 14px; "
+                                                  "  height: 20px; "
+                                                  "  font-size: 12px; "
                                                   "  font-weight: bold; "
                                                   "} "
                                                   "QPushButton:hover { "
@@ -188,6 +190,52 @@ class ToolsPanelHeader : public QWidget {
         void playClicked();
         void pauseClicked();
         void collapseToggled(bool collapsed);
+        void resizeDragStarted();
+        void resizeRequested(int deltaY);
+        void resizeDragEnded();
+
+    protected:
+        void mousePressEvent(QMouseEvent* event) override {
+            if (event->button() == Qt::LeftButton) {
+                isDragging_ = false;
+                dragStartY_ = event->globalPosition().y();
+                event->accept();
+            }
+        }
+
+        void mouseMoveEvent(QMouseEvent* event) override {
+            if (event->buttons() & Qt::LeftButton) {
+                int deltaY = dragStartY_ - event->globalPosition().y();
+
+                // If moved more than 3 pixels, consider it a drag
+                if (std::abs(deltaY) > 3) {
+                    if (!isDragging_) {
+                        isDragging_ = true;
+                        emit resizeDragStarted();
+                    }
+                    setCursor(Qt::SizeVerCursor);
+                    emit resizeRequested(deltaY);
+                    dragStartY_ = event->globalPosition().y();
+                }
+                event->accept();
+            }
+        }
+
+        void mouseReleaseEvent(QMouseEvent* event) override {
+            if (event->button() == Qt::LeftButton) {
+                setCursor(Qt::ArrowCursor);
+
+                // If it wasn't a drag, treat as a click to toggle
+                if (!isDragging_) {
+                    toggleCollapse();
+                } else {
+                    emit resizeDragEnded();
+                }
+
+                isDragging_ = false;
+                event->accept();
+            }
+        }
 
     private slots:
         void toggleCollapse() {
@@ -202,6 +250,8 @@ class ToolsPanelHeader : public QWidget {
         QPushButton* pauseButton_;
         QPushButton* collapseButton_;
         bool isCollapsed_;
+        bool isDragging_ = false;
+        qreal dragStartY_ = 0;
 };
 
 }  // namespace spqr

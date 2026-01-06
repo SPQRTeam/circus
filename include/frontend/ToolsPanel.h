@@ -1,12 +1,19 @@
 #pragma once
 
+#include <QApplication>
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMoveEvent>
 #include <QPushButton>
+#include <QScreen>
 #include <QTimer>
 #include <QWidget>
+#include <QWindow>
 #include <vector>
+#include <algorithm>
 
+#include "Constants.h"
 #include "frontend/ToolsPanelHeader.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
@@ -43,6 +50,9 @@ class ToolsPanel : public QWidget {
             connect(header_, &ToolsPanelHeader::openClicked, this, &ToolsPanel::onOpenClicked);
             connect(header_, &ToolsPanelHeader::playClicked, this, &ToolsPanel::onPlayClicked);
             connect(header_, &ToolsPanelHeader::pauseClicked, this, &ToolsPanel::onPauseClicked);
+            connect(header_, &ToolsPanelHeader::resizeDragStarted, this, &ToolsPanel::onResizeDragStarted);
+            connect(header_, &ToolsPanelHeader::resizeRequested, this, &ToolsPanel::onResizeRequested);
+            connect(header_, &ToolsPanelHeader::resizeDragEnded, this, &ToolsPanel::onResizeDragEnded);
 
             // Start collapsed
             setFixedHeight(header_->height());
@@ -50,10 +60,39 @@ class ToolsPanel : public QWidget {
 
             // Initialize button states (no simulation loaded yet)
             header_->setSimulationPlaying(false);
+
+            // Initialize size constraints
+            minExpandedHeight_ = 500;
+            updateMaxHeight();
+            currentExpandedHeight_ = minExpandedHeight_;
         }
 
         void setSimulationPlaying(bool playing) {
             header_->setSimulationPlaying(playing);
+        }
+
+    protected:
+        void moveEvent(QMoveEvent* event) override {
+            QWidget::moveEvent(event);
+            updateMaxHeight();
+        }
+
+        void changeEvent(QEvent* event) override {
+            QWidget::changeEvent(event);
+            if (event->type() == QEvent::ParentChange) {
+                updateMaxHeight();
+            } else if (event->type() == QEvent::WindowStateChange) {
+                QWidget* topLevel = window();
+                if (topLevel) {
+                    // Check if window was un-maximized
+                    if (!(topLevel->windowState() & Qt::WindowMaximized) && wasMaximized_) {
+                        // Resize to initial window size
+                        topLevel->resize(initialWindowWidth, initialWindowHeight);
+                    }
+                    wasMaximized_ = (topLevel->windowState() & Qt::WindowMaximized);
+                }
+                updateMaxHeight();
+            }
         }
 
     signals:
@@ -68,7 +107,35 @@ class ToolsPanel : public QWidget {
                 setFixedHeight(header_->height());
             } else {
                 container_->show();
-                setFixedHeight(500);  // Expanded height
+                setFixedHeight(currentExpandedHeight_);
+            }
+        }
+
+        void onResizeDragStarted() {
+            // Disable window resizing when drag starts
+            QWidget* topLevel = window();
+            if (topLevel) {
+                topLevel->setFixedSize(topLevel->size());
+            }
+        }
+
+        void onResizeRequested(int deltaY) {
+            // Only resize if expanded
+            if (container_->isVisible()) {
+                int newHeight = height() + deltaY;
+                newHeight = std::max(minExpandedHeight_, std::min(maxExpandedHeight_, newHeight));
+
+                currentExpandedHeight_ = newHeight;
+                setFixedHeight(newHeight);
+            }
+        }
+
+        void onResizeDragEnded() {
+            // Re-enable window resizing when drag ends
+            QWidget* topLevel = window();
+            if (topLevel) {
+                topLevel->setMinimumSize(0, 0);
+                topLevel->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
             }
         }
 
@@ -85,8 +152,39 @@ class ToolsPanel : public QWidget {
         }
 
     private:
+        void updateMaxHeight() {
+            QWidget* topLevel = window();
+
+            int currentWindowHeight = topLevel ? topLevel->height() : 0;
+
+            // Calculate minimum simulation height (at least 1/6 of screen)
+            int minSimulationHeight = currentWindowHeight / 6;
+
+            // Calculate max height for tools panel
+            // Reserve space for: min simulation height + header + margins
+            maxExpandedHeight_ = currentWindowHeight - minSimulationHeight - header_->height() - 50;
+
+            // Set fixed minimum window size
+            if (topLevel) {
+                topLevel->setMinimumSize(initialWindowWidth, initialWindowHeight);
+            }
+
+            // Clamp current height if it exceeds new max
+            if (currentExpandedHeight_ > maxExpandedHeight_) {
+                currentExpandedHeight_ = maxExpandedHeight_;
+                if (container_->isVisible()) {
+                    setFixedHeight(currentExpandedHeight_);
+                }
+            }
+        }
+
         ToolsPanelHeader* header_;
         QWidget* container_;
+
+        int minExpandedHeight_;
+        int maxExpandedHeight_;
+        int currentExpandedHeight_;
+        bool wasMaximized_ = false;
 };
 
 }  // namespace spqr
