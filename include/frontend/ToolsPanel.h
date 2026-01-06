@@ -28,17 +28,17 @@ class ToolsPanel : public QWidget {
     public:
         ToolsPanel(QWidget* parent) : QWidget(parent) {
             QVBoxLayout* mainLayout = new QVBoxLayout(this);
-            mainLayout->setContentsMargins(5, 0, 5, 0);
+            mainLayout->setContentsMargins(5, 0, 5, 5);
             mainLayout->setSpacing(0);
 
             header_ = new ToolsPanelHeader(this);
             mainLayout->addWidget(header_);
 
             container_ = new QWidget(this);
-            container_->setStyleSheet("QWidget { background-color: #232323; }");
+            container_->setStyleSheet("QWidget { background-color: #1a1a1a; }");
             QVBoxLayout* containerLayout = new QVBoxLayout(container_);
             containerLayout->setSpacing(0);
-            containerLayout->setContentsMargins(10, 10, 10, 10);
+            containerLayout->setContentsMargins(0, 10, 0, 0);
 
             // Add the grid to the container
             grid_ = new ToolsPanelGrid(container_);
@@ -75,7 +75,7 @@ class ToolsPanel : public QWidget {
             // Start collapsed
             isCollapsed_ = true;
             container_->hide();
-            setFixedHeight(header_->height());
+            setFixedHeight(header_->height()+5);
 
             // Initialize button states (no simulation loaded yet)
             header_->setSimulationPlaying(false);
@@ -121,7 +121,7 @@ class ToolsPanel : public QWidget {
             isCollapsed_ = !isCollapsed_;
             if (isCollapsed_) {
                 container_->hide();
-                setFixedHeight(header_->height());
+                setFixedHeight(header_->height()+5);
             } else {
                 container_->show();
                 setFixedHeight(currentExpandedHeight_);
@@ -182,7 +182,7 @@ class ToolsPanel : public QWidget {
 
             // Calculate max height for tools panel
             // Reserve space for: min simulation height + header + margins
-            maxExpandedHeight_ = currentWindowHeight - minSimulationHeight - header_->height() - 50;
+            maxExpandedHeight_ = currentWindowHeight - minSimulationHeight - header_->height()+5 - 50;
 
             // Set fixed minimum window size
             if (topLevel) {

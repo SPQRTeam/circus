@@ -16,10 +16,16 @@ class GridCell : public QWidget {
 
     public:
         GridCell(QWidget* parent = nullptr) : QWidget(parent) {
-            setStyleSheet("GridCell { "
-                         "  background-color: #2a2a2a; "
-                         "  border: 1px solid #444444; "
-                         "}");
+            setAttribute(Qt::WA_StyledBackground, true);
+            setStyleSheet("QWidget { "
+                            "  background-color: #2a2a2a; "
+                            "  border: 1px solid #444444; "
+                            "  border-radius: 3px;"
+                            "}"
+                            "QWidget:hover { "
+                            "  background-color: #3a3a3a; "
+                            "  border: 2px solid #1e667e; "
+                            "}");
             setMinimumSize(100, 100);
         }
 };
@@ -110,8 +116,8 @@ class ToolsPanelGrid : public QWidget {
                 layout->setSpacing(0);
 
                 QSplitter* splitter = new QSplitter(Qt::Horizontal, gridContainer_);
-                splitter->setHandleWidth(2);
-                splitter->setStyleSheet("QSplitter::handle { background-color: #555555; }");
+                splitter->setHandleWidth(6);
+                splitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                 for (int col = 0; col < numCols_; col++) {
                     GridCell* cell = new GridCell(splitter);
@@ -126,8 +132,8 @@ class ToolsPanelGrid : public QWidget {
                 layout->setSpacing(0);
 
                 QSplitter* splitter = new QSplitter(Qt::Vertical, gridContainer_);
-                splitter->setHandleWidth(2);
-                splitter->setStyleSheet("QSplitter::handle { background-color: #555555; }");
+                splitter->setHandleWidth(6);
+                splitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                 for (int row = 0; row < numRows_; row++) {
                     GridCell* cell = new GridCell(splitter);
@@ -142,13 +148,13 @@ class ToolsPanelGrid : public QWidget {
                 layout->setSpacing(0);
 
                 QSplitter* verticalSplitter = new QSplitter(Qt::Vertical, gridContainer_);
-                verticalSplitter->setHandleWidth(2);
-                verticalSplitter->setStyleSheet("QSplitter::handle { background-color: #555555; }");
+                verticalSplitter->setHandleWidth(6);
+                verticalSplitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                 for (int row = 0; row < numRows_; row++) {
                     QSplitter* horizontalSplitter = new QSplitter(Qt::Horizontal, verticalSplitter);
-                    horizontalSplitter->setHandleWidth(2);
-                    horizontalSplitter->setStyleSheet("QSplitter::handle { background-color: #555555; }");
+                    horizontalSplitter->setHandleWidth(6);
+                    horizontalSplitter->setStyleSheet("QSplitter::handle { background-color: #1a1a1a; }");
 
                     for (int col = 0; col < numCols_; col++) {
                         GridCell* cell = new GridCell(horizontalSplitter);

@@ -77,7 +77,7 @@ class ToolsPanelHeader : public QWidget {
             layout->addWidget(removeColumnButton_);
 
             setLayout(layout);
-            setFixedHeight(35);
+            setFixedHeight(40);
         }
 
         void updateGridButtonStates(int numRows, int numCols) {
