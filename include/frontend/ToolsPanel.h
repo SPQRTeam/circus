@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qcolor.h>
 #include <qcontainerfwd.h>
 #include <QApplication>
 #include <QEvent>
@@ -19,6 +20,7 @@
 #include "Constants.h"
 #include "frontend/ToolsPanelHeader.h"
 #include "frontend/ToolsPanelGrid.h"
+#include "tools/Tool.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
@@ -47,7 +49,7 @@ class ToolsPanel : public QWidget {
             containerLayout->setContentsMargins(0, 10, 0, 0);
 
             // Add the grid to the container
-            grid_ = new ToolsPanelGrid(getStreams(), container_);
+            grid_ = new ToolsPanelGrid(getRobots(), getStreams(), container_);
             containerLayout->addWidget(grid_);
 
             container_->setLayout(containerLayout);
@@ -208,31 +210,48 @@ class ToolsPanel : public QWidget {
             }
         }
 
-        QStringList getStreams(){
+        QMap<QString, ToolType> getStreams() {
             std::vector<std::string> available_streams = {
-                "Position",
-                "Orientation",
-                "Linear Acceleration",
-                "Angular Velocity",
-                "Image Left Camera",
-                "Image Right Camera",
+                "position",
+                "orientation",
+                "linear_acceleration",
+                "angular_velocity",
+                "rgb_image_left_camera",
+                "rgb_image_right_camera",
             };
 
-            QStringList streams;
-            streams.append(QString::fromStdString("Select stream"));
-            for(std::shared_ptr<spqr::Team> team : TeamManager::instance().getTeams()){
+            QMap<QString, ToolType> streams;
+            streams.insert("Select stream", ToolType::NONE);
+            for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
                 std::string team_name = team->name;
-                for(std::shared_ptr<spqr::Robot> robot : team->robots){
+                for (std::shared_ptr<Robot> robot : team->robots) {
                     std::string robot_name = robot->name;
-                    for (const std::string& stream : available_streams){
-                        // QString full_stream_name = QString::fromStdString(team_name) + "/" + QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
+                    for (const std::string& stream : available_streams) {
                         QString full_stream_name = QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
-                        streams.append(full_stream_name);
+
+                        if (stream == "position" || stream == "orientation" ||
+                            stream == "linear_acceleration" || stream == "Angular angular_velocity") {
+                            streams.insert(full_stream_name, ToolType::PLOT);
+                        }
+                        else if (stream == "rgb_image_left_camera" || stream == "rgb_image_right_camera") {
+                            // For image streams, use NONE for now (can add IMAGE type later)
+                            streams.insert(full_stream_name, ToolType::NONE);
+                        }
                     }
                 }
             }
-            
+
             return streams;
+        }
+
+        std::vector<std::shared_ptr<Robot>> getRobots() {
+            std::vector<std::shared_ptr<Robot>> robots;
+            for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
+                for (std::shared_ptr<Robot> robot : team->robots) {
+                    robots.push_back(robot);
+                }
+            }
+            return robots;
         }
 
         ToolsPanelHeader* header_;

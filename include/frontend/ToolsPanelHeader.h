@@ -6,12 +6,7 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QWidget>
-#include <vector>
 #include <cmath>
-
-#include "robots/BoosterK1.h"
-#include "robots/BoosterT1.h"
-#include "robots/Robot.h"
 
 namespace spqr {
 

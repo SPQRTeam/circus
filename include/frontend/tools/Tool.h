@@ -16,11 +16,18 @@
 
 namespace spqr {
 
+enum ToolType {
+    NONE,
+    PLOT,
+};
+
 class Tool : public QWidget {
         Q_OBJECT
 
     public:
-        Tool(QWidget* parent = nullptr) : QWidget(parent) {
+        Tool(ToolType type, QWidget* parent = nullptr) : QWidget(parent) {
+            type_ = type;
+            
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                             "  background-color: #1e1e1e; "
@@ -50,6 +57,15 @@ class Tool : public QWidget {
         }
 
         virtual ~Tool() = default;
+
+        ToolType type() const { return type_; }
+
+        // Virtual update method called periodically (500ms)
+        virtual void update() {}
+
+    private:
+        ToolType type_;
+
 };
 
 }
