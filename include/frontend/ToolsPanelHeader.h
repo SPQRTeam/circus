@@ -83,39 +83,10 @@ class ToolsPanelHeader : public QWidget {
                                         "} ");
             connect(pauseButton_, &QPushButton::clicked, this, &ToolsPanelHeader::pauseClicked);
             layout->addWidget(pauseButton_);
-
-            // Spacer to push collapse button to the right
+            
             layout->addStretch();
-
-            // Collapse/Expand button on the right
-            collapseButton_ = new QPushButton("▲", this);
-            collapseButton_->setStyleSheet("QPushButton { "
-                                           "  background-color: #444444; "
-                                           "  color: white; "
-                                           "  border: 1px solid #666666; "
-                                           "  border-radius: 3px; "
-                                           "  padding: 2px 2px 2px 2px; "
-                                           "  width: 40px; "
-                                           "  height: 20px; "
-                                           "  font-size: 12px; "
-                                           "  font-weight: bold; "
-                                           "} "
-                                           "QPushButton:hover { "
-                                           "  background-color: #595959; "
-                                           "  border: 1px solid #1e667e; "
-                                           "} ");
-            connect(collapseButton_, &QPushButton::clicked, this, &ToolsPanelHeader::toggleCollapse);
-            layout->addWidget(collapseButton_);
-
             setLayout(layout);
             setFixedHeight(30);
-
-            isCollapsed_ = true;
-        }
-
-        void setCollapsed(bool collapsed) {
-            isCollapsed_ = collapsed;
-            collapseButton_->setText(collapsed ? "▲" : "▼");
         }
 
         void setSimulationPlaying(bool playing) {
@@ -189,10 +160,10 @@ class ToolsPanelHeader : public QWidget {
         void openClicked();
         void playClicked();
         void pauseClicked();
-        void collapseToggled(bool collapsed);
+        void collapseToggled();
         void resizeDragStarted();
-        void resizeRequested(int deltaY);
         void resizeDragEnded();
+        void resizeRequested(int deltaY);
 
     protected:
         void mousePressEvent(QMouseEvent* event) override {
@@ -225,11 +196,11 @@ class ToolsPanelHeader : public QWidget {
             if (event->button() == Qt::LeftButton) {
                 setCursor(Qt::ArrowCursor);
 
-                // If it wasn't a drag, treat as a click to toggle
-                if (!isDragging_) {
-                    toggleCollapse();
-                } else {
+                if (isDragging_) {
                     emit resizeDragEnded();
+                } else {
+                    // If it wasn't a drag, treat as a click to toggle collapse
+                    emit collapseToggled();
                 }
 
                 isDragging_ = false;
@@ -237,19 +208,10 @@ class ToolsPanelHeader : public QWidget {
             }
         }
 
-    private slots:
-        void toggleCollapse() {
-            isCollapsed_ = !isCollapsed_;
-            collapseButton_->setText(isCollapsed_ ? "▲" : "▼");
-            emit collapseToggled(isCollapsed_);
-        }
-
     private:
         QPushButton* openButton_;
         QPushButton* playButton_;
         QPushButton* pauseButton_;
-        QPushButton* collapseButton_;
-        bool isCollapsed_;
         bool isDragging_ = false;
         qreal dragStartY_ = 0;
 };

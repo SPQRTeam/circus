@@ -45,26 +45,27 @@ class ToolsPanel : public QWidget {
 
             setLayout(mainLayout);
 
+            // Initialize size constraints
+            minExpandedHeight_ = 500;
+            updateMaxHeight();
+            currentExpandedHeight_ = minExpandedHeight_;
+
             // Connect header signals
-            connect(header_, &ToolsPanelHeader::collapseToggled, this, &ToolsPanel::onCollapseToggled);
             connect(header_, &ToolsPanelHeader::openClicked, this, &ToolsPanel::onOpenClicked);
             connect(header_, &ToolsPanelHeader::playClicked, this, &ToolsPanel::onPlayClicked);
             connect(header_, &ToolsPanelHeader::pauseClicked, this, &ToolsPanel::onPauseClicked);
+            connect(header_, &ToolsPanelHeader::collapseToggled, this, &ToolsPanel::onCollapseToggled);
             connect(header_, &ToolsPanelHeader::resizeDragStarted, this, &ToolsPanel::onResizeDragStarted);
             connect(header_, &ToolsPanelHeader::resizeRequested, this, &ToolsPanel::onResizeRequested);
             connect(header_, &ToolsPanelHeader::resizeDragEnded, this, &ToolsPanel::onResizeDragEnded);
 
             // Start collapsed
-            setFixedHeight(header_->height());
+            isCollapsed_ = true;
             container_->hide();
+            setFixedHeight(header_->height());
 
             // Initialize button states (no simulation loaded yet)
             header_->setSimulationPlaying(false);
-
-            // Initialize size constraints
-            minExpandedHeight_ = 500;
-            updateMaxHeight();
-            currentExpandedHeight_ = minExpandedHeight_;
         }
 
         void setSimulationPlaying(bool playing) {
@@ -103,8 +104,9 @@ class ToolsPanel : public QWidget {
         void resizeDragEnded();
 
     private slots:
-        void onCollapseToggled(bool collapsed) {
-            if (collapsed) {
+        void onCollapseToggled() {
+            isCollapsed_ = !isCollapsed_;
+            if (isCollapsed_) {
                 container_->hide();
                 setFixedHeight(header_->height());
             } else {
@@ -123,14 +125,11 @@ class ToolsPanel : public QWidget {
         }
 
         void onResizeRequested(int deltaY) {
-            // Only resize if expanded
-            if (container_->isVisible()) {
-                int newHeight = height() + deltaY;
-                newHeight = std::max(minExpandedHeight_, std::min(maxExpandedHeight_, newHeight));
+            int newHeight = height() + deltaY;
+            newHeight = std::max(minExpandedHeight_, std::min(maxExpandedHeight_, newHeight));
 
-                currentExpandedHeight_ = newHeight;
-                setFixedHeight(newHeight);
-            }
+            currentExpandedHeight_ = newHeight;
+            setFixedHeight(newHeight);
         }
 
         void onResizeDragEnded() {
@@ -189,6 +188,7 @@ class ToolsPanel : public QWidget {
         int maxExpandedHeight_;
         int currentExpandedHeight_;
         bool wasMaximized_ = false;
+        bool isCollapsed_ = true;
 };
 
 }  // namespace spqr

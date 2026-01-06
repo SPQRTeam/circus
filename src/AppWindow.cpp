@@ -376,12 +376,14 @@ void AppWindow::loadScene(const QString& yaml_file) {
         connect(toolsPanel, &ToolsPanel::pauseRequested, this, &AppWindow::pauseSimulation);
         connect(toolsPanel, &ToolsPanel::resizeDragStarted, this, [this]() {
             if (viewport) {
+                sim->pause();
                 viewport->pauseRendering();
             }
         });
         connect(toolsPanel, &ToolsPanel::resizeDragEnded, this, [this]() {
             if (viewport) {
                 viewport->resumeRendering();
+                sim->play();
             }
         });
 
