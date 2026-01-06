@@ -35,67 +35,57 @@ class ToolsPanelHeader : public QWidget {
 
             // Open button
             openButton_ = new QPushButton("Open", this);
-            openButton_->setStyleSheet("QPushButton { "
-                                       "  background-color: #444444; "
-                                       "  color: white; "
-                                       "  border: 1px solid #666666; "
-                                       "  border-radius: 3px; "
-                                       "  padding: 2px 2px 2px 2px; "
-                                       "  width: 80px; "
-                                       "  height: 25px; "
-                                       "  font-size: 12px; "
-                                       "  font-weight: bold; "
-                                       "} "
-                                       "QPushButton:hover { "
-                                       "  background-color: #595959; "
-                                       "  border: 1px solid #1e667e; "
-                                       "} ");
+            openButton_->setStyleSheet(getButtonStyle());
             connect(openButton_, &QPushButton::clicked, this, &ToolsPanelHeader::openClicked);
             layout->addWidget(openButton_);
 
             // Play button
             playButton_ = new QPushButton("Play", this);
-            playButton_->setStyleSheet("QPushButton { "
-                                       "  background-color: #444444; "
-                                       "  color: white; "
-                                       "  border: 1px solid #666666; "
-                                       "  border-radius: 3px; "
-                                       "  padding: 2px 2px 2px 2px; "
-                                       "  width: 80px; "
-                                       "  height: 25px; "
-                                       "  font-size: 12px; "
-                                       "  font-weight: bold; "
-                                       "} "
-                                       "QPushButton:hover { "
-                                       "  background-color: #595959; "
-                                       "  border: 1px solid #1e667e; "
-                                       "} ");
+            playButton_->setStyleSheet(getButtonStyle());
             connect(playButton_, &QPushButton::clicked, this, &ToolsPanelHeader::playClicked);
             layout->addWidget(playButton_);
 
             // Pause button
             pauseButton_ = new QPushButton("Pause", this);
-            pauseButton_->setStyleSheet("QPushButton { "
-                                        "  background-color: #444444; "
-                                        "  color: white; "
-                                        "  border: 1px solid #666666; "
-                                        "  border-radius: 3px; "
-                                        "  padding: 2px 2px 2px 2px; "
-                                        "  width: 80px; "
-                                        "  height: 25px; "
-                                        "  font-size: 12px; "
-                                        "  font-weight: bold; "
-                                        "} "
-                                        "QPushButton:hover { "
-                                        "  background-color: #595959; "
-                                        "  border: 1px solid #1e667e; "
-                                        "} ");
+            pauseButton_->setStyleSheet(getButtonStyle());
             connect(pauseButton_, &QPushButton::clicked, this, &ToolsPanelHeader::pauseClicked);
             layout->addWidget(pauseButton_);
-            
+
             layout->addStretch();
+
+            // Grid control buttons on the right
+            addRowButton_ = new QPushButton("Add Row", this);
+            addRowButton_->setStyleSheet(getButtonStyle());
+            connect(addRowButton_, &QPushButton::clicked, this, &ToolsPanelHeader::addRowClicked);
+            layout->addWidget(addRowButton_);
+
+            removeRowButton_ = new QPushButton("Remove Row", this);
+            removeRowButton_->setStyleSheet(getButtonStyleDisabled());
+            removeRowButton_->setEnabled(false);
+            connect(removeRowButton_, &QPushButton::clicked, this, &ToolsPanelHeader::removeRowClicked);
+            layout->addWidget(removeRowButton_);
+
+            addColumnButton_ = new QPushButton("Add Column", this);
+            addColumnButton_->setStyleSheet(getButtonStyle());
+            connect(addColumnButton_, &QPushButton::clicked, this, &ToolsPanelHeader::addColumnClicked);
+            layout->addWidget(addColumnButton_);
+
+            removeColumnButton_ = new QPushButton("Remove Column", this);
+            removeColumnButton_->setStyleSheet(getButtonStyleDisabled());
+            removeColumnButton_->setEnabled(false);
+            connect(removeColumnButton_, &QPushButton::clicked, this, &ToolsPanelHeader::removeColumnClicked);
+            layout->addWidget(removeColumnButton_);
+
             setLayout(layout);
             setFixedHeight(35);
+        }
+
+        void updateGridButtonStates(int numRows, int numCols) {
+            removeRowButton_->setEnabled(numRows > 1);
+            removeColumnButton_->setEnabled(numCols > 1);
+
+            removeRowButton_->setStyleSheet(numRows > 1 ? getButtonStyle() : getButtonStyleDisabled());
+            removeColumnButton_->setStyleSheet(numCols > 1 ? getButtonStyle() : getButtonStyleDisabled());
         }
 
         void setSimulationPlaying(bool playing) {
@@ -108,7 +98,7 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border: 1px solid #7e1e1e; "
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 80px; "
+                                                  "  width: 110px; "
                                                   "  height: 25px; "
                                                   "  font-size: 12px; "
                                                   "  font-weight: bold; "
@@ -116,22 +106,7 @@ class ToolsPanelHeader : public QWidget {
                                                   "QPushButton:hover { "
                                                   "  background-color: #595959; "
                                                   "  border: 1px solid #7e1e1e; "
-                                                  "} " :
-                                                  "QPushButton { "
-                                                  "  background-color: #666666; "
-                                                  "  color: #909090; "
-                                                  "  border: 1px solid #666666; "
-                                                  "  border-radius: 3px; "
-                                                  "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 80px; "
-                                                  "  height: 25px; "
-                                                  "  font-size: 12px; "
-                                                  "  font-weight: bold; "
-                                                  "} "
-                                                  "QPushButton:hover { "
-                                                  "  background-color: #595959; "
-                                                  "  border: 1px solid #1e667e; "
-                                                  "} ");
+                                                  "} " : getButtonStyleDisabled());
 
             playButton_->setStyleSheet(!playing ? "QPushButton { "
                                                   "  background-color: #444444; "
@@ -139,7 +114,7 @@ class ToolsPanelHeader : public QWidget {
                                                   "  border: 1px solid #1e7e34; "
                                                   "  border-radius: 3px; "
                                                   "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 80px; "
+                                                  "  width: 110px; "
                                                   "  height: 25px; "
                                                   "  font-size: 12px; "
                                                   "  font-weight: bold; "
@@ -147,22 +122,7 @@ class ToolsPanelHeader : public QWidget {
                                                   "QPushButton:hover { "
                                                   "  background-color: #595959; "
                                                   "  border: 1px solid #1e7e34; "
-                                                  "} " :
-                                                  "QPushButton { "
-                                                  "  background-color: #666666; "
-                                                  "  color: #909090; "
-                                                  "  border: 1px solid #666666; "
-                                                  "  border-radius: 3px; "
-                                                  "  padding: 2px 2px 2px 2px; "
-                                                  "  width: 80px; "
-                                                  "  height: 25px; "
-                                                  "  font-size: 12px; "
-                                                  "  font-weight: bold; "
-                                                  "} "
-                                                  "QPushButton:hover { "
-                                                  "  background-color: #595959; "
-                                                  "  border: 1px solid #1e667e; "
-                                                  "} ");
+                                                  "} " : getButtonStyleDisabled());
         }
 
     signals:
@@ -173,6 +133,10 @@ class ToolsPanelHeader : public QWidget {
         void resizeDragStarted();
         void resizeDragEnded();
         void resizeRequested(int deltaY);
+        void addRowClicked();
+        void removeRowClicked();
+        void addColumnClicked();
+        void removeColumnClicked();
 
     protected:
         void mousePressEvent(QMouseEvent* event) override {
@@ -225,10 +189,50 @@ class ToolsPanelHeader : public QWidget {
         }
 
     private:
+        QString getButtonStyle() {
+            return "QPushButton { "
+                                "  background-color: #444444; "
+                                "  color: white; "
+                                "  border: 1px solid #666666; "
+                                "  border-radius: 3px; "
+                                "  padding: 2px 2px 2px 2px; "
+                                "  width: 110px; "
+                                "  height: 25px; "
+                                "  font-size: 12px; "
+                                "  font-weight: bold; "
+                                "} "
+                                "QPushButton:hover { "
+                                "  background-color: #595959; "
+                                "  border: 1px solid #1e667e; "
+                                "} ";
+        }
+
+        QString getButtonStyleDisabled() {
+            return "QPushButton { "
+                                "  background-color: #666666; "
+                                "  color: #909090; "
+                                "  border: 1px solid #666666; "
+                                "  border-radius: 3px; "
+                                "  padding: 2px 2px 2px 2px; "
+                                "  width: 110px; "
+                                "  height: 25px; "
+                                "  font-size: 12px; "
+                                "  font-weight: bold; "
+                                "} "
+                                "QPushButton:hover { "
+                                "  background-color: #595959; "
+                                "  border: 1px solid #1e667e; "
+                                "} ";
+        }
+
         QWidget* background_;
         QPushButton* openButton_;
         QPushButton* playButton_;
         QPushButton* pauseButton_;
+        QPushButton* addRowButton_;
+        QPushButton* removeRowButton_;
+        QPushButton* addColumnButton_;
+        QPushButton* removeColumnButton_;
         bool isDragging_ = false;
         qreal dragStartY_ = 0;
 };

@@ -15,6 +15,7 @@
 
 #include "Constants.h"
 #include "frontend/ToolsPanelHeader.h"
+#include "frontend/ToolsPanelGrid.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
@@ -35,9 +36,14 @@ class ToolsPanel : public QWidget {
 
             container_ = new QWidget(this);
             container_->setStyleSheet("QWidget { background-color: #232323; }");
-            QHBoxLayout* containerLayout = new QHBoxLayout(container_);
-            containerLayout->setSpacing(10);
+            QVBoxLayout* containerLayout = new QVBoxLayout(container_);
+            containerLayout->setSpacing(0);
             containerLayout->setContentsMargins(10, 10, 10, 10);
+
+            // Add the grid to the container
+            grid_ = new ToolsPanelGrid(container_);
+            containerLayout->addWidget(grid_);
+
             container_->setLayout(containerLayout);
             mainLayout->addWidget(container_);
 
@@ -56,6 +62,15 @@ class ToolsPanel : public QWidget {
             connect(header_, &ToolsPanelHeader::resizeDragStarted, this, &ToolsPanel::onResizeDragStarted);
             connect(header_, &ToolsPanelHeader::resizeRequested, this, &ToolsPanel::onResizeRequested);
             connect(header_, &ToolsPanelHeader::resizeDragEnded, this, &ToolsPanel::onResizeDragEnded);
+
+            // Connect grid control buttons from header to grid slots
+            connect(header_, &ToolsPanelHeader::addRowClicked, grid_, &ToolsPanelGrid::addRow);
+            connect(header_, &ToolsPanelHeader::removeRowClicked, grid_, &ToolsPanelGrid::removeRow);
+            connect(header_, &ToolsPanelHeader::addColumnClicked, grid_, &ToolsPanelGrid::addColumn);
+            connect(header_, &ToolsPanelHeader::removeColumnClicked, grid_, &ToolsPanelGrid::removeColumn);
+
+            // Connect grid size changes to update header button states
+            connect(grid_, &ToolsPanelGrid::gridSizeChanged, header_, &ToolsPanelHeader::updateGridButtonStates);
 
             // Start collapsed
             isCollapsed_ = true;
@@ -185,6 +200,7 @@ class ToolsPanel : public QWidget {
 
         ToolsPanelHeader* header_;
         QWidget* container_;
+        ToolsPanelGrid* grid_;
 
         int minExpandedHeight_;
         int maxExpandedHeight_;
