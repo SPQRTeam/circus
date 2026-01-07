@@ -3,12 +3,14 @@
 #include <qdatetime.h>
 #include <qobject.h>
 
+#include <QCheckBox>
 #include <QColor>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QScrollArea>
 #include <QString>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -28,6 +30,7 @@ struct TimeSeriesData {
         QColor color;
         std::deque<std::pair<double, double>> data;  // (timestamp, value)
         double currentValue = 0.0;
+        bool visible = true;
 
         TimeSeriesData(const QString& n, const QColor& c) : name(n), color(c) {}
 };
@@ -69,12 +72,17 @@ class PlotWidget : public QWidget {
             double minTime = currentTime - 10.0;
             double maxTime = currentTime;
 
-            // Calculate value range from all series
+            // Calculate value range from visible series only
             double minValue = std::numeric_limits<double>::max();
             double maxValue = std::numeric_limits<double>::lowest();
             bool hasData = false;
 
             for (const auto* series : timeSeries_) {
+                // Only consider visible series for Y-axis bounds
+                if (!series->visible) {
+                    continue;
+                }
+
                 for (const auto& point : series->data) {
                     if (point.first >= minTime) {
                         minValue = std::min(minValue, point.second);
@@ -136,7 +144,7 @@ class PlotWidget : public QWidget {
 
             // Draw time series
             for (const auto* series : timeSeries_) {
-                if (series->data.empty()) {
+                if (series->data.empty() || !series->visible) {
                     continue;
                 }
 
@@ -178,7 +186,6 @@ class Plot : public Tool {
 
     public:
         Plot(QWidget* parent = nullptr) : Tool(ToolType::PLOT, parent) {
-            // Clear the default "Select a source" label from base Tool class
             QLayout* oldLayout = layout();
             if (oldLayout) {
                 QLayoutItem* item;
@@ -203,9 +210,12 @@ class Plot : public Tool {
                                             "  border: 1px solid #444444; "
                                             "  border-radius: 3px; "
                                             "}");
-            valuesLayout_ = new QVBoxLayout(valuesContainer_);
+            valuesContainer_->setFixedHeight(40);
+
+            valuesLayout_ = new QHBoxLayout(valuesContainer_);
             valuesLayout_->setContentsMargins(8, 6, 8, 6);
-            valuesLayout_->setSpacing(4);
+            valuesLayout_->setSpacing(20);
+            valuesLayout_->setAlignment(Qt::AlignLeft);
 
             layout->addWidget(valuesContainer_, 0);
 
@@ -230,6 +240,42 @@ class Plot : public Tool {
             TimeSeriesData* series = new TimeSeriesData(name, seriesColor);
             timeSeries_.push_back(series);
 
+            // Create container for checkbox and label
+            QWidget* seriesWidget = new QWidget(this);
+            seriesWidget->setStyleSheet("QWidget { background-color: transparent; border: none; }");
+            QHBoxLayout* seriesLayout = new QHBoxLayout(seriesWidget);
+            seriesLayout->setContentsMargins(0, 0, 0, 0);
+            seriesLayout->setSpacing(6);
+
+            // Add checkbox with colored indicator
+            QCheckBox* checkbox = new QCheckBox(this);
+            checkbox->setChecked(true);
+            QString colorStyle = QString(
+                                     "QCheckBox { "
+                                     "  background-color: transparent; "
+                                     "  border: none; "
+                                     "} "
+                                     "QCheckBox::indicator { "
+                                     "  width: 14px; "
+                                     "  height: 14px; "
+                                     "  border: 2px solid rgb(%1, %2, %3); "
+                                     "  border-radius: 3px; "
+                                     "  background-color: #252525; "
+                                     "} "
+                                     "QCheckBox::indicator:checked { "
+                                     "  background-color: rgb(%1, %2, %3); "
+                                     "}")
+                                     .arg(seriesColor.red())
+                                     .arg(seriesColor.green())
+                                     .arg(seriesColor.blue());
+            checkbox->setStyleSheet(colorStyle);
+
+            // Connect checkbox to visibility toggle
+            connect(checkbox, &QCheckBox::toggled, this, [this, series](bool checked) {
+                series->visible = checked;
+                updatePlot();
+            });
+
             // Add label for current value
             QLabel* valueLabel = new QLabel(this);
             valueLabel->setStyleSheet("QLabel { "
@@ -237,10 +283,18 @@ class Plot : public Tool {
                                       "  font-size: 12px; "
                                       "  background-color: transparent; "
                                       "  border: none; "
+                                      "  padding: 0px; "
+                                      "  margin: 0px; "
                                       "}");
+            valueLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
             updateValueLabel(valueLabel, name, 0.0, seriesColor);
-            valuesLayout_->addWidget(valueLabel);
+
+            seriesLayout->addWidget(checkbox);
+            seriesLayout->addWidget(valueLabel);
+
+            valuesLayout_->addWidget(seriesWidget);
             valueLabels_.push_back(valueLabel);
+            checkboxes_.push_back(checkbox);
         }
 
         void addDataPoint(const QString& seriesName, double value) {
@@ -272,6 +326,11 @@ class Plot : public Tool {
                 delete label;
             }
             valueLabels_.clear();
+
+            for (auto* checkbox : checkboxes_) {
+                delete checkbox;
+            }
+            checkboxes_.clear();
         }
 
         ~Plot() override {
@@ -291,9 +350,7 @@ class Plot : public Tool {
 
     private:
         void updateValueLabel(QLabel* label, const QString& name, double value, const QColor& color) {
-            QString colorHex = QString("rgb(%1, %2, %3)").arg(color.red()).arg(color.green()).arg(color.blue());
-
-            label->setText(QString("<span style='color: %1;'>●</span> <b>%2:</b> %3").arg(colorHex).arg(name).arg(value, 0, 'f', 3));
+            label->setText(QString("<b>%1:</b> %2").arg(name).arg(value, 0, 'f', 3));
         }
 
         QColor generateRandomColor() {
@@ -335,9 +392,10 @@ class Plot : public Tool {
 
         std::vector<TimeSeriesData*> timeSeries_;
         std::vector<QLabel*> valueLabels_;
+        std::vector<QCheckBox*> checkboxes_;
 
         QWidget* valuesContainer_;
-        QVBoxLayout* valuesLayout_;
+        QHBoxLayout* valuesLayout_;
         PlotWidget* plotWidget_;
         QTimer* updateTimer_;
 
