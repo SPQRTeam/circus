@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QString>
 #include <QTimer>
@@ -203,6 +204,32 @@ class Plot : public Tool {
             layout->setContentsMargins(8, 8, 8, 8);
             layout->setSpacing(8);
 
+            // Create horizontal layout for settings button and values panel
+            QHBoxLayout* topLayout = new QHBoxLayout();
+            topLayout->setSpacing(8);
+            topLayout->setContentsMargins(0, 0, 0, 0);
+
+            // Settings button (square)
+            settingsButton_ = new QPushButton(this);
+            settingsButton_->setText("⚙");
+            settingsButton_->setFixedSize(40, 40);
+            settingsButton_->setStyleSheet("QPushButton { "
+                                           "  background-color: #252525; "
+                                           "  border: 1px solid #444444; "
+                                           "  border-radius: 3px; "
+                                           "  color: white; "
+                                           "  font-size: 16px; "
+                                           "} "
+                                           "QPushButton:hover { "
+                                           "  background-color: #2a2a2a; "
+                                           "  border-color: #555555; "
+                                           "} "
+                                           "QPushButton:pressed { "
+                                           "  background-color: #202020; "
+                                           "}");
+
+            topLayout->addWidget(settingsButton_);
+
             // Current values section with horizontal scroll
             QScrollArea* valuesScrollArea = new QScrollArea(this);
             valuesScrollArea->setStyleSheet("QScrollArea { "
@@ -239,7 +266,9 @@ class Plot : public Tool {
             valuesLayout_->setSizeConstraint(QLayout::SetMinAndMaxSize);
 
             valuesScrollArea->setWidget(valuesContainer_);
-            layout->addWidget(valuesScrollArea, 0);
+            topLayout->addWidget(valuesScrollArea, 1);
+
+            layout->addLayout(topLayout, 0);
 
             // Plot widget
             plotWidget_ = new PlotWidget(this);
@@ -416,6 +445,7 @@ class Plot : public Tool {
         std::vector<QLabel*> valueLabels_;
         std::vector<QCheckBox*> checkboxes_;
 
+        QPushButton* settingsButton_;
         QWidget* valuesContainer_;
         QHBoxLayout* valuesLayout_;
         PlotWidget* plotWidget_;
