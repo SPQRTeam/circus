@@ -203,21 +203,43 @@ class Plot : public Tool {
             layout->setContentsMargins(8, 8, 8, 8);
             layout->setSpacing(8);
 
-            // Current values section
-            valuesContainer_ = new QWidget(this);
-            valuesContainer_->setStyleSheet("QWidget { "
+            // Current values section with horizontal scroll
+            QScrollArea* valuesScrollArea = new QScrollArea(this);
+            valuesScrollArea->setStyleSheet("QScrollArea { "
                                             "  background-color: #252525; "
                                             "  border: 1px solid #444444; "
                                             "  border-radius: 3px; "
+                                            "} "
+                                            "QScrollBar:horizontal { "
+                                            "  height: 8px; "
+                                            "  background-color: #1a1a1a; "
+                                            "} "
+                                            "QScrollBar::handle:horizontal { "
+                                            "  background-color: #555555; "
+                                            "  border-radius: 4px; "
+                                            "} "
+                                            "QScrollBar::handle:horizontal:hover { "
+                                            "  background-color: #666666; "
                                             "}");
-            valuesContainer_->setFixedHeight(40);
+            valuesScrollArea->setFixedHeight(40);
+            valuesScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            valuesScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            valuesScrollArea->setWidgetResizable(false);
+
+            valuesContainer_ = new QWidget();
+            valuesContainer_->setStyleSheet("QWidget { "
+                                            "  background-color: transparent; "
+                                            "  border: none; "
+                                            "}");
 
             valuesLayout_ = new QHBoxLayout(valuesContainer_);
             valuesLayout_->setContentsMargins(8, 6, 8, 6);
             valuesLayout_->setSpacing(20);
             valuesLayout_->setAlignment(Qt::AlignLeft);
+            valuesLayout_->setSizeConstraint(QLayout::SetMinAndMaxSize);
 
-            layout->addWidget(valuesContainer_, 0);
+            valuesScrollArea->setWidget(valuesContainer_);
+            layout->addWidget(valuesScrollArea, 0);
 
             // Plot widget
             plotWidget_ = new PlotWidget(this);

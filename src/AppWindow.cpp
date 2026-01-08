@@ -21,6 +21,11 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     std::signal(SIGINT, signalHandler);
     std::signal(SIGSEGV, signalHandler);
     std::signal(SIGABRT, signalHandler);
+    
+    std::optional<std::string> scenePath;
+    if (argc >= 2 && std::string(argv[1]).ends_with(".yaml")) {
+        scenePath = argv[1];
+    }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
 
@@ -32,16 +37,17 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     centralWidget->setLayout(mainLayout);
     setCentralWidget(centralWidget);
 
-    // Create viewport placeholder
-    viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
-    viewportPlaceholder->setAlignment(Qt::AlignCenter);
-    viewportPlaceholder->setStyleSheet("QLabel { "
-                                       "  color: #666666; "
-                                       "  font-size: 24px; "
-                                       "  font-weight: bold; "
-                                       "  background-color: #0a0a0a; "
-                                       "}");
-    mainLayout->addWidget(viewportPlaceholder);
+    if(!scenePath){
+        viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
+        viewportPlaceholder->setAlignment(Qt::AlignCenter);
+        viewportPlaceholder->setStyleSheet("QLabel { "
+                                           "  color: #666666; "
+                                           "  font-size: 24px; "
+                                           "  font-weight: bold; "
+                                           "  background-color: #0a0a0a; "
+                                           "}");
+        mainLayout->addWidget(viewportPlaceholder);
+    }
 
     if (toolsPanel) {
         mainLayout->removeWidget(toolsPanel);
@@ -65,11 +71,6 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
             viewport->resumeRendering();
         }
     });
-
-    std::optional<std::string> scenePath;
-    if (argc >= 2 && std::string(argv[1]).ends_with(".yaml")) {
-        scenePath = argv[1];
-    }
 
     if (scenePath) {
         QString fileArg = QString::fromLocal8Bit(scenePath->c_str());

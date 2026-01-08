@@ -157,17 +157,124 @@ class GridCell : public QWidget {
                         plot->addTimeSeries("X", QColor(255, 0, 0));
                         plot->addTimeSeries("Y", QColor(0, 255, 0));
                         plot->addTimeSeries("Z", QColor(0, 0, 255));
-                    } else if (selectedItem_.contains("/orientation")) {
+                    } 
+                    else if (selectedItem_.contains("/orientation")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Roll", QColor(255, 0, 0));
                         plot->addTimeSeries("Pitch", QColor(0, 255, 0));
                         plot->addTimeSeries("Yaw", QColor(0, 0, 255));
-                    } else if (selectedItem_.contains("/linear_acceleration")) {
+                    }
+                    else if (selectedItem_.contains("/joints_position")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("head_yaw");
+                        plot->addTimeSeries("head_pitch");
+                        plot->addTimeSeries("shoulder_left_pitch");
+                        plot->addTimeSeries("shoulder_left_roll");
+                        plot->addTimeSeries("elbow_left_pitch");
+                        plot->addTimeSeries("elbow_left_yaw");
+                        plot->addTimeSeries("shoulder_right_pitch");
+                        plot->addTimeSeries("shoulder_right_roll");
+                        plot->addTimeSeries("elbow_right_pitch");
+                        plot->addTimeSeries("elbow_right_yaw");
+                        plot->addTimeSeries("waist");
+                        plot->addTimeSeries("hip_left_pitch");
+                        plot->addTimeSeries("hip_left_roll");
+                        plot->addTimeSeries("hip_left_yaw");
+                        plot->addTimeSeries("knee_left_pitch");
+                        plot->addTimeSeries("ankle_left_pitch");
+                        plot->addTimeSeries("ankle_left_roll");
+                        plot->addTimeSeries("hip_right_pitch");
+                        plot->addTimeSeries("hip_right_roll");
+                        plot->addTimeSeries("hip_right_yaw");
+                        plot->addTimeSeries("knee_right_pitch");
+                        plot->addTimeSeries("ankle_right_pitch");
+                        plot->addTimeSeries("ankle_right_roll");
+                    } 
+                    else if (selectedItem_.contains("/joints_velocity")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("head_yaw");
+                        plot->addTimeSeries("head_pitch");
+                        plot->addTimeSeries("shoulder_left_pitch");
+                        plot->addTimeSeries("shoulder_left_roll");
+                        plot->addTimeSeries("elbow_left_pitch");
+                        plot->addTimeSeries("elbow_left_yaw");
+                        plot->addTimeSeries("shoulder_right_pitch");
+                        plot->addTimeSeries("shoulder_right_roll");
+                        plot->addTimeSeries("elbow_right_pitch");
+                        plot->addTimeSeries("elbow_right_yaw");
+                        plot->addTimeSeries("waist");
+                        plot->addTimeSeries("hip_left_pitch");
+                        plot->addTimeSeries("hip_left_roll");
+                        plot->addTimeSeries("hip_left_yaw");
+                        plot->addTimeSeries("knee_left_pitch");
+                        plot->addTimeSeries("ankle_left_pitch");
+                        plot->addTimeSeries("ankle_left_roll");
+                        plot->addTimeSeries("hip_right_pitch");
+                        plot->addTimeSeries("hip_right_roll");
+                        plot->addTimeSeries("hip_right_yaw");
+                        plot->addTimeSeries("knee_right_pitch");
+                        plot->addTimeSeries("ankle_right_pitch");
+                        plot->addTimeSeries("ankle_right_roll");
+                    } 
+                    else if (selectedItem_.contains("/joints_acceleration")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("head_yaw");
+                        plot->addTimeSeries("head_pitch");
+                        plot->addTimeSeries("shoulder_left_pitch");
+                        plot->addTimeSeries("shoulder_left_roll");
+                        plot->addTimeSeries("elbow_left_pitch");
+                        plot->addTimeSeries("elbow_left_yaw");
+                        plot->addTimeSeries("shoulder_right_pitch");
+                        plot->addTimeSeries("shoulder_right_roll");
+                        plot->addTimeSeries("elbow_right_pitch");
+                        plot->addTimeSeries("elbow_right_yaw");
+                        plot->addTimeSeries("waist");
+                        plot->addTimeSeries("hip_left_pitch");
+                        plot->addTimeSeries("hip_left_roll");
+                        plot->addTimeSeries("hip_left_yaw");
+                        plot->addTimeSeries("knee_left_pitch");
+                        plot->addTimeSeries("ankle_left_pitch");
+                        plot->addTimeSeries("ankle_left_roll");
+                        plot->addTimeSeries("hip_right_pitch");
+                        plot->addTimeSeries("hip_right_roll");
+                        plot->addTimeSeries("hip_right_yaw");
+                        plot->addTimeSeries("knee_right_pitch");
+                        plot->addTimeSeries("ankle_right_pitch");
+                        plot->addTimeSeries("ankle_right_roll");
+                    } 
+                    else if (selectedItem_.contains("/joints_torque")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("head_yaw");
+                        plot->addTimeSeries("head_pitch");
+                        plot->addTimeSeries("shoulder_left_pitch");
+                        plot->addTimeSeries("shoulder_left_roll");
+                        plot->addTimeSeries("elbow_left_pitch");
+                        plot->addTimeSeries("elbow_left_yaw");
+                        plot->addTimeSeries("shoulder_right_pitch");
+                        plot->addTimeSeries("shoulder_right_roll");
+                        plot->addTimeSeries("elbow_right_pitch");
+                        plot->addTimeSeries("elbow_right_yaw");
+                        plot->addTimeSeries("waist");
+                        plot->addTimeSeries("hip_left_pitch");
+                        plot->addTimeSeries("hip_left_roll");
+                        plot->addTimeSeries("hip_left_yaw");
+                        plot->addTimeSeries("knee_left_pitch");
+                        plot->addTimeSeries("ankle_left_pitch");
+                        plot->addTimeSeries("ankle_left_roll");
+                        plot->addTimeSeries("hip_right_pitch");
+                        plot->addTimeSeries("hip_right_roll");
+                        plot->addTimeSeries("hip_right_yaw");
+                        plot->addTimeSeries("knee_right_pitch");
+                        plot->addTimeSeries("ankle_right_pitch");
+                        plot->addTimeSeries("ankle_right_roll");
+                    } 
+                    else if (selectedItem_.contains("/linear_acceleration")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Ax", QColor(255, 0, 0));
                         plot->addTimeSeries("Ay", QColor(0, 255, 0));
                         plot->addTimeSeries("Az", QColor(0, 0, 255));
-                    } else if (selectedItem_.contains("/angular_velocity")) {
+                    } 
+                    else if (selectedItem_.contains("/angular_velocity")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Wx", QColor(255, 0, 0));
                         plot->addTimeSeries("Wy", QColor(0, 255, 0));
@@ -334,8 +441,8 @@ class ToolsPanelGrid : public QWidget {
                                     } else {
                                         qDebug() << "Pose sensor not found!";
                                     }
-
-                                } else if (sensorType == "orientation") {
+                                } 
+                                else if (sensorType == "orientation") {
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
                                         Sensor* poseSensor = it->second;
@@ -344,7 +451,128 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("Pitch", orientation(1));
                                         plot->addDataPoint("Yaw", orientation(2));
                                     }
-                                } else if (sensorType == "linear_acceleration") {
+                                } 
+                                else if (sensorType == "joints_position") {
+                                    auto it = sensors.find("joints");
+                                    if (it != sensors.end()) {
+                                        Sensor* jointsSensor = it->second;
+                                        Eigen::Vector3d position = dynamic_cast<Joints*>(jointsSensor)->getPosition();
+                                        plot->addDataPoint("head_yaw", position(0));
+                                        plot->addDataPoint("head_pitch", position(1));
+                                        plot->addDataPoint("shoulder_left_pitch", position(2));
+                                        plot->addDataPoint("shoulder_left_roll", position(3));
+                                        plot->addDataPoint("elbow_left_pitch", position(4));
+                                        plot->addDataPoint("elbow_left_yaw", position(5));
+                                        plot->addDataPoint("shoulder_right_pitch", position(6));
+                                        plot->addDataPoint("shoulder_right_roll", position(7));
+                                        plot->addDataPoint("elbow_right_pitch", position(8));
+                                        plot->addDataPoint("elbow_right_yaw", position(9));
+                                        plot->addDataPoint("waist", position(10));
+                                        plot->addDataPoint("hip_left_pitch", position(11));
+                                        plot->addDataPoint("hip_left_roll", position(12));
+                                        plot->addDataPoint("hip_left_yaw", position(13));
+                                        plot->addDataPoint("knee_left_pitch", position(14));
+                                        plot->addDataPoint("ankle_left_pitch", position(15));
+                                        plot->addDataPoint("ankle_left_roll", position(16));
+                                        plot->addDataPoint("hip_right_pitch", position(17));
+                                        plot->addDataPoint("hip_right_roll", position(18));
+                                        plot->addDataPoint("hip_right_yaw", position(19));
+                                        plot->addDataPoint("knee_right_pitch", position(20));
+                                        plot->addDataPoint("ankle_right_pitch", position(21));
+                                        plot->addDataPoint("ankle_right_roll", position(22));   
+                                    }
+                                } 
+                                else if (sensorType == "joints_velocity") {
+                                    auto it = sensors.find("joints");
+                                    if (it != sensors.end()) {
+                                        Sensor* jointsSensor = it->second;
+                                        Eigen::Vector3d velocity = dynamic_cast<Joints*>(jointsSensor)->getVelocity();
+                                        plot->addDataPoint("head_yaw", velocity(0));
+                                        plot->addDataPoint("head_pitch", velocity(1));
+                                        plot->addDataPoint("shoulder_left_pitch", velocity(2));
+                                        plot->addDataPoint("shoulder_left_roll", velocity(3));
+                                        plot->addDataPoint("elbow_left_pitch", velocity(4));
+                                        plot->addDataPoint("elbow_left_yaw", velocity(5));
+                                        plot->addDataPoint("shoulder_right_pitch", velocity(6));
+                                        plot->addDataPoint("shoulder_right_roll", velocity(7));
+                                        plot->addDataPoint("elbow_right_pitch", velocity(8));
+                                        plot->addDataPoint("elbow_right_yaw", velocity(9));
+                                        plot->addDataPoint("waist", velocity(10));
+                                        plot->addDataPoint("hip_left_pitch", velocity(11));
+                                        plot->addDataPoint("hip_left_roll", velocity(12));
+                                        plot->addDataPoint("hip_left_yaw", velocity(13));
+                                        plot->addDataPoint("knee_left_pitch", velocity(14));
+                                        plot->addDataPoint("ankle_left_pitch", velocity(15));
+                                        plot->addDataPoint("ankle_left_roll", velocity(16));
+                                        plot->addDataPoint("hip_right_pitch", velocity(17));
+                                        plot->addDataPoint("hip_right_roll", velocity(18));
+                                        plot->addDataPoint("hip_right_yaw", velocity(19));
+                                        plot->addDataPoint("knee_right_pitch", velocity(20));
+                                        plot->addDataPoint("ankle_right_pitch", velocity(21));
+                                        plot->addDataPoint("ankle_right_roll", velocity(22));   
+                                    }
+                                } 
+                                else if (sensorType == "joints_acceleration") {
+                                    auto it = sensors.find("joints");
+                                    if (it != sensors.end()) {
+                                        Sensor* jointsSensor = it->second;
+                                        Eigen::Vector3d acceleration = dynamic_cast<Joints*>(jointsSensor)->getAcceleration();
+                                        plot->addDataPoint("head_yaw", acceleration(0));
+                                        plot->addDataPoint("head_pitch", acceleration(1));
+                                        plot->addDataPoint("shoulder_left_pitch", acceleration(2));
+                                        plot->addDataPoint("shoulder_left_roll", acceleration(3));
+                                        plot->addDataPoint("elbow_left_pitch", acceleration(4));
+                                        plot->addDataPoint("elbow_left_yaw", acceleration(5));
+                                        plot->addDataPoint("shoulder_right_pitch", acceleration(6));
+                                        plot->addDataPoint("shoulder_right_roll", acceleration(7));
+                                        plot->addDataPoint("elbow_right_pitch", acceleration(8));
+                                        plot->addDataPoint("elbow_right_yaw", acceleration(9));
+                                        plot->addDataPoint("waist", acceleration(10));
+                                        plot->addDataPoint("hip_left_pitch", acceleration(11));
+                                        plot->addDataPoint("hip_left_roll", acceleration(12));
+                                        plot->addDataPoint("hip_left_yaw", acceleration(13));
+                                        plot->addDataPoint("knee_left_pitch", acceleration(14));
+                                        plot->addDataPoint("ankle_left_pitch", acceleration(15));
+                                        plot->addDataPoint("ankle_left_roll", acceleration(16));
+                                        plot->addDataPoint("hip_right_pitch", acceleration(17));
+                                        plot->addDataPoint("hip_right_roll", acceleration(18));
+                                        plot->addDataPoint("hip_right_yaw", acceleration(19));
+                                        plot->addDataPoint("knee_right_pitch", acceleration(20));
+                                        plot->addDataPoint("ankle_right_pitch", acceleration(21));
+                                        plot->addDataPoint("ankle_right_roll", acceleration(22));   
+                                    }
+                                } 
+                                else if (sensorType == "joints_torque") {
+                                    auto it = sensors.find("joints");
+                                    if (it != sensors.end()) {
+                                        Sensor* jointsSensor = it->second;
+                                        Eigen::Vector3d torque = dynamic_cast<Joints*>(jointsSensor)->getTorque();
+                                        plot->addDataPoint("head_yaw", torque(0));
+                                        plot->addDataPoint("head_pitch", torque(1));
+                                        plot->addDataPoint("shoulder_left_pitch", torque(2));
+                                        plot->addDataPoint("shoulder_left_roll", torque(3));
+                                        plot->addDataPoint("elbow_left_pitch", torque(4));
+                                        plot->addDataPoint("elbow_left_yaw", torque(5));
+                                        plot->addDataPoint("shoulder_right_pitch", torque(6));
+                                        plot->addDataPoint("shoulder_right_roll", torque(7));
+                                        plot->addDataPoint("elbow_right_pitch", torque(8));
+                                        plot->addDataPoint("elbow_right_yaw", torque(9));
+                                        plot->addDataPoint("waist", torque(10));
+                                        plot->addDataPoint("hip_left_pitch", torque(11));   
+                                        plot->addDataPoint("hip_left_roll", torque(12));
+                                        plot->addDataPoint("hip_left_yaw", torque(13));
+                                        plot->addDataPoint("knee_left_pitch", torque(14));
+                                        plot->addDataPoint("ankle_left_pitch", torque(15));
+                                        plot->addDataPoint("ankle_left_roll", torque(16));
+                                        plot->addDataPoint("hip_right_pitch", torque(17));
+                                        plot->addDataPoint("hip_right_roll", torque(18));
+                                        plot->addDataPoint("hip_right_yaw", torque(19));
+                                        plot->addDataPoint("knee_right_pitch", torque(20));
+                                        plot->addDataPoint("ankle_right_pitch", torque(21));
+                                        plot->addDataPoint("ankle_right_roll", torque(22));   
+                                    }
+                                }
+                                else if (sensorType == "linear_acceleration") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
                                         Sensor* imuSensor = it->second;
@@ -353,7 +581,8 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("Ay", linAcc(1));
                                         plot->addDataPoint("Az", linAcc(2));
                                     }
-                                } else if (sensorType == "angular_velocity") {
+                                } 
+                                else if (sensorType == "angular_velocity") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
                                         Sensor* imuSensor = it->second;
@@ -364,7 +593,9 @@ class ToolsPanelGrid : public QWidget {
                                     }
                                 }
 
-                            } else if (tool && tool->type() == ToolType::IMAGE) {
+                            } 
+                            
+                            else if (tool && tool->type() == ToolType::IMAGE) {
                                 Image* imageTool = dynamic_cast<Image*>(tool);
 
                                 // Add image data based on sensor type
