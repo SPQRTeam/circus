@@ -31,20 +31,23 @@
     <mesh name="back_net" file="../meshes/goal/BackNet.obj"/>
 
     <mesh name="colosseum" file="../meshes/colosseum.obj" scale="0.004 0.004 0.004"/>
-    <texture name="colosseum_tex" type="2d" builtin="flat" rgb1="0.118 0.4 0.494" width="512" height="512"/>
+    <texture name="colosseum_tex" type="2d" builtin="flat" rgb1="0.666 0.639 0.557" width="512" height="512"/>
     <material name="colosseum_mat"
             texture="colosseum_tex"
-            rgba="0.118 0.4 0.494 0.3"
+            rgba="0.666 0.639 0.557 0.3"
             specular="0.05"
             shininess="0.1"/>
 
-    <!-- <texture name="sand_txt" type="2d" file="../textures/sand.png"/>
-    <material name="sand" texture="sand_txt" texrepeat="100 100" specular="0.2" shininess="0.1" reflectance="0.0"/> -->
-
-    <texture name="plane_tex" type="2d" builtin="flat" rgb1="1 1 1" width="512" height="512"/>
+    <texture name="plane_tex" type="2d" builtin="flat" rgb1="0.549 0.45 0.282" width="512" height="512"/>
     <material name="plane_mat"
             texture="plane_tex"
-            rgba="1 1 1 0.3"
+            rgba="0.549 0.45 0.282 0.3"
+            specular="0.05"
+            shininess="0.1"/>
+    <texture name="plane_in_tex" type="2d" builtin="flat" rgb1="0.71 0.67 0.59" width="512" height="512"/>
+    <material name="plane_in_mat"
+            texture="plane_tex"
+            rgba="0.71 0.67 0.59 1"
             specular="0.05"
             shininess="0.1"/>
 
@@ -61,7 +64,7 @@
 
     <!-- Grid -->
     <geom name="plane_ellipsoid_full" type="ellipsoid" size="41 34 0.0001" material="plane_mat" pos="0 0 -0.2" friction="10 10 10"/>
-    <geom name="plane_ellipsoid_in" type="ellipsoid" size="21 14 0.0001" material="grass" pos="0 0 -0.05" friction="10 10 10"/>
+    <geom name="plane_ellipsoid_in" type="ellipsoid" size="21 14 0.0001" material="plane_in_mat" pos="0 0 -0.05" friction="10 10 10"/>
 
     <!-- Field -->
     <geom name="left_ground" type="plane" size="4 5.5 0.1" material="grass" pos="-4 0 0" euler="0 0 0" condim="3" friction="0.01 0.01 0.01"/>
