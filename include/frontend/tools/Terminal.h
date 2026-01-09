@@ -2,8 +2,10 @@
 
 #include <qobject.h>
 
+#include <QContextMenuEvent>
 #include <QFont>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QProcess>
 #include <QTextEdit>
 #include <QTimer>
@@ -91,6 +93,42 @@ class TerminalDisplay : public QTextEdit {
             } else {
                 QTextEdit::keyPressEvent(event);
             }
+        }
+
+        void contextMenuEvent(QContextMenuEvent* event) override {
+            QMenu* menu = new QMenu(this);
+
+            // Style the menu to match the terminal theme
+            menu->setStyleSheet(
+                "QMenu {"
+                "  background-color: #1e1e1e;"
+                "  color: #cccccc;"
+                "  border: 1px solid #444444;"
+                "  padding: 4px;"
+                "}"
+                "QMenu::item {"
+                "  padding: 6px 20px;"
+                "  border-radius: 3px;"
+                "}"
+                "QMenu::item:selected {"
+                "  background-color: #2d2d2d;"
+                "}"
+                "QMenu::item:disabled {"
+                "  color: #666666;"
+                "}"
+            );
+
+            // Add Copy action
+            QAction* copyAction = menu->addAction("Copy");
+            copyAction->setEnabled(!textCursor().selectedText().isEmpty());
+            connect(copyAction, &QAction::triggered, this, &QTextEdit::copy);
+
+            // Add Paste action
+            QAction* pasteAction = menu->addAction("Paste");
+            connect(pasteAction, &QAction::triggered, this, &QTextEdit::paste);
+
+            menu->exec(event->globalPos());
+            delete menu;
         }
 
     private:
