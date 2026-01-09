@@ -5,13 +5,19 @@
 
 #include <QCheckBox>
 #include <QColor>
+#include <QDoubleSpinBox>
+#include <QFormLayout>
 #include <QFrame>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QResizeEvent>
 #include <QScrollArea>
+#include <QSpinBox>
 #include <QString>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -40,7 +46,8 @@ class PlotWidget : public QWidget {
         Q_OBJECT
 
     public:
-        PlotWidget(QWidget* parent = nullptr) : QWidget(parent) {
+        PlotWidget(QWidget* parent = nullptr)
+            : QWidget(parent), timeWindow_(10.0), autoYBounds_(true), fixedMinY_(-10.0), fixedMaxY_(10.0) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #1a1a1a; "
@@ -53,6 +60,27 @@ class PlotWidget : public QWidget {
             timeSeries_ = series;
             update();
         }
+
+        void setTimeWindow(double seconds) {
+            timeWindow_ = seconds;
+            update();
+        }
+
+        void setYBoundsAuto(bool autoMode) {
+            autoYBounds_ = autoMode;
+            update();
+        }
+
+        void setFixedYBounds(double minY, double maxY) {
+            fixedMinY_ = minY;
+            fixedMaxY_ = maxY;
+            update();
+        }
+
+        double getTimeWindow() const { return timeWindow_; }
+        bool isYBoundsAuto() const { return autoYBounds_; }
+        double getFixedMinY() const { return fixedMinY_; }
+        double getFixedMaxY() const { return fixedMaxY_; }
 
     protected:
         void paintEvent(QPaintEvent* event) override {
@@ -68,42 +96,51 @@ class PlotWidget : public QWidget {
                 return;
             }
 
-            // Calculate time window (last 10 seconds)
+            // Calculate time window using settings
             double currentTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000.0;
-            double minTime = currentTime - 10.0;
+            double minTime = currentTime - timeWindow_;
             double maxTime = currentTime;
 
-            // Calculate value range from visible series only
-            double minValue = std::numeric_limits<double>::max();
-            double maxValue = std::numeric_limits<double>::lowest();
-            bool hasData = false;
+            // Calculate value range
+            double minValue, maxValue;
 
-            for (const auto* series : timeSeries_) {
-                // Only consider visible series for Y-axis bounds
-                if (!series->visible) {
-                    continue;
-                }
+            if (autoYBounds_) {
+                // Calculate value range from visible series only
+                minValue = std::numeric_limits<double>::max();
+                maxValue = std::numeric_limits<double>::lowest();
+                bool hasData = false;
 
-                for (const auto& point : series->data) {
-                    if (point.first >= minTime) {
-                        minValue = std::min(minValue, point.second);
-                        maxValue = std::max(maxValue, point.second);
-                        hasData = true;
+                for (const auto* series : timeSeries_) {
+                    // Only consider visible series for Y-axis bounds
+                    if (!series->visible) {
+                        continue;
+                    }
+
+                    for (const auto& point : series->data) {
+                        if (point.first >= minTime) {
+                            minValue = std::min(minValue, point.second);
+                            maxValue = std::max(maxValue, point.second);
+                            hasData = true;
+                        }
                     }
                 }
-            }
 
-            if (!hasData) {
-                minValue = -1.0;
-                maxValue = 1.0;
-            } else {
-                // Add 10% padding to the range
-                double range = maxValue - minValue;
-                if (range < 1e-6) {
-                    range = 1.0;
+                if (!hasData) {
+                    minValue = -1.0;
+                    maxValue = 1.0;
+                } else {
+                    // Add 10% padding to the range
+                    double range = maxValue - minValue;
+                    if (range < 1e-6) {
+                        range = 1.0;
+                    }
+                    minValue -= range * 0.1;
+                    maxValue += range * 0.1;
                 }
-                minValue -= range * 0.1;
-                maxValue += range * 0.1;
+            } else {
+                // Use fixed bounds
+                minValue = fixedMinY_;
+                maxValue = fixedMaxY_;
             }
 
             // Define plot area with margins
@@ -129,7 +166,7 @@ class PlotWidget : public QWidget {
                 painter.setPen(QPen(QColor(60, 60, 60), 1));
             }
 
-            // Vertical grid lines (10 lines for 10 seconds)
+            // Vertical grid lines (10 lines)
             for (int i = 0; i <= 10; i++) {
                 int x = plotArea.left() + (plotArea.width() * i) / 10;
                 painter.drawLine(x, plotArea.top(), x, plotArea.bottom());
@@ -137,7 +174,8 @@ class PlotWidget : public QWidget {
                 // X-axis labels (time)
                 if (i % 2 == 0) {
                     painter.setPen(QColor(150, 150, 150));
-                    QString timeLabel = QString("-%1s").arg(10 - i);
+                    double timeValue = timeWindow_ * (10 - i) / 10.0;
+                    QString timeLabel = QString("-%1s").arg(QString::number(timeValue, 'f', timeValue < 10 ? 1 : 0));
                     painter.drawText(QRect(x - 20, plotArea.bottom() + 5, 40, 20), Qt::AlignCenter, timeLabel);
                     painter.setPen(QPen(QColor(60, 60, 60), 1));
                 }
@@ -180,6 +218,10 @@ class PlotWidget : public QWidget {
 
     private:
         std::vector<TimeSeriesData*> timeSeries_;
+        double timeWindow_;
+        bool autoYBounds_;
+        double fixedMinY_;
+        double fixedMaxY_;
 };
 
 class Plot : public Tool {
@@ -283,6 +325,12 @@ class Plot : public Tool {
 
             // Initialize random number generator for colors
             randomEngine_.seed(std::random_device{}());
+
+            // Create settings panel (initially hidden)
+            createSettingsPanel();
+
+            // Connect settings button
+            connect(settingsButton_, &QPushButton::clicked, this, &Plot::toggleSettingsPanel);
         }
 
         void addTimeSeries(const QString& name, const QColor& color = QColor()) {
@@ -356,8 +404,8 @@ class Plot : public Tool {
                     series->data.push_back({timestamp, value});
                     series->currentValue = value;
 
-                    // Remove old data points (older than 10 seconds)
-                    double cutoffTime = timestamp - 10.0;
+                    // Remove old data points (keep up to 600 seconds to allow time window changes)
+                    double cutoffTime = timestamp - 600.0;
                     while (!series->data.empty() && series->data.front().first < cutoffTime) {
                         series->data.pop_front();
                     }
@@ -388,6 +436,15 @@ class Plot : public Tool {
             clearTimeSeries();
         }
 
+    protected:
+        void resizeEvent(QResizeEvent* event) override {
+            Tool::resizeEvent(event);
+            if (settingsPanel_ && plotWidget_) {
+                // Position settings panel to cover the plot widget
+                settingsPanel_->setGeometry(plotWidget_->geometry());
+            }
+        }
+
     private slots:
         void updatePlot() {
             // Update value labels
@@ -397,6 +454,18 @@ class Plot : public Tool {
 
             // Update plot
             plotWidget_->setTimeSeries(timeSeries_);
+        }
+
+        void toggleSettingsPanel() {
+            if (settingsPanel_->isVisible()) {
+                // Apply settings and close
+                applySettings();
+                settingsPanel_->hide();
+            } else {
+                // Show settings panel
+                settingsPanel_->show();
+                settingsPanel_->raise();
+            }
         }
 
     private:
@@ -441,6 +510,222 @@ class Plot : public Tool {
             return std::sqrt(dr * dr + dg * dg + db * db);
         }
 
+        void createSettingsPanel() {
+            // Create settings panel as overlay
+            settingsPanel_ = new QWidget(this);
+            settingsPanel_->setStyleSheet("QWidget { "
+                                          "  background-color: rgba(26, 26, 26, 240); "
+                                          "  border: 1px solid #444444; "
+                                          "  border-radius: 5px; "
+                                          "}");
+            settingsPanel_->hide();
+
+            QVBoxLayout* panelLayout = new QVBoxLayout(settingsPanel_);
+            panelLayout->setContentsMargins(20, 20, 20, 20);
+            panelLayout->setSpacing(10);
+
+            // Title
+            // QLabel* titleLabel = new QLabel("Plot Settings", settingsPanel_);
+            // titleLabel->setStyleSheet("QLabel { "
+            //                           "  color: white; "
+            //                           "  font-size: 15px; "
+            //                           "  font-weight: bold; "
+            //                           "  background-color: transparent; "
+            //                           "  border: none; "
+            //                           "}");
+            // panelLayout->addWidget(titleLabel);
+
+            // Time window setting
+            QGroupBox* timeGroup = new QGroupBox("Timeline", settingsPanel_);
+            timeGroup->setStyleSheet("QGroupBox { "
+                                     "  color: white; "
+                                     "  font-size: 14px; "
+                                     "  font-weight: bold; "
+                                     "  border: 1px solid #555555; "
+                                     "  border-radius: 3px; "
+                                     "  margin-top: 10px; "
+                                     "  padding-top: 10px; "
+                                     "  background-color: transparent; "
+                                     "} "
+                                     "QGroupBox::title { "
+                                     "  subcontrol-origin: margin; "
+                                     "  subcontrol-position: top left; "
+                                     "  left: 10px; "
+                                     "  padding: 0 5px; "
+                                     "}");
+            QFormLayout* timeLayout = new QFormLayout(timeGroup);
+            timeLayout->setLabelAlignment(Qt::AlignLeft);
+
+            // Create white label for time window
+            QLabel* timeWindowLabel = new QLabel("Time window:", settingsPanel_);
+            timeWindowLabel->setStyleSheet("QLabel { "
+                                          "  color: white; "
+                                          "  background-color: transparent; "
+                                          "  border: none; "
+                                          "}");
+
+            timeWindowSpinBox_ = new QSpinBox(settingsPanel_);
+            timeWindowSpinBox_->setMinimum(1);
+            timeWindowSpinBox_->setMaximum(300);
+            timeWindowSpinBox_->setValue(static_cast<int>(plotWidget_->getTimeWindow()));
+            timeWindowSpinBox_->setSuffix(" seconds");
+            timeWindowSpinBox_->setButtonSymbols(QAbstractSpinBox::NoButtons);
+            timeWindowSpinBox_->setFixedHeight(30);
+            timeWindowSpinBox_->setStyleSheet("QSpinBox { "
+                                              "  color: white; "
+                                              "  background-color: #252525; "
+                                              "  border: 1px solid #444444; "
+                                              "  border-radius: 3px; "
+                                              "  padding: 5px; "
+                                              "}"
+                                            );
+            timeLayout->addRow(timeWindowLabel, timeWindowSpinBox_);
+
+            panelLayout->addWidget(timeGroup);
+
+            // Y-Axis bounds setting
+            QGroupBox* yBoundsGroup = new QGroupBox("Bounds", settingsPanel_);
+            yBoundsGroup->setStyleSheet("QGroupBox { "
+                                        "  color: white; "
+                                        "  font-size: 14px; "
+                                        "  font-weight: bold; "
+                                        "  border: 1px solid #555555; "
+                                        "  border-radius: 3px; "
+                                        "  margin-top: 10px; "
+                                        "  padding-top: 10px; "
+                                        "  background-color: transparent; "
+                                        "} "
+                                        "QGroupBox::title { "
+                                        "  subcontrol-origin: margin; "
+                                        "  subcontrol-position: top left; "
+                                        "  left: 10px; "
+                                        "  padding: 0 5px; "
+                                        "}");
+            QVBoxLayout* yBoundsLayout = new QVBoxLayout(yBoundsGroup);
+
+            autoYBoundsRadio_ = new QRadioButton("Automatic", settingsPanel_);
+            autoYBoundsRadio_->setChecked(plotWidget_->isYBoundsAuto());
+            autoYBoundsRadio_->setStyleSheet("QRadioButton { "
+                                             "  color: white; "
+                                             "  background-color: transparent; "
+                                             "  border: 1px solid #444444; "
+                                             "  padding: 5px; "
+                                             "} "
+                                             "QRadioButton::indicator { "
+                                             "  width: 10px; "
+                                             "  height: 10px; "
+                                             "  border: 1px solid #444444; "
+                                             "  border-radius: 3px; "
+                                             "  background-color: transparent; "
+                                             "} "
+                                             "QRadioButton::indicator:checked { "
+                                             "  background-color: #444444; "
+                                             "  border: 1px solid #606060; "
+                                            "   border-radius: 3px; "
+                                             "}");
+            yBoundsLayout->addWidget(autoYBoundsRadio_);
+
+            fixedYBoundsRadio_ = new QRadioButton("Fixed", settingsPanel_);
+            fixedYBoundsRadio_->setChecked(!plotWidget_->isYBoundsAuto());
+            fixedYBoundsRadio_->setStyleSheet("QRadioButton { "
+                                              "  color: white; "
+                                              "  background-color: transparent; "
+                                              "  border: 1px solid #444444; "
+                                              "  padding: 5px; "
+                                              "} "
+                                              "QRadioButton::indicator { "
+                                              "  width: 10px; "
+                                              "  height: 10px; "
+                                              "  border: 1px solid #444444; "
+                                              "  border-radius: 3px; "
+                                              "  background-color: transparent; "
+                                              "} "
+                                              "QRadioButton::indicator:checked { "
+                                              "  background-color: #444444; "
+                                              "  border: 1px solid #606060; "
+                                              "  border-radius: 3px; "
+                                              "}");
+            yBoundsLayout->addWidget(fixedYBoundsRadio_);
+
+            QFormLayout* fixedBoundsLayout = new QFormLayout();
+            fixedBoundsLayout->setVerticalSpacing(10);
+
+            // Create white labels
+            QLabel* upperBoundLabel = new QLabel("Upper bound:", settingsPanel_);
+            upperBoundLabel->setStyleSheet("QLabel { "
+                                          "  color: white; "
+                                          "  background-color: transparent; "
+                                          "  border: none; "
+                                          "}");
+            QLabel* lowerBoundLabel = new QLabel("Lower bound:", settingsPanel_);
+            lowerBoundLabel->setStyleSheet("QLabel { "
+                                          "  color: white; "
+                                          "  background-color: transparent; "
+                                          "  border: none; "
+                                          "}");
+
+            maxYSpinBox_ = new QDoubleSpinBox(settingsPanel_);
+            maxYSpinBox_->setMinimum(-10000.0);
+            maxYSpinBox_->setMaximum(10000.0);
+            maxYSpinBox_->setValue(plotWidget_->getFixedMaxY());
+            maxYSpinBox_->setDecimals(2);
+            maxYSpinBox_->setEnabled(!plotWidget_->isYBoundsAuto());
+            maxYSpinBox_->setButtonSymbols(QAbstractSpinBox::NoButtons);
+            maxYSpinBox_->setFixedHeight(30);
+            maxYSpinBox_->setStyleSheet("QDoubleSpinBox { "
+                                        "  color: white; "
+                                        "  background-color: #252525; "
+                                        "  border: 1px solid #444444; "
+                                        "  border-radius: 3px; "
+                                        "  padding: 5px; "
+                                        "}");
+            fixedBoundsLayout->addRow(upperBoundLabel, maxYSpinBox_);
+
+            fixedBoundsLayout->setVerticalSpacing(10);
+
+            minYSpinBox_ = new QDoubleSpinBox(settingsPanel_);
+            minYSpinBox_->setMinimum(-10000.0);
+            minYSpinBox_->setMaximum(10000.0);
+            minYSpinBox_->setValue(plotWidget_->getFixedMinY());
+            minYSpinBox_->setDecimals(2);
+            minYSpinBox_->setEnabled(!plotWidget_->isYBoundsAuto());
+            minYSpinBox_->setButtonSymbols(QAbstractSpinBox::NoButtons);
+            minYSpinBox_->setFixedHeight(30);
+            minYSpinBox_->setStyleSheet("QDoubleSpinBox { "
+                                        "  color: white; "
+                                        "  background-color: #252525; "
+                                        "  border: 1px solid #444444; "
+                                        "  border-radius: 3px; "
+                                        "  padding: 5px; "
+                                        "}");
+            fixedBoundsLayout->addRow(lowerBoundLabel, minYSpinBox_);
+
+
+            yBoundsLayout->addLayout(fixedBoundsLayout);
+            panelLayout->addWidget(yBoundsGroup);
+
+            // Connect radio buttons to enable/disable spin boxes
+            connect(autoYBoundsRadio_, &QRadioButton::toggled, this, [this](bool checked) {
+                minYSpinBox_->setEnabled(!checked);
+                maxYSpinBox_->setEnabled(!checked);
+            });
+
+            panelLayout->addStretch();
+        }
+
+        void applySettings() {
+            // Apply time window setting
+            plotWidget_->setTimeWindow(static_cast<double>(timeWindowSpinBox_->value()));
+
+            // Apply Y-axis bounds setting
+            if (autoYBoundsRadio_->isChecked()) {
+                plotWidget_->setYBoundsAuto(true);
+            } else {
+                plotWidget_->setYBoundsAuto(false);
+                plotWidget_->setFixedYBounds(minYSpinBox_->value(), maxYSpinBox_->value());
+            }
+        }
+
         std::vector<TimeSeriesData*> timeSeries_;
         std::vector<QLabel*> valueLabels_;
         std::vector<QCheckBox*> checkboxes_;
@@ -450,6 +735,14 @@ class Plot : public Tool {
         QHBoxLayout* valuesLayout_;
         PlotWidget* plotWidget_;
         QTimer* updateTimer_;
+
+        // Settings panel widgets
+        QWidget* settingsPanel_;
+        QSpinBox* timeWindowSpinBox_;
+        QRadioButton* autoYBoundsRadio_;
+        QRadioButton* fixedYBoundsRadio_;
+        QDoubleSpinBox* minYSpinBox_;
+        QDoubleSpinBox* maxYSpinBox_;
 
         std::mt19937 randomEngine_;
 };
