@@ -213,10 +213,11 @@ class ToolsPanel : public QWidget {
 
         QMap<QString, ToolType> getStreams() {
             std::vector<std::string> available_streams = {
-                "position", "orientation", 
+                "position", "orientation",
                 "joints_position", "joints_velocity", "joints_acceleration", "joints_torque",
-                "linear_acceleration", "angular_velocity", 
+                "linear_acceleration", "angular_velocity",
                 "rgb_left_camera", "rgb_right_camera",
+                "terminal",
             };
 
             QMap<QString, ToolType> streams;
@@ -228,13 +229,16 @@ class ToolsPanel : public QWidget {
                     for (const std::string& stream : available_streams) {
                         QString full_stream_name = QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
 
-                        if (stream == "position" || stream == "orientation" || 
+                        if (stream == "position" || stream == "orientation" ||
                             stream == "joints_position" || stream == "joints_velocity" || stream == "joints_acceleration" || stream == "joints_torque" ||
                             stream == "linear_acceleration" || stream == "angular_velocity") {
                             streams.insert(full_stream_name, ToolType::PLOT);
-                        } 
+                        }
                         else if (stream == "rgb_left_camera" || stream == "rgb_right_camera") {
                             streams.insert(full_stream_name, ToolType::IMAGE);
+                        }
+                        else if (stream == "terminal") {
+                            streams.insert(full_stream_name, ToolType::TERMINAL);
                         }
                     }
                 }

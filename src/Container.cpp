@@ -166,4 +166,43 @@ std::string Container::request(const std::string& method, const std::string& end
 
     return response;
 }
+
+std::string Container::createExec(const std::vector<std::string>& cmd, bool attachStdin, bool attachStdout,
+                                   bool attachStderr, bool tty) {
+    if (state != ContainerState::RUNNING) {
+        throw std::runtime_error("Container must be RUNNING to create exec instance");
+    }
+
+    nlohmann::json payload;
+    payload["AttachStdin"] = attachStdin;
+    payload["AttachStdout"] = attachStdout;
+    payload["AttachStderr"] = attachStderr;
+    payload["Tty"] = tty;
+    payload["Cmd"] = cmd;
+    payload["User"] = "root";  // Run as root by default
+
+    std::string endpoint = "/containers/" + id + "/exec";
+    std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);
+
+    nlohmann::json resp = nlohmann::json::parse(resp_raw);
+    if (!resp.contains("Id")) {
+        throw std::runtime_error("Docker exec create failed");
+    }
+
+    return resp["Id"];
+}
+
+std::string Container::startExec(const std::string& exec_id, bool tty) {
+    nlohmann::json payload;
+    payload["Detach"] = false;
+    payload["Tty"] = tty;
+
+    std::string endpoint = "/exec/" + exec_id + "/start";
+    return request(POST, endpoint, 0, &payload);
+}
+
+void Container::writeToExec(const std::string& data) {
+    // This will be handled by the Terminal widget through streaming
+    // For now, this is a placeholder for future websocket implementation
+}
 }  // namespace spqr

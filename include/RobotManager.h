@@ -120,7 +120,6 @@ class RobotManager {
                 r->container = std::make_unique<Container>(r->name + "_container");
                 r->container->create(r->name, image, binds);
                 r->container->start();
-                std::cout << "Started container for robot: " << r->name << " Container State: " << r->container->getState() << std::endl;
             }
         }
 

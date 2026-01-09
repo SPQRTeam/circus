@@ -21,6 +21,7 @@ enum ToolType {
     NONE,
     PLOT,
     IMAGE,
+    TERMINAL,
 };
 
 class Tool : public QWidget {

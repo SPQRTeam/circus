@@ -27,6 +27,7 @@
 #include "sensors/Sensor.h"
 #include "tools/Image.h"
 #include "tools/Plot.h"
+#include "tools/Terminal.h"
 #include "tools/Tool.h"
 
 namespace spqr {
@@ -35,7 +36,8 @@ class GridCell : public QWidget {
         Q_OBJECT
 
     public:
-        GridCell(QMap<QString, ToolType> streams, QWidget* parent = nullptr) : QWidget(parent) {
+        GridCell(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, QWidget* parent = nullptr) : QWidget(parent) {
+            robots_ = robots;
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #2a2a2a; "
@@ -287,6 +289,29 @@ class GridCell : public QWidget {
                     newTool = new Image(this);
                     break;
 
+                case ToolType::TERMINAL: {
+                    // Extract robot name from selectedItem_ (format: "robot_name/terminal")
+                    QString robotName = selectedItem_.split("/").first();
+                    std::shared_ptr<Container> container = nullptr;
+
+                    // Find the robot and its container
+                    for (auto& robot : robots_) {
+                        if (QString::fromStdString(robot->name) == robotName) {
+                            if (robot->container) {
+                                container = std::shared_ptr<Container>(robot->container.get(), [](Container*){});
+                            }
+                            break;
+                        }
+                    }
+
+                    if (container) {
+                        newTool = new Terminal(container, this);
+                    } else {
+                        newTool = new Tool(ToolType::NONE, this);
+                    }
+                    break;
+                }
+
                 case ToolType::NONE:
                     newTool = new Tool(ToolType::NONE, this);
                     break;
@@ -303,6 +328,7 @@ class GridCell : public QWidget {
         Tool* tool_;
         QVBoxLayout* cellLayout_;
         QMap<QString, ToolType> streams_;
+        std::vector<std::shared_ptr<Robot>> robots_;
 };
 
 class ToolsPanelGrid : public QWidget {
@@ -668,7 +694,7 @@ class ToolsPanelGrid : public QWidget {
 
                     // Create new cell if needed
                     if (!cell) {
-                        cell = new GridCell(streams_, nullptr);
+                        cell = new GridCell(robots_, streams_, nullptr);
                     }
 
                     cellGrid_.append(cell);
