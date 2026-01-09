@@ -6,6 +6,8 @@
 #include "curl/curl.h"
 
 namespace spqr {
+
+enum class ContainerState { NONE, IDLE, RUNNING, REMOVED };
 class Container {
     public:
         // TODO: is the path always correct for Unix systems??
@@ -19,8 +21,6 @@ class Container {
         void remove();
 
     private:
-        enum class ContainerState { NONE, IDLE, RUNNING, REMOVED };
-
         std::string request(const std::string& method, const std::string& endpoint, const long expected_response,
                             const nlohmann::json* body = nullptr);
 
