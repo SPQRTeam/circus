@@ -21,7 +21,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     std::signal(SIGINT, signalHandler);
     std::signal(SIGSEGV, signalHandler);
     std::signal(SIGABRT, signalHandler);
-    
+
     std::optional<std::string> scenePath;
     if (argc >= 2 && std::string(argv[1]).ends_with(".yaml")) {
         scenePath = argv[1];
@@ -37,7 +37,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     centralWidget->setLayout(mainLayout);
     setCentralWidget(centralWidget);
 
-    if(!scenePath){
+    if (!scenePath) {
         viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
         viewportPlaceholder->setAlignment(Qt::AlignCenter);
         viewportPlaceholder->setStyleSheet("QLabel { "

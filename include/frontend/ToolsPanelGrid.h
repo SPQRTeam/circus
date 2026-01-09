@@ -159,14 +159,12 @@ class GridCell : public QWidget {
                         plot->addTimeSeries("X", QColor(255, 0, 0));
                         plot->addTimeSeries("Y", QColor(0, 255, 0));
                         plot->addTimeSeries("Z", QColor(0, 0, 255));
-                    } 
-                    else if (selectedItem_.contains("/orientation")) {
+                    } else if (selectedItem_.contains("/orientation")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Roll", QColor(255, 0, 0));
                         plot->addTimeSeries("Pitch", QColor(0, 255, 0));
                         plot->addTimeSeries("Yaw", QColor(0, 0, 255));
-                    }
-                    else if (selectedItem_.contains("/joints_position")) {
+                    } else if (selectedItem_.contains("/joints_position")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("head_yaw");
                         plot->addTimeSeries("head_pitch");
@@ -191,8 +189,7 @@ class GridCell : public QWidget {
                         plot->addTimeSeries("knee_right_pitch");
                         plot->addTimeSeries("ankle_right_pitch");
                         plot->addTimeSeries("ankle_right_roll");
-                    } 
-                    else if (selectedItem_.contains("/joints_velocity")) {
+                    } else if (selectedItem_.contains("/joints_velocity")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("head_yaw");
                         plot->addTimeSeries("head_pitch");
@@ -217,8 +214,7 @@ class GridCell : public QWidget {
                         plot->addTimeSeries("knee_right_pitch");
                         plot->addTimeSeries("ankle_right_pitch");
                         plot->addTimeSeries("ankle_right_roll");
-                    } 
-                    else if (selectedItem_.contains("/joints_acceleration")) {
+                    } else if (selectedItem_.contains("/joints_acceleration")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("head_yaw");
                         plot->addTimeSeries("head_pitch");
@@ -243,8 +239,7 @@ class GridCell : public QWidget {
                         plot->addTimeSeries("knee_right_pitch");
                         plot->addTimeSeries("ankle_right_pitch");
                         plot->addTimeSeries("ankle_right_roll");
-                    } 
-                    else if (selectedItem_.contains("/joints_torque")) {
+                    } else if (selectedItem_.contains("/joints_torque")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("head_yaw");
                         plot->addTimeSeries("head_pitch");
@@ -269,14 +264,12 @@ class GridCell : public QWidget {
                         plot->addTimeSeries("knee_right_pitch");
                         plot->addTimeSeries("ankle_right_pitch");
                         plot->addTimeSeries("ankle_right_roll");
-                    } 
-                    else if (selectedItem_.contains("/linear_acceleration")) {
+                    } else if (selectedItem_.contains("/linear_acceleration")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Ax", QColor(255, 0, 0));
                         plot->addTimeSeries("Ay", QColor(0, 255, 0));
                         plot->addTimeSeries("Az", QColor(0, 0, 255));
-                    } 
-                    else if (selectedItem_.contains("/angular_velocity")) {
+                    } else if (selectedItem_.contains("/angular_velocity")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("Wx", QColor(255, 0, 0));
                         plot->addTimeSeries("Wy", QColor(0, 255, 0));
@@ -298,7 +291,7 @@ class GridCell : public QWidget {
                     for (auto& robot : robots_) {
                         if (QString::fromStdString(robot->name) == robotName) {
                             if (robot->container) {
-                                container = std::shared_ptr<Container>(robot->container.get(), [](Container*){});
+                                container = std::shared_ptr<Container>(robot->container.get(), [](Container*) {});
                             }
                             break;
                         }
@@ -468,8 +461,7 @@ class ToolsPanelGrid : public QWidget {
                                     } else {
                                         qDebug() << "Pose sensor not found!";
                                     }
-                                } 
-                                else if (sensorType == "orientation") {
+                                } else if (sensorType == "orientation") {
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
                                         Sensor* poseSensor = it->second;
@@ -478,8 +470,7 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("Pitch", orientation(1), simTime);
                                         plot->addDataPoint("Yaw", orientation(2), simTime);
                                     }
-                                } 
-                                else if (sensorType == "joints_position") {
+                                } else if (sensorType == "joints_position") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
@@ -506,10 +497,9 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("hip_right_yaw", position(19), simTime);
                                         plot->addDataPoint("knee_right_pitch", position(20), simTime);
                                         plot->addDataPoint("ankle_right_pitch", position(21), simTime);
-                                        plot->addDataPoint("ankle_right_roll", position(22), simTime);   
+                                        plot->addDataPoint("ankle_right_roll", position(22), simTime);
                                     }
-                                } 
-                                else if (sensorType == "joints_velocity") {
+                                } else if (sensorType == "joints_velocity") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
@@ -536,10 +526,9 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("hip_right_yaw", velocity(19), simTime);
                                         plot->addDataPoint("knee_right_pitch", velocity(20), simTime);
                                         plot->addDataPoint("ankle_right_pitch", velocity(21), simTime);
-                                        plot->addDataPoint("ankle_right_roll", velocity(22), simTime);   
+                                        plot->addDataPoint("ankle_right_roll", velocity(22), simTime);
                                     }
-                                } 
-                                else if (sensorType == "joints_acceleration") {
+                                } else if (sensorType == "joints_acceleration") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
@@ -566,10 +555,9 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("hip_right_yaw", acceleration(19), simTime);
                                         plot->addDataPoint("knee_right_pitch", acceleration(20), simTime);
                                         plot->addDataPoint("ankle_right_pitch", acceleration(21), simTime);
-                                        plot->addDataPoint("ankle_right_roll", acceleration(22), simTime);   
+                                        plot->addDataPoint("ankle_right_roll", acceleration(22), simTime);
                                     }
-                                } 
-                                else if (sensorType == "joints_torque") {
+                                } else if (sensorType == "joints_torque") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
@@ -585,7 +573,7 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("elbow_right_pitch", torque(8), simTime);
                                         plot->addDataPoint("elbow_right_yaw", torque(9), simTime);
                                         plot->addDataPoint("waist", torque(10), simTime);
-                                        plot->addDataPoint("hip_left_pitch", torque(11), simTime);   
+                                        plot->addDataPoint("hip_left_pitch", torque(11), simTime);
                                         plot->addDataPoint("hip_left_roll", torque(12), simTime);
                                         plot->addDataPoint("hip_left_yaw", torque(13), simTime);
                                         plot->addDataPoint("knee_left_pitch", torque(14), simTime);
@@ -596,10 +584,9 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("hip_right_yaw", torque(19), simTime);
                                         plot->addDataPoint("knee_right_pitch", torque(20), simTime);
                                         plot->addDataPoint("ankle_right_pitch", torque(21), simTime);
-                                        plot->addDataPoint("ankle_right_roll", torque(22), simTime);   
+                                        plot->addDataPoint("ankle_right_roll", torque(22), simTime);
                                     }
-                                }
-                                else if (sensorType == "linear_acceleration") {
+                                } else if (sensorType == "linear_acceleration") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
                                         Sensor* imuSensor = it->second;
@@ -608,8 +595,7 @@ class ToolsPanelGrid : public QWidget {
                                         plot->addDataPoint("Ay", linAcc(1), simTime);
                                         plot->addDataPoint("Az", linAcc(2), simTime);
                                     }
-                                }
-                                else if (sensorType == "angular_velocity") {
+                                } else if (sensorType == "angular_velocity") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
                                         Sensor* imuSensor = it->second;
@@ -620,8 +606,8 @@ class ToolsPanelGrid : public QWidget {
                                     }
                                 }
 
-                            } 
-                            
+                            }
+
                             else if (tool && tool->type() == ToolType::IMAGE) {
                                 Image* imageTool = dynamic_cast<Image*>(tool);
 

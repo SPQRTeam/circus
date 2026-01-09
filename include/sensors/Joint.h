@@ -2,12 +2,12 @@
 
 #include <mujoco/mujoco.h>
 
+#include <Eigen/Eigen>
 #include <algorithm>
 #include <map>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <Eigen/Eigen>
 
 #include "sensors/Sensor.h"
 
@@ -136,7 +136,6 @@ class Joints : public Sensor {
         Eigen::VectorXd getTorque() const {
             return Eigen::Map<const Eigen::VectorXd>(torque.data(), size);
         }
-
 
     private:
         mjModel* mujModel;

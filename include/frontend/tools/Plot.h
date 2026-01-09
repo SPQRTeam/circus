@@ -82,10 +82,18 @@ class PlotWidget : public QWidget {
             update();
         }
 
-        double getTimeWindow() const { return timeWindow_; }
-        bool isYBoundsAuto() const { return autoYBounds_; }
-        double getFixedMinY() const { return fixedMinY_; }
-        double getFixedMaxY() const { return fixedMaxY_; }
+        double getTimeWindow() const {
+            return timeWindow_;
+        }
+        bool isYBoundsAuto() const {
+            return autoYBounds_;
+        }
+        double getFixedMinY() const {
+            return fixedMinY_;
+        }
+        double getFixedMaxY() const {
+            return fixedMaxY_;
+        }
 
     protected:
         void paintEvent(QPaintEvent* event) override {
@@ -356,21 +364,20 @@ class Plot : public Tool {
             // Add checkbox with colored indicator
             QCheckBox* checkbox = new QCheckBox(this);
             checkbox->setChecked(true);
-            QString colorStyle = QString(
-                                     "QCheckBox { "
-                                     "  background-color: transparent; "
-                                     "  border: none; "
-                                     "} "
-                                     "QCheckBox::indicator { "
-                                     "  width: 8px; "
-                                     "  height: 8px; "
-                                     "  border: 2px solid rgb(%1, %2, %3); "
-                                     "  border-radius: 3px; "
-                                     "  background-color: #252525; "
-                                     "} "
-                                     "QCheckBox::indicator:checked { "
-                                     "  background-color: rgb(%1, %2, %3); "
-                                     "}")
+            QString colorStyle = QString("QCheckBox { "
+                                         "  background-color: transparent; "
+                                         "  border: none; "
+                                         "} "
+                                         "QCheckBox::indicator { "
+                                         "  width: 8px; "
+                                         "  height: 8px; "
+                                         "  border: 2px solid rgb(%1, %2, %3); "
+                                         "  border-radius: 3px; "
+                                         "  background-color: #252525; "
+                                         "} "
+                                         "QCheckBox::indicator:checked { "
+                                         "  background-color: rgb(%1, %2, %3); "
+                                         "}")
                                      .arg(seriesColor.red())
                                      .arg(seriesColor.green())
                                      .arg(seriesColor.blue());
@@ -574,10 +581,10 @@ class Plot : public Tool {
             // Create white label for time window
             QLabel* timeWindowLabel = new QLabel("Time window:", settingsPanel_);
             timeWindowLabel->setStyleSheet("QLabel { "
-                                          "  color: white; "
-                                          "  background-color: transparent; "
-                                          "  border: none; "
-                                          "}");
+                                           "  color: white; "
+                                           "  background-color: transparent; "
+                                           "  border: none; "
+                                           "}");
 
             timeWindowSpinBox_ = new QSpinBox(settingsPanel_);
             timeWindowSpinBox_->setMinimum(1);
@@ -592,8 +599,7 @@ class Plot : public Tool {
                                               "  border: 1px solid #444444; "
                                               "  border-radius: 3px; "
                                               "  padding: 5px; "
-                                              "}"
-                                            );
+                                              "}");
             timeLayout->addRow(timeWindowLabel, timeWindowSpinBox_);
 
             panelLayout->addWidget(timeGroup);
@@ -636,7 +642,7 @@ class Plot : public Tool {
                                              "QRadioButton::indicator:checked { "
                                              "  background-color: #444444; "
                                              "  border: 1px solid #606060; "
-                                            "   border-radius: 3px; "
+                                             "   border-radius: 3px; "
                                              "}");
             yBoundsLayout->addWidget(autoYBoundsRadio_);
 
@@ -668,16 +674,16 @@ class Plot : public Tool {
             // Create white labels
             QLabel* upperBoundLabel = new QLabel("Upper bound:", settingsPanel_);
             upperBoundLabel->setStyleSheet("QLabel { "
-                                          "  color: white; "
-                                          "  background-color: transparent; "
-                                          "  border: none; "
-                                          "}");
+                                           "  color: white; "
+                                           "  background-color: transparent; "
+                                           "  border: none; "
+                                           "}");
             QLabel* lowerBoundLabel = new QLabel("Lower bound:", settingsPanel_);
             lowerBoundLabel->setStyleSheet("QLabel { "
-                                          "  color: white; "
-                                          "  background-color: transparent; "
-                                          "  border: none; "
-                                          "}");
+                                           "  color: white; "
+                                           "  background-color: transparent; "
+                                           "  border: none; "
+                                           "}");
 
             maxYSpinBox_ = new QDoubleSpinBox(settingsPanel_);
             maxYSpinBox_->setMinimum(-10000.0);
@@ -714,7 +720,6 @@ class Plot : public Tool {
                                         "  padding: 5px; "
                                         "}");
             fixedBoundsLayout->addRow(lowerBoundLabel, minYSpinBox_);
-
 
             yBoundsLayout->addLayout(fixedBoundsLayout);
             panelLayout->addWidget(yBoundsGroup);

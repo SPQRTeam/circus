@@ -1,9 +1,10 @@
 #include "SimulationViewport.h"
 
-#include <cmath>
 #include <mujoco/mjvisualize.h>
 #include <qnamespace.h>
 #include <qpoint.h>
+
+#include <cmath>
 
 #include "RobotManager.h"
 #include "sensors/Sensor.h"
@@ -26,7 +27,7 @@ SimulationViewport::SimulationViewport(MujocoContext& mujContext)
 
     // Set initial camera position for animation (far away, higher elevation)
     cam->distance = this->targetDistance * 5.0f;  // Start 5x farther
-    cam->elevation = -20.0f;  // Start from lower angle
+    cam->elevation = -20.0f;                      // Start from lower angle
     cam->azimuth = this->targetAzimuth - 360.0f;  // Start 360 degrees before target (full rotation)
 }
 

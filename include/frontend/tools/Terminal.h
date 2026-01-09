@@ -99,24 +99,22 @@ class TerminalDisplay : public QTextEdit {
             QMenu* menu = new QMenu(this);
 
             // Style the menu to match the terminal theme
-            menu->setStyleSheet(
-                "QMenu {"
-                "  background-color: #1e1e1e;"
-                "  color: #cccccc;"
-                "  border: 1px solid #444444;"
-                "  padding: 4px;"
-                "}"
-                "QMenu::item {"
-                "  padding: 6px 20px;"
-                "  border-radius: 3px;"
-                "}"
-                "QMenu::item:selected {"
-                "  background-color: #2d2d2d;"
-                "}"
-                "QMenu::item:disabled {"
-                "  color: #666666;"
-                "}"
-            );
+            menu->setStyleSheet("QMenu {"
+                                "  background-color: #1e1e1e;"
+                                "  color: #cccccc;"
+                                "  border: 1px solid #444444;"
+                                "  padding: 4px;"
+                                "}"
+                                "QMenu::item {"
+                                "  padding: 6px 20px;"
+                                "  border-radius: 3px;"
+                                "}"
+                                "QMenu::item:selected {"
+                                "  background-color: #2d2d2d;"
+                                "}"
+                                "QMenu::item:disabled {"
+                                "  color: #666666;"
+                                "}");
 
             // Add Copy action
             QAction* copyAction = menu->addAction("Copy");
@@ -134,7 +132,6 @@ class TerminalDisplay : public QTextEdit {
     private:
         int inputStartPos_;
 };
-
 
 class Terminal : public Tool {
         Q_OBJECT
@@ -273,10 +270,10 @@ class Terminal : public Tool {
 
             // Start docker exec with interactive bash and proper environment
             QStringList args;
-            args << "exec" << "-i"
-                 << "-e" << "TERM=xterm-256color"
-                 << containerId
-                 << "/bin/bash";
+            args << "exec"
+                 << "-i"
+                 << "-e"
+                 << "TERM=xterm-256color" << containerId << "/bin/bash";
 
             display_->appendOutput("Starting shell in container " + containerId.left(12) + " ...\n");
 
