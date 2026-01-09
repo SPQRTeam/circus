@@ -27,6 +27,24 @@
     <mesh name="right_net" file="../meshes/goal/RightNet.obj"/>
     <mesh name="back_net" file="../meshes/goal/BackNet.obj"/>
 
+    <mesh name="colosseum" file="../meshes/colosseum.obj" scale="0.004 0.004 0.004"/>
+    <texture name="colosseum_tex" type="2d" builtin="flat" rgb1="0.118 0.4 0.494" width="512" height="512"/>
+    <material name="colosseum_mat"
+            texture="colosseum_tex"
+            rgba="0.118 0.4 0.494 0.3"
+            specular="0.05"
+            shininess="0.1"/>
+
+    <!-- <texture name="sand_txt" type="2d" file="../textures/sand.png"/>
+    <material name="sand" texture="sand_txt" texrepeat="100 100" specular="0.2" shininess="0.1" reflectance="0.0"/> -->
+
+    <texture name="plane_tex" type="2d" builtin="flat" rgb1="1 1 1" width="512" height="512"/>
+    <material name="plane_mat"
+            texture="plane_tex"
+            rgba="1 1 1 0.3"
+            specular="0.05"
+            shininess="0.1"/>
+
 </asset>
 
 <visual>
@@ -36,14 +54,10 @@
 
 <worldbody>
 
-    <!-- <light name="spot1" castshadow="true" pos="-8 -5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
-    <light name="spot2" castshadow="true" pos="8 -5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
-    <light name="spot3" castshadow="true" pos="-8 5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/>
-    <light name="spot4" castshadow="true" pos="8 5.5 10" dir="0 0 -1" diffuse="0.8 0.8 0.8"/> -->
     <light name="center" castshadow="false" pos="0 0 100" dir="0 0 -1" ambient="1 1 1"/>
 
     <!-- Grid -->
-    <geom name="infinite_grid" type="plane" size="30 30 0.1" material="grid_mat" pos="0 0 -0.05" friction="10 10 10"/>
+    <geom name="infinite_grid" type="ellipsoid" size="41 34 0.0001" material="plane_mat" pos="0 0 -0.05" friction="10 10 10"/>
 
     <!-- Field -->
     <geom name="left_ground" type="plane" size="4 5.5 0.1" material="grass" pos="-4 0 0" euler="0 0 0" condim="3" friction="0.01 0.01 0.01"/>
@@ -77,6 +91,10 @@
     <geom name="right_goal_left_net" type="mesh" mesh="left_net"  pos="7 0 0" euler="1.57 3.14 0"/>
     <geom name="right_goal_right_net" type="mesh" mesh="right_net"  pos="7 0 0" euler="1.57 3.14 0"/>
     <geom name="right_goal_back_net" type="mesh" mesh="back_net"  pos="7 0 0" euler="1.57 3.14 0"/>
+
+    <!-- Colosseum -->
+    <geom name="colosseum_geom" type="mesh" mesh="colosseum" material="colosseum_mat" pos="0 0 -0.5" euler="0 0 0" contype="0" conaffinity="0"/>
+
 </worldbody>
 
 </mujoco>
