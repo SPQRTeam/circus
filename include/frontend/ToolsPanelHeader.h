@@ -209,7 +209,7 @@ class ToolsPanelHeader : public QWidget {
                    "} "
                    "QPushButton:hover { "
                    "  background-color: #595959; "
-                   "  border: 1px solid #1e667e; "
+                   "  border: 1px solid #006778; "
                    "} ";
         }
 
@@ -227,7 +227,7 @@ class ToolsPanelHeader : public QWidget {
                    "} "
                    "QPushButton:hover { "
                    "  background-color: #595959; "
-                   "  border: 1px solid #1e667e; "
+                   "  border: 1px solid #006778; "
                    "} ";
         }
 

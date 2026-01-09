@@ -46,7 +46,7 @@ class GridCell : public QWidget {
                           "}"
                           "QWidget:hover { "
                           "  background-color: #3a3a3a; "
-                          "  border: 2px solid #1e667e; "
+                          "  border: 2px solid #006778; "
                           "}");
             setMinimumSize(400, 300);
 
@@ -69,7 +69,7 @@ class GridCell : public QWidget {
             popupView->setStyleSheet("QListView { "
                                      "  background-color: #2a2a2a; "
                                      "  color: white; "
-                                     "  border: 1px solid #1e667e; "
+                                     "  border: 1px solid #006778; "
                                      "  padding: 0; "
                                      "  margin: 0; "
                                      "  outline: 0; "
@@ -79,7 +79,7 @@ class GridCell : public QWidget {
                                      "  margin: 0; "
                                      "} "
                                      "QListView::item:selected { "
-                                     "  background-color: #1e667e; "
+                                     "  background-color: #006778; "
                                      "  color: white; "
                                      "}");
             combo->setView(popupView);
@@ -94,7 +94,7 @@ class GridCell : public QWidget {
                                  "} "
                                  "QComboBox:hover { "
                                  "  background-color: #595959; "
-                                 "  border: 1px solid #1e667e; "
+                                 "  border: 1px solid #006778; "
                                  "} ");
 
             combo->addItems(streams.keys());
@@ -365,7 +365,7 @@ class ToolsPanelGrid : public QWidget {
                                        "  min-height: 20px; "
                                        "}"
                                        "QScrollBar::handle:horizontal:hover, QScrollBar::handle:vertical:hover { "
-                                       "  background-color: #1e667e; "
+                                       "  background-color: #006778; "
                                        "}"
                                        "QScrollBar::add-line, QScrollBar::sub-line { "
                                        "  border: none; "
