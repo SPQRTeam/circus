@@ -26,13 +26,17 @@ class Robot {
     public:
         Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
               const Eigen::Vector3d& initOrientation, const std::shared_ptr<Team>& team)
-            : name(name), type(type), number(number), initPosition(initPosition), initOrientation(initOrientation), team(team) {}
+            : name(name), type(type), number(number), initPosition(initPosition), initOrientation(initOrientation), team(team), mujData_(nullptr) {}
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext) = 0;
         virtual void update() = 0;
         virtual void receiveMessage(const std::map<std::string, msgpack::object>& message) = 0;
         virtual std::map<std::string, msgpack::object> sendMessage() = 0;
         virtual std::map<std::string, Sensor*> getSensors() = 0;
+
+        double getSimTime() const {
+            return mujData_ ? mujData_->time : 0.0;
+        }
 
         std::string name;
         std::string type;
@@ -43,6 +47,9 @@ class Robot {
         std::shared_ptr<Team> team;
 
         msgpack::zone buffer_zone_;
+
+    protected:
+        mjData* mujData_;
 };
 
 }  // namespace spqr

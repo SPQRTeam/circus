@@ -48,7 +48,7 @@ class PlotWidget : public QWidget {
 
     public:
         PlotWidget(QWidget* parent = nullptr)
-            : QWidget(parent), timeWindow_(10.0), autoYBounds_(true), fixedMinY_(-10.0), fixedMaxY_(10.0) {
+            : QWidget(parent), timeWindow_(10.0), autoYBounds_(true), fixedMinY_(-10.0), fixedMaxY_(10.0), currentSimTime_(0.0) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #1a1a1a; "
@@ -60,6 +60,10 @@ class PlotWidget : public QWidget {
         void setTimeSeries(const std::vector<TimeSeriesData*>& series) {
             timeSeries_ = series;
             update();
+        }
+
+        void setCurrentSimTime(double simTime) {
+            currentSimTime_ = simTime;
         }
 
         void setTimeWindow(double seconds) {
@@ -97,9 +101,9 @@ class PlotWidget : public QWidget {
                 return;
             }
 
-            // Calculate time window using settings
-            double currentTime = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000.0;
-            double minTime = currentTime - timeWindow_;
+            // Calculate time window using simulation time
+            double currentTime = currentSimTime_;
+            double minTime = std::max(0.0, currentTime - timeWindow_);
             double maxTime = currentTime;
 
             // Calculate value range
@@ -172,12 +176,12 @@ class PlotWidget : public QWidget {
                 int x = plotArea.left() + (plotArea.width() * i) / 10;
                 painter.drawLine(x, plotArea.top(), x, plotArea.bottom());
 
-                // X-axis labels (time)
+                // X-axis labels (simulation time in seconds)
                 if (i % 2 == 0) {
                     painter.setPen(QColor(150, 150, 150));
-                    double timeValue = timeWindow_ * (10 - i) / 10.0;
-                    QString timeLabel = QString("-%1s").arg(QString::number(timeValue, 'f', timeValue < 10 ? 1 : 0));
-                    painter.drawText(QRect(x - 20, plotArea.bottom() + 5, 40, 20), Qt::AlignCenter, timeLabel);
+                    double timeValue = minTime + (maxTime - minTime) * i / 10.0;
+                    QString timeLabel = QString("%1s").arg(QString::number(timeValue, 'f', 1));
+                    painter.drawText(QRect(x - 30, plotArea.bottom() + 5, 60, 20), Qt::AlignCenter, timeLabel);
                     painter.setPen(QPen(QColor(60, 60, 60), 1));
                 }
             }
@@ -223,6 +227,7 @@ class PlotWidget : public QWidget {
         bool autoYBounds_;
         double fixedMinY_;
         double fixedMaxY_;
+        double currentSimTime_;
 };
 
 class Plot : public Tool {
@@ -398,8 +403,15 @@ class Plot : public Tool {
             checkboxes_.push_back(checkbox);
         }
 
-        void addDataPoint(const QString& seriesName, double value) {
-            double timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000.0;
+        void addDataPoint(const QString& seriesName, double value, double simTime = -1.0) {
+            // Use simulation time if provided, otherwise fall back to wall-clock time
+            double timestamp;
+            if (simTime >= 0.0) {
+                timestamp = simTime;
+                lastSimTime_ = simTime;  // Track the last known simulation time
+            } else {
+                timestamp = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000.0;
+            }
 
             for (auto* series : timeSeries_) {
                 if (series->name == seriesName) {
@@ -454,7 +466,8 @@ class Plot : public Tool {
                 updateValueLabel(valueLabels_[i], timeSeries_[i]->name, timeSeries_[i]->currentValue, timeSeries_[i]->color);
             }
 
-            // Update plot
+            // Update plot with current simulation time
+            plotWidget_->setCurrentSimTime(lastSimTime_);
             plotWidget_->setTimeSeries(timeSeries_);
         }
 
@@ -737,6 +750,7 @@ class Plot : public Tool {
         QHBoxLayout* valuesLayout_;
         PlotWidget* plotWidget_;
         QTimer* updateTimer_;
+        double lastSimTime_ = 0.0;
 
         // Settings panel widgets
         QWidget* settingsPanel_;
