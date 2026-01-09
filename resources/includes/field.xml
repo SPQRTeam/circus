@@ -7,9 +7,12 @@
     <!-- Field -->
     <texture name="half_field" type="2d" file="../textures/halfField.png"/>
     <material name="grass" texture="half_field" texrepeat="1 1" specular="0.2" shininess="0.1" reflectance="0.0"/>
+    <texture name="half_field_with_lines" type="2d" file="../textures/halfFieldWithLines.png"/>
+    <material name="field" texture="half_field_with_lines" texrepeat="1 1" specular="0.2" shininess="0.1" reflectance="0.0"/>
 
     <!-- Lines Mesh -->
     <mesh name="lines_mesh" file="../meshes/lines/14x9.obj"/>
+    <material name="lines_mat" rgba="0.6 0.6 0.5 0.7" specular="0.2" shininess="0.1" reflectance="0.0"/>
 
     <!-- Goal Meshes -->
     <mesh name="left_post" file="../meshes/goal/LeftPost.obj"/>
@@ -49,7 +52,7 @@
 
 <visual>
     <!-- <quality shadowsize="4096"/> -->
-    <!-- <map shadowclip="1.0" znear="0.01"/> -->
+    <map shadowclip="1.0" znear="0.0001"/>
 </visual>
 
 <worldbody>
@@ -57,7 +60,7 @@
     <light name="center" castshadow="false" pos="0 0 100" dir="0 0 -1" ambient="1 1 1"/>
 
     <!-- Grid -->
-    <geom name="plane_ellipsoid_full" type="ellipsoid" size="41 34 0.0001" material="plane_mat" pos="0 0 -0.1" friction="10 10 10"/>
+    <geom name="plane_ellipsoid_full" type="ellipsoid" size="41 34 0.0001" material="plane_mat" pos="0 0 -0.2" friction="10 10 10"/>
     <geom name="plane_ellipsoid_in" type="ellipsoid" size="21 14 0.0001" material="grass" pos="0 0 -0.05" friction="10 10 10"/>
 
     <!-- Field -->
@@ -65,7 +68,7 @@
     <geom name="right_ground" type="plane" size="4 5.5 0.1" material="grass" pos="4 0 0" euler="0 0 3.141592653589793" condim="3" friction="0.01 0.01 0.01"/>
 
     <!-- Lines -->
-    <geom name="lines" type="mesh" mesh="lines_mesh"  pos="0 0 0.0001" euler="1.570796327 0 0"/>
+    <geom name="lines" type="mesh" mesh="lines_mesh" material="lines_mat" pos="0 0 0.001" euler="1.570796327 0 0" contype="0" conaffinity="0"/>
 
     <!-- Left goal -->
     <geom name="left_goal_left_post" type="mesh" mesh="left_post"  pos="-7 0 0" euler="1.57 0 0"/>
