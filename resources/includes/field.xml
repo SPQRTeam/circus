@@ -57,7 +57,8 @@
     <light name="center" castshadow="false" pos="0 0 100" dir="0 0 -1" ambient="1 1 1"/>
 
     <!-- Grid -->
-    <geom name="infinite_grid" type="ellipsoid" size="41 34 0.0001" material="plane_mat" pos="0 0 -0.05" friction="10 10 10"/>
+    <geom name="plane_ellipsoid_full" type="ellipsoid" size="41 34 0.0001" material="plane_mat" pos="0 0 -0.1" friction="10 10 10"/>
+    <geom name="plane_ellipsoid_in" type="ellipsoid" size="21 14 0.0001" material="grass" pos="0 0 -0.05" friction="10 10 10"/>
 
     <!-- Field -->
     <geom name="left_ground" type="plane" size="4 5.5 0.1" material="grass" pos="-4 0 0" euler="0 0 0" condim="3" friction="0.01 0.01 0.01"/>
