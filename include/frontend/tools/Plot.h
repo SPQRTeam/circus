@@ -1,5 +1,6 @@
 #pragma once
 
+#include <qabstractscrollarea.h>
 #include <qdatetime.h>
 #include <qobject.h>
 
@@ -278,9 +279,10 @@ class Plot : public Tool {
                                             "  background-color: #252525; "
                                             "  border: 1px solid #444444; "
                                             "  border-radius: 3px; "
+                                            "  padding-top: 5px;"
                                             "} "
                                             "QScrollBar:horizontal { "
-                                            "  height: 8px; "
+                                            "  height: 4px; "
                                             "  background-color: #1a1a1a; "
                                             "} "
                                             "QScrollBar::handle:horizontal { "
@@ -355,8 +357,8 @@ class Plot : public Tool {
                                      "  border: none; "
                                      "} "
                                      "QCheckBox::indicator { "
-                                     "  width: 14px; "
-                                     "  height: 14px; "
+                                     "  width: 8px; "
+                                     "  height: 8px; "
                                      "  border: 2px solid rgb(%1, %2, %3); "
                                      "  border-radius: 3px; "
                                      "  background-color: #252525; "
