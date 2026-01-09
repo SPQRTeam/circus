@@ -260,6 +260,18 @@ class Terminal : public Tool {
             if (process_ && process_->state() == QProcess::Running) {
                 QString output = QString::fromUtf8(process_->readAllStandardOutput());
                 if (!output.isEmpty()) {
+                    // Check for clear screen escape sequence
+                    if (output.contains("\033[H\033[2J") || output.contains("\033[3J")) {
+                        display_->clear();
+                        // Remove the escape sequences
+                        output.remove("\033[H");
+                        output.remove("\033[2J");
+                        output.remove("\033[3J");
+                        output.remove("[H");
+                        output.remove("[2J");
+                        output.remove("[3J");
+                    }
+
                     // Check if output contains our prompt marker
                     if (output.contains("__PROMPT__")) {
                         // Split by the marker
@@ -286,7 +298,7 @@ class Terminal : public Tool {
                                 }
                             }
                         }
-                    } else {
+                    } else if (!output.trimmed().isEmpty()) {
                         display_->appendOutput(output);
                     }
                 }
