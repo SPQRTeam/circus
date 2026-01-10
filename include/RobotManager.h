@@ -75,10 +75,10 @@ class RobotManager {
         }
 
         std::shared_ptr<Robot> create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
-                                      const Eigen::Vector3d& ori, const std::shared_ptr<Team> team) {
+                                      const Eigen::Vector3d& ori, std::tuple<int, int, int> color,  const std::shared_ptr<Team> team) {
             auto it = robotFactory.find(type);
             if (it != robotFactory.end())
-                return it->second(name, type, number, pos, ori, team);
+                return it->second(name, type, number, pos, ori, color, team);
             return nullptr;
         }
 
@@ -232,14 +232,16 @@ class RobotManager {
         std::vector<std::shared_ptr<Robot>> robots_;
 
         using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&,
-                                                                  const Eigen::Vector3d&, const std::shared_ptr<Team>&)>;
+                                                                  const Eigen::Vector3d&, const std::tuple<int,int,int>&, const std::shared_ptr<Team>&)>;
 
         std::unordered_map<std::string, RobotCreator> robotFactory
-            = {{"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori,
-                                 auto&& team) { return std::make_shared<BoosterK1>(name, type, number, pos, ori, team); }},
-               {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& team) {
-                    return std::make_shared<BoosterT1>(name, type, number, pos, ori, team);
-                }}};
+            = {{"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& color, auto&& team) { 
+                return std::make_shared<BoosterK1>(name, type, number, pos, ori, color, team); 
+            }},
+               {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& color, auto&& team) {
+                return std::make_shared<BoosterT1>(name, type, number, pos, ori, color, team);
+            }}
+        };
 };
 
 }  // namespace spqr

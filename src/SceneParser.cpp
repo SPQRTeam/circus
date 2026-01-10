@@ -77,7 +77,6 @@ SceneParser::SceneParser(const string& yamlPath) {
             throw runtime_error("Each team must be a sequence of robots.");
 
         shared_ptr<Team> teamSpec = std::make_shared<Team>();
-        teamSpec->name = teamName;
 
         uint8_t typeIndex = 0;
         for (const YAML::Node& robotNode : robotsNode) {
@@ -102,7 +101,15 @@ SceneParser::SceneParser(const string& yamlPath) {
                     ori[i] = robotNode["orientation"][i].as<double>();
             }
 
-            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamSpec);
+            std::tuple<int, int, int> teamColor = {255, 255, 255};  // Default to white
+            if (teamName == "red") {
+                teamColor = {130, 36, 51};
+            } 
+            else if (teamName == "blue") {
+                teamColor = {0, 103, 120};
+            }
+
+            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamColor, teamSpec);
 
             robotTypes.insert(robotType);
             teamSpec->robots.push_back(std::move(robot));

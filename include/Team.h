@@ -26,7 +26,7 @@ class TeamManager {
 
             for (const std::shared_ptr<Robot>& robot : team->robots)
                 RobotManager::instance().registerRobot(robot);
-
+            
             teams_.push_back(std::move(team));
         }
 

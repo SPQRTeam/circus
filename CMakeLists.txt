@@ -31,7 +31,7 @@ option(BUILD_PYTHON_BINDINGS "Build python bindings" ON)
 # ============================= Dependencies ==================================================
 find_package(Eigen3 REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets Qml Quick Charts)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets Quick Charts)
 
 # Optional deps (linked only if found)
 find_package(nlohmann_json QUIET)
@@ -141,14 +141,6 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 file(GLOB_RECURSE ALL_UIS  CONFIGURE_DEPENDS "${_src_dir}/*.ui")
 file(GLOB_RECURSE ALL_QRCS CONFIGURE_DEPENDS "${_src_dir}/*.qrc")
 
-# Add QML resources - only if the file exists
-if(EXISTS "${CMAKE_SOURCE_DIR}/resources/qml.qrc")
-  qt_add_resources(QML_RESOURCES "${CMAKE_SOURCE_DIR}/resources/qml.qrc")
-else()
-  set(QML_RESOURCES "")
-  message(WARNING "QML resources not found at ${CMAKE_SOURCE_DIR}/resources/qml.qrc - skipping QML resources")
-endif()
-
 # Identify entry points we don't want in the core lib
 set(MAIN_SRC "")
 if(EXISTS "${_src_dir}/main.cpp")
@@ -177,7 +169,6 @@ set(_EXTRA_LIBS
   Qt6::Core
   Qt6::Widgets
   Qt6::OpenGLWidgets
-  Qt6::Qml
   Qt6::Quick
   Qt6::Charts
   ${_PUGI_TGT}
