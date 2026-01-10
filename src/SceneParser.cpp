@@ -276,6 +276,53 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
     prefixSubtree(sensorModel, robotSpec->name);
     prefixSubtree(actuatorModel, robotSpec->name);
 
+    // Set the Trunk body color based on robot's team color
+    // Use a stack-based traversal to find all body nodes recursively
+    std::stack<xml_node> nodeStack;
+    for (xml_node child : worldbodyModel.children()) {
+        nodeStack.push(child);
+    }
+
+    std::string expectedTrunkName = robotSpec->name + "_Trunk";
+    bool foundTrunk = false;
+
+    while (!nodeStack.empty() && !foundTrunk) {
+        xml_node current = nodeStack.top();
+        nodeStack.pop();
+
+        if (strcmp(current.name(), "body") == 0) {
+            const char* bodyName = current.attribute("name").value();
+            if (strcmp(bodyName, expectedTrunkName.c_str()) == 0) {
+                // Found the Trunk body, now find its visual geometry (class="visual")
+                for (xml_node geom : current.children("geom")) {
+                    const char* geomClass = geom.attribute("class").value();
+                    if (strcmp(geomClass, "visual") == 0) {
+                        // Set the rgba attribute for this visual geometry
+                        auto [r, g, b] = robotSpec->color;
+                        std::ostringstream rgbaStream;
+                        rgbaStream << (r / 255.0) << " " << (g / 255.0) << " " << (b / 255.0) << " 1";
+
+                        xml_attribute rgbaAttr = geom.attribute("rgba");
+                        if (rgbaAttr) {
+                            rgbaAttr.set_value(rgbaStream.str().c_str());
+                        } else {
+                            geom.append_attribute("rgba") = rgbaStream.str().c_str();
+                        }
+                        foundTrunk = true;
+                        break;  // Only set the first visual geom in Trunk
+                    }
+                }
+            }
+        }
+
+        // Add children to stack for traversal
+        if (!foundTrunk) {
+            for (xml_node child : current.children()) {
+                nodeStack.push(child);
+            }
+        }
+    }
+
     for (xml_node child : worldbodyModel.children()) {
         worldbody.append_copy(child);
     }

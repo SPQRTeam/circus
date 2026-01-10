@@ -68,15 +68,6 @@ class BoosterT1 : public Robot {
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
             cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
             cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
-
-            int body_id = mj_name2id(mujCtx->model, mjOBJ_BODY, (name + "_Trunk").c_str());
-            if (body_id != -1) {
-                int geom_id = mujCtx->model->body_geomadr[body_id];
-                auto [r, g, b] = color;
-                mujCtx->model->geom_rgba[4 * geom_id + 0] = r / 255.0f;
-                mujCtx->model->geom_rgba[4 * geom_id + 1] = g / 255.0f;
-                mujCtx->model->geom_rgba[4 * geom_id + 2] = b / 255.0f;
-            }
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
