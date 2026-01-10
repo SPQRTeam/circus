@@ -65,6 +65,10 @@ class GameControllerPanel : public QWidget {
             // Start collapsed
             isExpanded_ = false;
             currentView_ = GameControllerView::NONE;
+
+            for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
+                teamNames_.push_back(team->name);
+            }
         }
 
         bool isExpanded() const { return isExpanded_; }
@@ -135,10 +139,10 @@ class GameControllerPanel : public QWidget {
                     viewWidget = createConsoleWidget();
                     break;
                 case GameControllerView::TEAM1:
-                    viewWidget = createTeamWidget(1);
+                    viewWidget = createTeamWidget(teamNames_[0]);
                     break;
                 case GameControllerView::TEAM2:
-                    viewWidget = createTeamWidget(2);
+                    viewWidget = createTeamWidget(teamNames_[1]);
                     break;
                 case GameControllerView::NONE:
                     break;
@@ -159,8 +163,8 @@ class GameControllerPanel : public QWidget {
             return new ConsoleWidget(gameController_, contentContainer_);
         }
 
-        QWidget* createTeamWidget(int teamNumber) {
-            return new TeamWidget(teamNumber, gameController_, contentContainer_);
+        QWidget* createTeamWidget(std::string teamName) {
+            return new TeamWidget(teamName, gameController_, contentContainer_);
         }
 
         GameController* gameController_;
@@ -173,6 +177,8 @@ class GameControllerPanel : public QWidget {
         // Size constraints
         int minExpandedWidth_ = 250;
         int maxExpandedWidth_ = 400;
+
+        std::vector<std::string> teamNames_;
 };
 
 }  // namespace spqr

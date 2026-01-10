@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "Team.h"
 #include "GameController.h"
 
 namespace spqr {
@@ -13,8 +14,8 @@ class TeamWidget : public QWidget {
         Q_OBJECT
 
     public:
-        TeamWidget(int teamNumber, GameController* gameController, QWidget* parent = nullptr)
-            : teamNumber_(teamNumber), gameController_(gameController), QWidget(parent) {
+        TeamWidget(std::string teamName, GameController* gameController, QWidget* parent = nullptr)
+            : teamName_(teamName), gameController_(gameController), QWidget(parent) {
 
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
@@ -27,7 +28,7 @@ class TeamWidget : public QWidget {
             layout->setSpacing(5);
 
             // Header label
-            QLabel* header = new QLabel(QString("Team %1 - Robots").arg(teamNumber), this);
+            QLabel* header = new QLabel(QString("Team %1 - Robots").arg(teamName), this);
             header->setStyleSheet("QLabel { "
                                   "  color: #00a0b0; "
                                   "  font-size: 14px; "
@@ -72,7 +73,6 @@ class TeamWidget : public QWidget {
 
             setLayout(layout);
 
-            // TODO: Populate robot list from TeamManager
             loadRobots();
         }
 
@@ -80,13 +80,16 @@ class TeamWidget : public QWidget {
 
     private:
         void loadRobots() {
-            // Placeholder - will be implemented to fetch robots from TeamManager
-            robotList_->addItem(QString("Robot 1 (Team %1)").arg(teamNumber_));
-            robotList_->addItem(QString("Robot 2 (Team %1)").arg(teamNumber_));
-            robotList_->addItem(QString("Robot 3 (Team %1)").arg(teamNumber_));
+            for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
+                if (team->name == teamName_) {
+                    for (std::shared_ptr<Robot> robot : team->robots) {
+                        robotList_->addItem(QString::fromStdString(robot->name));
+                    }
+                }
+            }
         }
 
-        int teamNumber_;
+        std::string teamName_;
         GameController* gameController_;
         QListWidget* robotList_;
 };
