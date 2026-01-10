@@ -16,15 +16,11 @@
 
 namespace spqr {
 
-
-
 class GameControllerPanel : public QWidget {
         Q_OBJECT
 
     public:
-        GameControllerPanel(GameController* gameController, QWidget* parent = nullptr)
-            : gameController_(gameController), QWidget(parent) {
-
+        GameControllerPanel(GameController* gameController, QWidget* parent = nullptr) : gameController_(gameController), QWidget(parent) {
             // Main horizontal layout
             QHBoxLayout* mainLayout = new QHBoxLayout(this);
             mainLayout->setContentsMargins(5, 0, 5, 0);
@@ -39,7 +35,7 @@ class GameControllerPanel : public QWidget {
             contentContainer_->setStyleSheet("QWidget { background-color: #1a1a1a; }");
             contentContainer_->setMinimumWidth(minExpandedWidth_);
             contentContainer_->setMaximumWidth(maxExpandedWidth_);
-            contentContainer_->hide(); // Start collapsed
+            contentContainer_->hide();  // Start collapsed
 
             QVBoxLayout* contentLayout = new QVBoxLayout(contentContainer_);
             contentLayout->setContentsMargins(0, 0, 0, 0);
@@ -68,8 +64,12 @@ class GameControllerPanel : public QWidget {
             }
         }
 
-        bool isExpanded() const { return isExpanded_; }
-        int getExpandedWidth() const { return isExpanded_ ? (header_->width() + contentContainer_->width()) : header_->width() + 5; }
+        bool isExpanded() const {
+            return isExpanded_;
+        }
+        int getExpandedWidth() const {
+            return isExpanded_ ? (header_->width() + contentContainer_->width()) : header_->width() + 5;
+        }
 
     signals:
         void expansionChanged(bool expanded);

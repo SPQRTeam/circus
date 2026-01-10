@@ -1,38 +1,48 @@
 #pragma once
 
-#include "MujocoContext.h"
-#include "Team.h"
 #include <algorithm>
+#include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <map>
+
+#include "MujocoContext.h"
+#include "Team.h"
 
 namespace spqr {
 
-enum GamePhase {
-    INITIAL,
-    READY,
-    SET,
-    PLAY
-};
+enum GamePhase { INITIAL, READY, SET, PLAY };
 
 class GameController {
     public:
         GameController(MujocoContext *mujContext) : mujContext_(mujContext) {}
         ~GameController() = default;
 
-        GamePhase getCurrentPhase() const { return currentPhase_; }
-        double getSimTime() const { return simTime_; }
-        double getGameTime() const { return gameTime_; }
-        int getGameDuration() const { return gameDuration_; }
-        int getScoreRedTeam() const { return scoreRedTeam_; }
-        int getScoreBlueTeam() const { return scoreBlueTeam_; }
-        void setGameDuration(int duration) { gameDuration_ = duration; }
+        GamePhase getCurrentPhase() const {
+            return currentPhase_;
+        }
+        double getSimTime() const {
+            return simTime_;
+        }
+        double getGameTime() const {
+            return gameTime_;
+        }
+        int getGameDuration() const {
+            return gameDuration_;
+        }
+        int getScoreRedTeam() const {
+            return scoreRedTeam_;
+        }
+        int getScoreBlueTeam() const {
+            return scoreBlueTeam_;
+        }
+        void setGameDuration(int duration) {
+            gameDuration_ = duration;
+        }
 
         std::map<std::string, std::string> availableCommands() const;
-        bool isCommandValid(const std::string& command) const;
+        bool isCommandValid(const std::string &command) const;
         std::string handleCommand(std::string command);
         std::string handleGamePhase(std::string phase);
         std::string handleMoveRobot(std::string team, int robotId, double x, double y, double theta);
@@ -50,8 +60,8 @@ class GameController {
         GamePhase currentPhase_ = INITIAL;
         double simTime_ = 0.0;
         double gameTime_ = 0.0;
-        int gameDuration_ = 600; // default 10 minutes
-        
+        int gameDuration_ = 600;  // default 10 minutes
+
         int scoreRedTeam_ = 0;
         int scoreBlueTeam_ = 0;
 
@@ -61,4 +71,4 @@ class GameController {
         float maxY = 5.5f;
 };
 
-}
+}  // namespace spqr

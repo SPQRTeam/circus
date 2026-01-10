@@ -5,8 +5,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "Team.h"
 #include "GameController.h"
+#include "Team.h"
 
 namespace spqr {
 
@@ -16,7 +16,6 @@ class TeamWidget : public QWidget {
     public:
         TeamWidget(std::string teamName, GameController* gameController, QWidget* parent = nullptr)
             : teamName_(teamName), gameController_(gameController), QWidget(parent) {
-
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #0a0a0a; "

@@ -14,9 +14,7 @@ class ConsoleWidget : public QWidget {
         Q_OBJECT
 
     public:
-        ConsoleWidget(GameController* gameController, QWidget* parent = nullptr)
-            : gameController_(gameController), QWidget(parent) {
-
+        ConsoleWidget(GameController* gameController, QWidget* parent = nullptr) : gameController_(gameController), QWidget(parent) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #0a0a0a; "
@@ -98,8 +96,7 @@ class ConsoleWidget : public QWidget {
                     outputArea_->clear();
                     outputArea_->append("Game Controller Console ready.");
                     return;
-                }
-                else if (command == "help") {
+                } else if (command == "help") {
                     outputArea_->append(QString::fromStdString(helpMessage()));
                     return;
                 }

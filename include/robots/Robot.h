@@ -8,6 +8,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
+#include <iostream>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -16,7 +17,6 @@
 #include "Container.h"
 #include "MujocoContext.h"
 #include "sensors/Sensor.h"
-#include <iostream>
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -27,13 +27,7 @@ class Robot {
     public:
         Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
               const Eigen::Vector3d& initOrientation, const std::tuple<int, int, int> color, const std::shared_ptr<Team>& team)
-            : name(name),
-              type(type),
-              number(number),
-              initPosition(initPosition),
-              initOrientation(initOrientation),
-              color(color),
-              team(team) {}
+            : name(name), type(type), number(number), initPosition(initPosition), initOrientation(initOrientation), color(color), team(team) {}
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext) = 0;
         virtual void update() = 0;

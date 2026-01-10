@@ -7,12 +7,7 @@
 
 namespace spqr {
 
-enum class GameControllerView {
-    NONE,
-    CONSOLE,
-    TEAM1,
-    TEAM2
-};
+enum class GameControllerView { NONE, CONSOLE, TEAM1, TEAM2 };
 
 enum class GameControllerView;
 
