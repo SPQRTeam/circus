@@ -155,10 +155,16 @@ void AppWindow::loadScene(const QString& yaml_file) {
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         viewportContainer->setParent(nullptr);
         viewportContainer->setWindowFlags(Qt::Widget);
+
+        // Add viewport with margins and spacing
         contentLayout->addWidget(viewportContainer);
+        contentLayout->setContentsMargins(0, 5, 5, 0);
+        contentLayout->setSpacing(5);  // Space between GameControllerPanel and viewport
 
         toolsPanel = new ToolsPanel(false, *mujContext, this);
         mainLayout->addWidget(toolsPanel);
+
+        mainLayout->setSpacing(5);  // Space between viewport area and toolsPanel
 
         // Reconnect ToolsPanel signals
         connect(toolsPanel, &ToolsPanel::openRequested, this, &AppWindow::openScene);

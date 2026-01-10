@@ -30,7 +30,7 @@ class GameControllerPanel : public QWidget {
 
             // Main horizontal layout
             QHBoxLayout* mainLayout = new QHBoxLayout(this);
-            mainLayout->setContentsMargins(0, 5, 0, 5);
+            mainLayout->setContentsMargins(5, 0, 5, 0);
             mainLayout->setSpacing(0);
 
             // Create the header (left column with buttons)
@@ -55,7 +55,7 @@ class GameControllerPanel : public QWidget {
 
             // Set size policy to prevent expanding
             setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-            setFixedWidth(header_->width());
+            setFixedWidth(header_->width() + 5);
 
             // Connect header signals
             connect(header_, &GameControllerPanelHeader::consoleButtonClicked, this, &GameControllerPanel::onConsoleButtonClicked);
@@ -68,7 +68,7 @@ class GameControllerPanel : public QWidget {
         }
 
         bool isExpanded() const { return isExpanded_; }
-        int getExpandedWidth() const { return isExpanded_ ? (header_->width() + contentContainer_->width()) : header_->width(); }
+        int getExpandedWidth() const { return isExpanded_ ? (header_->width() + contentContainer_->width()) : header_->width() + 5; }
 
     signals:
         void expansionChanged(bool expanded);

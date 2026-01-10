@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -13,6 +14,15 @@ class GameControllerPanelHeader : public QWidget {
 
     public:
         GameControllerPanelHeader(QWidget* parent = nullptr) : QWidget(parent) {
+            // Create background widget
+            background_ = new QWidget(this);
+            background_->setStyleSheet("QWidget { "
+                                       "  background-color: #333333; "
+                                       "  border: 1px solid #555555; "
+                                       "  border-radius: 3px; "
+                                       "}");
+            background_->lower();  // Send to back
+
             // Set fixed width for the button column
             setFixedWidth(50);
 
@@ -49,9 +59,6 @@ class GameControllerPanelHeader : public QWidget {
             layout->addStretch();
 
             setLayout(layout);
-
-            // Set background
-            setStyleSheet("QWidget { background-color: #333333; border: 1px solid #555555; border-radius: 3px; }");
         }
 
         void setActiveButton(GameControllerView view);
@@ -60,6 +67,14 @@ class GameControllerPanelHeader : public QWidget {
         void consoleButtonClicked();
         void team1ButtonClicked();
         void team2ButtonClicked();
+
+    protected:
+        void resizeEvent(QResizeEvent* event) override {
+            QWidget::resizeEvent(event);
+            if (background_) {
+                background_->setGeometry(0, 0, width(), height());
+            }
+        }
 
     private:
         QString getButtonStyle() {
@@ -92,6 +107,7 @@ class GameControllerPanelHeader : public QWidget {
                    "} ";
         }
 
+        QWidget* background_;
         QPushButton* consoleButton_;
         QPushButton* team1Button_;
         QPushButton* team2Button_;
