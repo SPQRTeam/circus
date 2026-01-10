@@ -10,7 +10,7 @@
             <site name='imu' size='0.01' pos='0.0 0.0 0.0' />
             <inertial pos="-0.0043392 -0.00065534 0.065686" quat="0.999896 -0.00411546 0.0137413 -0.00168959" mass="6.3921" diaginertia="0.0962166 0.0895166 0.0201248" />
             <joint name="world_joint" type="free" limited="false" actuatorfrclimited="false" />
-            
+
             <body name="Head_1" pos="0.0056 0 0.2149">
                 <inertial pos="-0.00069503 -0.00038527 0.031688"
                     quat="0.993827 -0.00957801 0.00894723 -0.110168" mass="0.29729"

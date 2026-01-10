@@ -34,7 +34,6 @@ class ToolsPanel : public QWidget {
 
     public:
         ToolsPanel(bool initial, MujocoContext& mujContext, QWidget* parent) : initial_(initial), mujContext_(mujContext), QWidget(parent) {
-
             QVBoxLayout* mainLayout = new QVBoxLayout(this);
             mainLayout->setContentsMargins(5, 0, 5, 5);
             mainLayout->setSpacing(0);

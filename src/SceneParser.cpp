@@ -104,8 +104,7 @@ SceneParser::SceneParser(const string& yamlPath) {
             std::tuple<int, int, int> teamColor = {255, 255, 255};  // Default to white
             if (teamName == "red") {
                 teamColor = {130, 36, 51};
-            } 
-            else if (teamName == "blue") {
+            } else if (teamName == "blue") {
                 teamColor = {0, 103, 120};
             }
 

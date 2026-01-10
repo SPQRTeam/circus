@@ -6,7 +6,6 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <csignal>
-#include <cstddef>
 #include <string>
 
 #include "Constants.h"

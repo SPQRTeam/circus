@@ -37,7 +37,8 @@ class GridCell : public QWidget {
         Q_OBJECT
 
     public:
-        GridCell(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext, QWidget* parent = nullptr) : mujContext_(mujContext), QWidget(parent) {
+        GridCell(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext, QWidget* parent = nullptr)
+            : mujContext_(mujContext), QWidget(parent) {
             robots_ = robots;
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
@@ -331,7 +332,9 @@ class ToolsPanelGrid : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanelGrid(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext, QWidget* parent = nullptr) : mujContext_(mujContext), QWidget(parent) {
+        ToolsPanelGrid(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext,
+                       QWidget* parent = nullptr)
+            : mujContext_(mujContext), QWidget(parent) {
             robots_ = robots;
             streams_ = streams;
 

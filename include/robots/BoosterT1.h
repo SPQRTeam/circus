@@ -35,7 +35,7 @@ class BoosterT1 : public Robot {
         std::array<Camera*, 2> cameras = {};
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
-                  const Eigen::Vector3d& initOrientation, const std::tuple<int,int,int> color, const std::shared_ptr<Team>& team)
+                  const Eigen::Vector3d& initOrientation, const std::tuple<int, int, int> color, const std::shared_ptr<Team>& team)
             : Robot(name, type, number, initPosition, initOrientation, color, team),
               joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                         {JointValue::HEAD_PITCH, name + "_Head_pitch"},
