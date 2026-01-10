@@ -19,6 +19,7 @@
 #include <QWidget>
 #include <memory>
 
+#include "MujocoContext.h"
 #include "robots/Robot.h"
 #include "sensors/Camera.h"
 #include "sensors/Imu.h"
@@ -36,7 +37,7 @@ class GridCell : public QWidget {
         Q_OBJECT
 
     public:
-        GridCell(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, QWidget* parent = nullptr) : QWidget(parent) {
+        GridCell(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext, QWidget* parent = nullptr) : mujContext_(mujContext), QWidget(parent) {
             robots_ = robots;
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
@@ -320,6 +321,8 @@ class GridCell : public QWidget {
         QString selectedItem_;
         Tool* tool_;
         QVBoxLayout* cellLayout_;
+
+        MujocoContext& mujContext_;
         QMap<QString, ToolType> streams_;
         std::vector<std::shared_ptr<Robot>> robots_;
 };
@@ -328,7 +331,7 @@ class ToolsPanelGrid : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanelGrid(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, QWidget* parent = nullptr) : QWidget(parent) {
+        ToolsPanelGrid(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext, QWidget* parent = nullptr) : mujContext_(mujContext), QWidget(parent) {
             robots_ = robots;
             streams_ = streams;
 
@@ -447,7 +450,7 @@ class ToolsPanelGrid : public QWidget {
 
                             if (tool && tool->type() == ToolType::PLOT) {
                                 Plot* plot = dynamic_cast<Plot*>(tool);
-                                double simTime = robot->getSimTime();
+                                double simTime = mujContext_.data->time;
 
                                 // Add data based on sensor type
                                 if (sensorType == "position") {
@@ -681,7 +684,7 @@ class ToolsPanelGrid : public QWidget {
 
                     // Create new cell if needed
                     if (!cell) {
-                        cell = new GridCell(robots_, streams_, nullptr);
+                        cell = new GridCell(robots_, streams_, mujContext_, nullptr);
                     }
 
                     cellGrid_.append(cell);
@@ -790,6 +793,8 @@ class ToolsPanelGrid : public QWidget {
         int prevNumRows_ = 1;
         int prevNumCols_ = 1;
         QList<GridCell*> cellGrid_;
+
+        MujocoContext& mujContext_;
         std::vector<std::shared_ptr<Robot>> robots_;
         QMap<QString, ToolType> streams_;
         QTimer* updateTimer_;

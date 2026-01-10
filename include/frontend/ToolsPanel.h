@@ -33,8 +33,7 @@ class ToolsPanel : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanel(bool initial, QWidget* parent) : QWidget(parent) {
-            initial_ = initial;
+        ToolsPanel(bool initial, MujocoContext& mujContext, QWidget* parent) : initial_(initial), mujContext_(mujContext), QWidget(parent) {
 
             QVBoxLayout* mainLayout = new QVBoxLayout(this);
             mainLayout->setContentsMargins(5, 0, 5, 5);
@@ -50,7 +49,7 @@ class ToolsPanel : public QWidget {
             containerLayout->setContentsMargins(0, 10, 0, 0);
 
             // Add the grid to the container
-            grid_ = new ToolsPanelGrid(getRobots(), getStreams(), container_);
+            grid_ = new ToolsPanelGrid(getRobots(), getStreams(), mujContext, container_);
             containerLayout->addWidget(grid_);
 
             container_->setLayout(containerLayout);
@@ -258,6 +257,7 @@ class ToolsPanel : public QWidget {
         ToolsPanelGrid* grid_;
 
         bool initial_;
+        MujocoContext& mujContext_;
         int minExpandedHeight_;
         int maxExpandedHeight_;
         int currentExpandedHeight_;

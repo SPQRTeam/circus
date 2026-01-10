@@ -34,10 +34,6 @@ class Robot {
         virtual std::map<std::string, msgpack::object> sendMessage() = 0;
         virtual std::map<std::string, Sensor*> getSensors() = 0;
 
-        double getSimTime() const {
-            return mujData_ ? mujData_->time : 0.0;
-        }
-
         std::string name;
         std::string type;
         uint8_t number;

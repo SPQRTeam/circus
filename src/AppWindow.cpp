@@ -6,6 +6,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <csignal>
+#include <cstddef>
 #include <string>
 
 #include "Constants.h"
@@ -54,7 +55,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
         toolsPanel->deleteLater();
         toolsPanel = nullptr;
     }
-    toolsPanel = new ToolsPanel(true, this);
+    toolsPanel = new ToolsPanel(true, *mujContext, this);
     mainLayout->addWidget(toolsPanel);
 
     // Connect ToolsPanel signals
@@ -126,7 +127,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         viewportContainer->setWindowFlags(Qt::Widget);
         mainLayout->addWidget(viewportContainer);
 
-        toolsPanel = new ToolsPanel(false, this);
+        toolsPanel = new ToolsPanel(false, *mujContext, this);
         mainLayout->addWidget(toolsPanel);
 
         // Reconnect ToolsPanel signals
