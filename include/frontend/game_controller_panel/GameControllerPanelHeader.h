@@ -7,6 +7,13 @@
 
 namespace spqr {
 
+enum class GameControllerView {
+    NONE,
+    CONSOLE,
+    TEAM1,
+    TEAM2
+};
+
 enum class GameControllerView;
 
 class GameControllerPanelHeader : public QWidget {
@@ -61,7 +68,29 @@ class GameControllerPanelHeader : public QWidget {
             setLayout(layout);
         }
 
-        void setActiveButton(GameControllerView view);
+        // void setActiveButton(GameControllerView view);
+        void setActiveButton(GameControllerView view) {
+            // Reset all buttons to normal style
+            consoleButton_->setStyleSheet(getButtonStyle());
+            team1Button_->setStyleSheet(getButtonStyle());
+            team2Button_->setStyleSheet(getButtonStyle());
+
+            // Set active button style
+            switch (view) {
+                case GameControllerView::CONSOLE:
+                    consoleButton_->setStyleSheet(getActiveButtonStyle());
+                    break;
+                case GameControllerView::TEAM1:
+                    team1Button_->setStyleSheet(getActiveButtonStyle());
+                    break;
+                case GameControllerView::TEAM2:
+                    team2Button_->setStyleSheet(getActiveButtonStyle());
+                    break;
+                case GameControllerView::NONE:
+                    // All buttons are already reset
+                    break;
+            }
+        }
 
     signals:
         void consoleButtonClicked();

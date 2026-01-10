@@ -1,7 +1,13 @@
 #pragma once
 
 #include "MujocoContext.h"
+#include "Team.h"
 #include <algorithm>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <map>
 
 namespace spqr {
 
@@ -25,49 +31,34 @@ class GameController {
         int getScoreBlueTeam() const { return scoreBlueTeam_; }
         void setGameDuration(int duration) { gameDuration_ = duration; }
 
-        std::vector<std::string> availableCommands() const {
-            return {"initial", "ready", "set", "play"};
-        }
-
-        void handleCommand(std::string command) {
-            if(std::find(availableCommands().begin(), availableCommands().end(), command) == availableCommands().end()) {
-                return; // Invalid command
-            }
-
-            if (command == "initial") {
-                currentPhase_ = INITIAL;
-            } else if (command == "ready") {
-                currentPhase_ = READY;
-            } else if (command == "set") {
-                currentPhase_ = SET;
-            } else if (command == "play") {
-                currentPhase_ = PLAY;
-            }
-        }
-
-        void updateSimTime() {
-            if (mujContext_ && mujContext_->data) {
-                simTime_ = mujContext_->data->time;
-            }
-        }
-
-        void updateGameTime(double time) {
-            gameTime_ = time;
-        }
-
-        void updateScore(int redTeamScore, int blueTeamScore) {
-            scoreRedTeam_ = redTeamScore;
-            scoreBlueTeam_ = blueTeamScore;
-        }
+        std::map<std::string, std::string> availableCommands() const;
+        bool isCommandValid(const std::string& command) const;
+        std::string handleCommand(std::string command);
+        std::string handleGamePhase(std::string phase);
+        std::string handleMoveRobot(std::string team, int robotId, double x, double y, double theta);
+        std::string handleMoveBall(double x, double y);
+        void updateSimTime();
+        void updateGameTime(double time);
+        void updateScore(int redTeamScore, int blueTeamScore);
 
     private:
+        std::string getAvailableTeams();
+        std::string getAvailableRobots(std::shared_ptr<Team> team);
+        bool checkFieldBounds(double x, double y);
+
         MujocoContext *mujContext_;
         GamePhase currentPhase_ = INITIAL;
         double simTime_ = 0.0;
         double gameTime_ = 0.0;
         int gameDuration_ = 600; // default 10 minutes
+        
         int scoreRedTeam_ = 0;
         int scoreBlueTeam_ = 0;
+
+        float minX = -8.0f;
+        float maxX = 8.0f;
+        float minY = -5.5f;
+        float maxY = 5.5f;
 };
 
 }

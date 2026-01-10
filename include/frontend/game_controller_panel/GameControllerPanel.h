@@ -16,12 +16,7 @@
 
 namespace spqr {
 
-enum class GameControllerView {
-    NONE,
-    CONSOLE,
-    TEAM1,
-    TEAM2
-};
+
 
 class GameControllerPanel : public QWidget {
         Q_OBJECT

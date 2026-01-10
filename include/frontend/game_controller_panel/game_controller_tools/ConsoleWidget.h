@@ -100,32 +100,37 @@ class ConsoleWidget : public QWidget {
                     return;
                 }
                 else if (command == "help") {
-                    outputArea_->append(QString::fromStdString(helpMessage_));
+                    outputArea_->append(QString::fromStdString(helpMessage()));
                     return;
                 }
 
                 std::string cmdStr = command.toStdString();
-                auto availableCommands = gameController_->availableCommands();
-                if (std::find(availableCommands.begin(), availableCommands.end(), cmdStr) != availableCommands.end()) {
-                    gameController_->handleCommand(cmdStr);
-                    outputArea_->append(QString("Game phase changed to: %1").arg(command.toUpper()));
+                if (gameController_->isCommandValid(cmdStr)) {
+                    std::string res = gameController_->handleCommand(cmdStr);
+                    outputArea_->append(QString("%1").arg(QString::fromStdString(res)));
                 } else {
                     outputArea_->append(QString("Unknown command: %1").arg(command));
-                    outputArea_->append("Available commands: initial, ready, set, play");
+                    outputArea_->append(QString::fromStdString(helpMessage()));
                 }
             }
+        }
+
+        std::string helpMessage() {
+            std::string helpMsg = "Available commands:\n"
+                                  "  clear   - Clear the console output\n"
+                                  "  help    - Show this help message\n";
+
+            auto commands = gameController_->availableCommands();
+            for (const auto& [cmd, desc] : commands) {
+                helpMsg += "  " + cmd + " - " + desc + "\n";
+            }
+
+            return helpMsg;
         }
 
         GameController* gameController_;
         QTextEdit* outputArea_;
         QTextEdit* inputArea_;
-
-        std::string helpMessage_ = "Available commands:\n"
-                                           "  initial - Set game phase to INITIAL\n"
-                                           "  ready   - Set game phase to READY\n"
-                                           "  set     - Set game phase to SET\n"
-                                           "  play    - Set game phase to PLAY\n"
-                                           "Type 'clear' to clear the console output.";
 };
 
 }  // namespace spqr
