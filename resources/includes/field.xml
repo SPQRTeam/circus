@@ -30,7 +30,8 @@
     <mesh name="right_net" file="../meshes/goal/RightNet.obj"/>
     <mesh name="back_net" file="../meshes/goal/BackNet.obj"/>
 
-    <mesh name="colosseum" file="../meshes/colosseum.obj" scale="0.004 0.004 0.004"/>
+    <!-- Colosseum Mesh -->
+    <mesh name="colosseum" file="../meshes/colosseum/colosseum.obj" scale="0.004 0.004 0.004"/>
     <texture name="colosseum_tex" type="2d" builtin="flat" rgb1="0.666 0.639 0.557" width="512" height="512"/>
     <material name="colosseum_mat"
             texture="colosseum_tex"
