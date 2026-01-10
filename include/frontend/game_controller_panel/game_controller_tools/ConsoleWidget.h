@@ -4,6 +4,7 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <algorithm>
 
 #include "GameController.h"
 
@@ -47,9 +48,7 @@ class ConsoleWidget : public QWidget {
                                        "  font-family: monospace; "
                                        "  font-size: 11px; "
                                        "}");
-            outputArea_->setText("Game Controller Console\n"
-                                 "Type commands below and press Enter\n"
-                                 "Available commands: initial, ready, set, playing\n");
+            outputArea_->setText("Game Controller Console ready.\n");
             layout->addWidget(outputArea_, 1);
 
             // Input area (command input)
@@ -83,20 +82,32 @@ class ConsoleWidget : public QWidget {
 
                 // Process command
                 if (!command.isEmpty()) {
-                    processCommand(command);
+                    sendCommand(command);
                 }
             }
         }
 
     private:
-        void processCommand(const QString& command) {
+        void sendCommand(const QString& command) {
             // Log the command to output
             outputArea_->append(QString("> %1").arg(command));
 
             // Process game controller commands
             if (gameController_) {
-                if (command == "initial" || command == "ready" || command == "set" || command == "play") {
-                    gameController_->updateGamePhase(command.toStdString());
+                if (command == "clear") {
+                    outputArea_->clear();
+                    outputArea_->append("Game Controller Console ready.");
+                    return;
+                }
+                else if (command == "help") {
+                    outputArea_->append(QString::fromStdString(helpMessage_));
+                    return;
+                }
+
+                std::string cmdStr = command.toStdString();
+                auto availableCommands = gameController_->availableCommands();
+                if (std::find(availableCommands.begin(), availableCommands.end(), cmdStr) != availableCommands.end()) {
+                    gameController_->handleCommand(cmdStr);
                     outputArea_->append(QString("Game phase changed to: %1").arg(command.toUpper()));
                 } else {
                     outputArea_->append(QString("Unknown command: %1").arg(command));
@@ -108,6 +119,13 @@ class ConsoleWidget : public QWidget {
         GameController* gameController_;
         QTextEdit* outputArea_;
         QTextEdit* inputArea_;
+
+        std::string helpMessage_ = "Available commands:\n"
+                                           "  initial - Set game phase to INITIAL\n"
+                                           "  ready   - Set game phase to READY\n"
+                                           "  set     - Set game phase to SET\n"
+                                           "  play    - Set game phase to PLAY\n"
+                                           "Type 'clear' to clear the console output.";
 };
 
 }  // namespace spqr

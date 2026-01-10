@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MujocoContext.h"
+#include <algorithm>
 
 namespace spqr {
 
@@ -24,7 +25,15 @@ class GameController {
         int getScoreBlueTeam() const { return scoreBlueTeam_; }
         void setGameDuration(int duration) { gameDuration_ = duration; }
 
-        void updateGamePhase(std::string command) {
+        std::vector<std::string> availableCommands() const {
+            return {"initial", "ready", "set", "play"};
+        }
+
+        void handleCommand(std::string command) {
+            if(std::find(availableCommands().begin(), availableCommands().end(), command) == availableCommands().end()) {
+                return; // Invalid command
+            }
+
             if (command == "initial") {
                 currentPhase_ = INITIAL;
             } else if (command == "ready") {
