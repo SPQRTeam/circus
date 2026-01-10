@@ -110,10 +110,12 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
         return "Team '" + team + "' not found. Available teams: " + getAvailableTeams();
     }
 
-    // Validate robot exists in the team
+    // Validate robot exists in the team and move it
+    std::shared_ptr<Robot> targetRobot = nullptr;
     for (std::shared_ptr<Robot> robot : targetTeam->robots) {
         if (robot->number == robotId) {
             robotFound = true;
+            targetRobot = robot;
             break;
         }
     }
@@ -122,7 +124,24 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
         return "Robot " + std::to_string(robotId) + " not found in team '" + team + "'. Available robots: " + getAvailableRobots(targetTeam);
     }
 
-    // Implementation for moving robot can be added here
+    std::string trunkBodyName = targetRobot->name + "_Trunk";
+    int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, trunkBodyName.c_str());
+    if (bodyId < 0) {
+        return "Error: Could not find body for robot " + team + "-" + std::to_string(robotId);
+    }
+
+    int jntadr = mujContext_->model->body_jntadr[bodyId];
+    int qposadr = mujContext_->model->jnt_qposadr[jntadr];
+
+    mujContext_->data->qpos[qposadr + 0] = x;
+    mujContext_->data->qpos[qposadr + 1] = y;   
+
+    double halfTheta = theta * 0.5;
+    mujContext_->data->qpos[qposadr + 3] = std::cos(halfTheta);  // w
+    mujContext_->data->qpos[qposadr + 4] = 0;                      // x
+    mujContext_->data->qpos[qposadr + 5] = 0;                      // y
+    mujContext_->data->qpos[qposadr + 6] = std::sin(halfTheta);  // z   
+    mj_forward(mujContext_->model, mujContext_->data);
 
     return "Robot " + team + "-" + std::to_string(robotId) + " moved to (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(theta) + ")";
 }
@@ -133,6 +152,18 @@ std::string GameController::handleMoveBall(double x, double y) {
     }
 
     // Implementation for moving ball can be added here
+    std::string bodyName = "ball";
+    int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, bodyName.c_str());
+    if (bodyId < 0) {
+        return "Error: Could not find ball body in the simulation.";
+    }
+
+    int jntadr = mujContext_->model->body_jntadr[bodyId];
+    int qposadr = mujContext_->model->jnt_qposadr[jntadr];
+
+    mujContext_->data->qpos[qposadr + 0] = x;
+    mujContext_->data->qpos[qposadr + 1] = y;   
+    mj_forward(mujContext_->model, mujContext_->data);
 
     return "Ball moved to (" + std::to_string(x) + ", " + std::to_string(y) + ")";
 }
@@ -171,7 +202,7 @@ std::string GameController::getAvailableRobots(std::shared_ptr<Team> team) {
 }
 
 bool GameController::checkFieldBounds(double x, double y) {
-    return (x >= minX && x <= maxX && y >= minY && y <= maxY);
+    return (x > minX && x < maxX && y > minY && y < maxY);
 }
 
 }

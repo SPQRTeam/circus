@@ -62,7 +62,6 @@ class BoosterT1 : public Robot {
                         {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
         void bindMujoco(MujocoContext* mujCtx) override {
-            mujData_ = mujCtx->data;  // Store pointer to simulation data
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);

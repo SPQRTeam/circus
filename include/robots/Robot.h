@@ -16,6 +16,7 @@
 #include "Container.h"
 #include "MujocoContext.h"
 #include "sensors/Sensor.h"
+#include <iostream>
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -32,8 +33,7 @@ class Robot {
               initPosition(initPosition),
               initOrientation(initOrientation),
               color(color),
-              team(team),
-              mujData_(nullptr) {}
+              team(team) {}
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext) = 0;
         virtual void update() = 0;
@@ -51,9 +51,6 @@ class Robot {
         std::shared_ptr<Team> team;
 
         msgpack::zone buffer_zone_;
-
-    protected:
-        mjData* mujData_;
 };
 
 }  // namespace spqr
