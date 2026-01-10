@@ -8,7 +8,7 @@ enum GamePhase {
     INITIAL,
     READY,
     SET,
-    PLAYING
+    PLAY
 };
 
 class GameController {
@@ -31,8 +31,8 @@ class GameController {
                 currentPhase_ = READY;
             } else if (command == "set") {
                 currentPhase_ = SET;
-            } else if (command == "playing") {
-                currentPhase_ = PLAYING;
+            } else if (command == "play") {
+                currentPhase_ = PLAY;
             }
         }
 

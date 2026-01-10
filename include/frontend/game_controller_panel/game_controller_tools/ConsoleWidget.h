@@ -95,12 +95,12 @@ class ConsoleWidget : public QWidget {
 
             // Process game controller commands
             if (gameController_) {
-                if (command == "initial" || command == "ready" || command == "set" || command == "playing") {
+                if (command == "initial" || command == "ready" || command == "set" || command == "play") {
                     gameController_->updateGamePhase(command.toStdString());
                     outputArea_->append(QString("Game phase changed to: %1").arg(command.toUpper()));
                 } else {
                     outputArea_->append(QString("Unknown command: %1").arg(command));
-                    outputArea_->append("Available commands: initial, ready, set, playing");
+                    outputArea_->append("Available commands: initial, ready, set, play");
                 }
             }
         }
