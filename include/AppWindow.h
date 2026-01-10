@@ -4,6 +4,7 @@
 #include <qqmlapplicationengine.h>
 #include <qtmetamacros.h>
 
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMainWindow>
 #include <QObject>
@@ -12,10 +13,12 @@
 #include <QVariantMap>
 #include <memory>
 
+#include "GameController.h"
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
-#include "frontend/ToolsPanel.h"
+#include "frontend/game_controller_panel/GameControllerPanel.h"
+#include "frontend/tools_panel/ToolsPanel.h"
 
 namespace spqr {
 
@@ -36,12 +39,15 @@ class AppWindow : public QMainWindow {
         static void signalHandler(int signal);
 
         QVBoxLayout* mainLayout = nullptr;
+        QHBoxLayout* contentLayout = nullptr;
         QWidget* viewportContainer = nullptr;
         QLabel* viewportPlaceholder = nullptr;
 
+        GameControllerPanel* gameControllerPanel = nullptr;
         ToolsPanel* toolsPanel = nullptr;
 
         std::unique_ptr<MujocoContext> mujContext;
+        std::unique_ptr<GameController> gameController;
         std::unique_ptr<SimulationViewport> viewport;
         std::unique_ptr<SimulationThread> sim;
 };

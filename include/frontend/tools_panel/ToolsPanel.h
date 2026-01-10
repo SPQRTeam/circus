@@ -20,8 +20,8 @@
 
 #include "Constants.h"
 #include "Team.h"
-#include "frontend/ToolsPanelGrid.h"
-#include "frontend/ToolsPanelHeader.h"
+#include "frontend/tools_panel/ToolsPanelGrid.h"
+#include "frontend/tools_panel/ToolsPanelHeader.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"

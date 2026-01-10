@@ -3,16 +3,19 @@
 #include <qaction.h>
 
 #include <QFileDialog>
+#include <QHBoxLayout>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <csignal>
 #include <string>
 
 #include "Constants.h"
+#include "GameController.h"
 #include "MujocoContext.h"
 #include "RobotManager.h"
 #include "SceneParser.h"
 #include "Team.h"
+#include "frontend/game_controller_panel/GameControllerPanel.h"
 
 namespace spqr {
 
@@ -31,11 +34,28 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
 
     mainLayout = new QVBoxLayout();
     mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setStyleSheet("background-color: #1a1a1a;");
     centralWidget->setLayout(mainLayout);
     setCentralWidget(centralWidget);
+
+    // Create horizontal layout for GameControllerPanel and viewport
+    contentLayout = new QHBoxLayout();
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+    contentLayout->setSpacing(0);
+
+    QWidget* contentWidget = new QWidget(this);
+    contentWidget->setLayout(contentLayout);
+    mainLayout->addWidget(contentWidget);
+
+    // Initialize GameController (without MujocoContext for now)
+    gameController = std::make_unique<GameController>(nullptr);
+
+    // Create GameControllerPanel on the left
+    gameControllerPanel = new GameControllerPanel(gameController.get(), this);
+    contentLayout->addWidget(gameControllerPanel);
 
     if (!scenePath) {
         viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
@@ -46,7 +66,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
                                            "  font-weight: bold; "
                                            "  background-color: #0a0a0a; "
                                            "}");
-        mainLayout->addWidget(viewportPlaceholder);
+        contentLayout->addWidget(viewportPlaceholder);
     }
 
     if (toolsPanel) {
@@ -96,7 +116,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         }
 
         if (viewportContainer) {
-            mainLayout->removeWidget(viewportContainer);
+            contentLayout->removeWidget(viewportContainer);
             viewportContainer->deleteLater();
             viewportContainer = nullptr;
         }
@@ -112,6 +132,17 @@ void AppWindow::loadScene(const QString& yaml_file) {
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
+        // Update GameController with MujocoContext
+        gameController = std::make_unique<GameController>(mujContext.get());
+
+        // Recreate GameControllerPanel with updated GameController
+        if (gameControllerPanel) {
+            contentLayout->removeWidget(gameControllerPanel);
+            gameControllerPanel->deleteLater();
+        }
+        gameControllerPanel = new GameControllerPanel(gameController.get(), this);
+        contentLayout->insertWidget(0, gameControllerPanel);
+
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
 
@@ -124,7 +155,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         viewportContainer = QWidget::createWindowContainer(viewport.get());
         viewportContainer->setParent(nullptr);
         viewportContainer->setWindowFlags(Qt::Widget);
-        mainLayout->addWidget(viewportContainer);
+        contentLayout->addWidget(viewportContainer);
 
         toolsPanel = new ToolsPanel(false, *mujContext, this);
         mainLayout->addWidget(toolsPanel);
