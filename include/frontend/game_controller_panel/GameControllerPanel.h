@@ -3,9 +3,11 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
+#include <QMouseEvent>
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <cmath>
 
 #include "GameController.h"
 #include "frontend/game_controller_panel/GameControllerPanelHeader.h"
@@ -76,6 +78,72 @@ class GameControllerPanel : public QWidget {
 
     signals:
         void expansionChanged(bool expanded);
+        void resizeDragStarted();
+        void resizeDragEnded();
+
+    protected:
+        void mousePressEvent(QMouseEvent* event) override {
+            if (event->button() == Qt::LeftButton && isExpanded_) {
+                int mouseX = event->pos().x();
+                // Check if mouse is near the right edge (within 15 pixels for easier grabbing)
+                if (std::abs(mouseX - width()) <= 30) {
+                    isDragging_ = true;
+                    dragStartX_ = event->globalPosition().x();
+                    initialWidth_ = width();
+                    emit resizeDragStarted();
+                    event->accept();
+                    return;
+                }
+            }
+            QWidget::mousePressEvent(event);
+        }
+
+        void mouseMoveEvent(QMouseEvent* event) override {
+            if (isExpanded_) {
+                int mouseX = event->pos().x();
+                // Change cursor when hovering near right edge (15 pixels for easier targeting)
+                if (std::abs(mouseX - width()) <= 30 || isDragging_) {
+                    setCursor(Qt::SizeHorCursor);
+                } else {
+                    setCursor(Qt::ArrowCursor);
+                }
+
+                if (isDragging_ && (event->buttons() & Qt::LeftButton)) {
+                    int deltaX = event->globalPosition().x() - dragStartX_;
+                    int newWidth = initialWidth_ + deltaX;
+
+                    // Clamp width between min and max (fixed values, not dynamic)
+                    int minWidth = header_->width() + 250 + 5;  // 250 is base minExpandedWidth
+                    int maxWidth = header_->width() + 600 + 5;  // 600 is max allowed width
+                    newWidth = std::max(minWidth, std::min(maxWidth, newWidth));
+
+                    // Update content container width
+                    int contentWidth = newWidth - header_->width() - 5;
+                    contentContainer_->setMinimumWidth(contentWidth);
+                    contentContainer_->setMaximumWidth(contentWidth);
+                    setFixedWidth(newWidth);
+
+                    event->accept();
+                    return;
+                }
+            }
+            QWidget::mouseMoveEvent(event);
+        }
+
+        void mouseReleaseEvent(QMouseEvent* event) override {
+            if (event->button() == Qt::LeftButton && isDragging_) {
+                isDragging_ = false;
+                setCursor(Qt::ArrowCursor);
+                emit resizeDragEnded();
+
+                // Store the current width as the preferred width for this view
+                currentExpandedWidth_ = contentContainer_->width();
+
+                event->accept();
+                return;
+            }
+            QWidget::mouseReleaseEvent(event);
+        }
 
     private slots:
         void onConsoleButtonClicked() {
@@ -114,7 +182,7 @@ class GameControllerPanel : public QWidget {
             isExpanded_ = false;
             currentView_ = GameControllerView::NONE;
             header_->setActiveButton(GameControllerView::NONE);
-            setFixedWidth(header_->width());
+            setFixedWidth(header_->width() + 5);
             emit expansionChanged(false);
         }
 
@@ -132,6 +200,13 @@ class GameControllerPanel : public QWidget {
                 }
             }
 
+            // Reload team names in case they were empty at construction time
+            if (teamNames_.empty()) {
+                for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
+                    teamNames_.push_back(team->name);
+                }
+            }
+
             // Create and show the requested view
             QWidget* viewWidget = nullptr;
             switch (view) {
@@ -139,10 +214,14 @@ class GameControllerPanel : public QWidget {
                     viewWidget = createConsoleWidget();
                     break;
                 case GameControllerView::TEAM1:
-                    viewWidget = createTeamWidget(teamNames_[0]);
+                    if (teamNames_.size() > 0) {
+                        viewWidget = createTeamWidget(teamNames_[0]);
+                    }
                     break;
                 case GameControllerView::TEAM2:
-                    viewWidget = createTeamWidget(teamNames_[1]);
+                    if (teamNames_.size() > 1) {
+                        viewWidget = createTeamWidget(teamNames_[1]);
+                    }
                     break;
                 case GameControllerView::NONE:
                     break;
@@ -154,7 +233,7 @@ class GameControllerPanel : public QWidget {
                 isExpanded_ = true;
                 currentView_ = view;
                 header_->setActiveButton(view);
-                setFixedWidth(header_->width() + contentContainer_->minimumWidth());
+                setFixedWidth(header_->width() + contentContainer_->minimumWidth() + 5);
                 emit expansionChanged(true);
             }
         }
@@ -177,8 +256,14 @@ class GameControllerPanel : public QWidget {
         // Size constraints
         int minExpandedWidth_ = 250;
         int maxExpandedWidth_ = 400;
+        int currentExpandedWidth_ = 250;
 
         std::vector<std::string> teamNames_;
+
+        // Resize drag state
+        bool isDragging_ = false;
+        qreal dragStartX_ = 0;
+        int initialWidth_ = 0;
 };
 
 }  // namespace spqr
