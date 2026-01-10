@@ -167,15 +167,18 @@ string SceneParser::buildMuJoCoXml() {
     xml_node sensor = mujoco.append_child("sensor");
 
     // xml_node light = worldbody.append_child("light");
-    // light.append_attribute("ambient") = "1.0 1.0 1.0";
-    // light.append_attribute("diffuse") = "0.0 0.0 0.0";
-    // light.append_attribute("specular") = "0.0 0.0 0.0";
+    // light.append_attribute("ambient") = "0.5 0.5 0.5";
+    // light.append_attribute("diffuse") = "0.7 0.7 0.7";
+    // light.append_attribute("specular") = "0.3 0.3 0.3";
     // light.append_attribute("pos") = "0 0 100";
     // light.append_attribute("dir") = "0 0 -1";
+    // light.append_attribute("castshadow") = "false";
+    // light.append_attribute("attenuation") = "1 0 0";
+    // light.append_attribute("cutoff") = "60";
+    // light.append_attribute("exponent") = "10";   
 
     for (const shared_ptr<Team>& team : scene.teams) {
         for (const shared_ptr<Robot>& robot : team->robots) {
-            // TODO use team name to setup jerseys
             buildRobotInstance(robot, worldbody, actuator, sensor);
         }
     }
