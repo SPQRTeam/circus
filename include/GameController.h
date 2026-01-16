@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <string>
+#include <tuple>
 
 #include "MujocoContext.h"
 #include "robots/Robot.h"
@@ -11,6 +13,18 @@ namespace spqr {
 
 enum GamePhase { INITIAL, READY, SET, PLAY };
 enum Penalty { NONE_PENALTY, LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_DEFENSE }; // TODO: check true penalties
+
+// Convert a Penalty enum to a readable string label.
+inline std::string penaltyToString(Penalty penalty) {
+    switch (penalty) {
+        case NONE_PENALTY: return "NONE_PENALTY";
+        case LEAVING_THE_FIELD: return "LEAVING_THE_FIELD";
+        case PUSHING: return "PUSHING";
+        case FOUL: return "FOUL";
+        case ILLEGAL_DEFENSE: return "ILLEGAL_DEFENSE";
+        default: return "UNKNOWN_PENALTY";
+    }
+}
 
 class RobotInGame {
     public:
@@ -22,9 +36,17 @@ class RobotInGame {
         }
 
         void setPenalized(Penalty penalty, int gameTimeWhenPenalized) {
+            std::cout << "Setting penalty for robot " << robot_->name << " to " << penaltyToString(penalty)
+                      << " at game time " << gameTimeWhenPenalized << std::endl;
             isPenalized_ = (penalty != NONE_PENALTY);
             currentPenalty_ = penalty;
             timeOfLastPenalty_ = (isPenalized_) ? gameTimeWhenPenalized : -1;
+
+            std::cout << "Robot " << robot_->name << " penalization status: " << penaltyToString(currentPenalty_) << std::endl;
+        }
+
+        Penalty getPenalty() const {
+            return currentPenalty_;
         }
 
     private:
@@ -43,17 +65,21 @@ class TeamInGame {
             return team_;
         }
 
-        void addRobotInGame(std::shared_ptr<Robot> robot) {
-            robotsInGame_.emplace_back(robot);
+        void addRobotInGame(RobotInGame rig) {
+            robotsInGame_.emplace_back(rig);
         }
         
-        RobotInGame& getRobotInGame(int robotId) {
+        RobotInGame* getRobotInGame(int robotId) {
             for (RobotInGame& rig : robotsInGame_) {
                 if (rig.getRobot()->number == robotId) {
-                    return rig;
+                    return &rig;
                 }
             }
-            throw std::runtime_error("Robot with ID " + std::to_string(robotId) + " not found in team '" + team_->name + "'.");
+            return nullptr;
+        }
+
+        std::vector<RobotInGame>& getRobotsInGame() {
+            return robotsInGame_;
         }
 
         void setScore(int score) {
@@ -98,9 +124,11 @@ class GameController {
             int redScore = 0;
             int blueScore = 0;
             for (const TeamInGame& t : teamsInGame_) {
-                if (t.getTeam()->name == "Red") {
+                std::string teamName = t.getTeam()->name;
+                std::transform(teamName.begin(), teamName.end(), teamName.begin(), ::tolower);
+                if (teamName == "red") {
                     redScore = t.getScore();
-                } else if (t.getTeam()->name == "Blue") {
+                } else if (teamName == "blue") {
                     blueScore = t.getScore();
                 }
             }
@@ -144,6 +172,8 @@ class GameController {
         float maxX = 8.0f;
         float minY = -5.5f;
         float maxY = 5.5f;
+
+        bool request_mjforward = false;
 };
 
 }  // namespace spqr

@@ -1,6 +1,17 @@
 #include "GameController.h"
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <string>
 
 namespace spqr {
+
+// Helper function to convert string to lowercase
+static std::string toLower(const std::string& str) {
+    std::string result = str;
+    std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+    return result;
+}
 
 void GameController::bindMujoco(MujocoContext* mujContext) {
     mujContext_ = mujContext;
@@ -8,10 +19,10 @@ void GameController::bindMujoco(MujocoContext* mujContext) {
     // Rebuild teams in game from current TeamManager state
     teamsInGame_.clear();
     for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
-        TeamInGame teamInGame(team);
-        teamsInGame_.emplace_back(teamInGame);
+        teamsInGame_.emplace_back(TeamInGame(team));
+        TeamInGame& teamInGame = teamsInGame_.back();
         for (const std::shared_ptr<Robot>& robot : team->robots) {
-            teamInGame.addRobotInGame(robot);
+            teamInGame.addRobotInGame(RobotInGame(robot));
         }
     }
 }
@@ -32,8 +43,8 @@ std::map<std::string, std::string> GameController::availableCommands() const {
         {"ready", "Set game phase to READY"},
         {"set", "Set game phase to SET"},
         {"play", "Set game phase to PLAY"},
-        {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta>"},
-        {"mvb", "Move ball command: mvb <x> <y>"},
+        {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta> [m, m, deg]"},
+        {"mvb", "Move ball command: mvb <x> <y> [m, m]"},
         {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_DEFENSE"},
         {"unpenalize", "Unpenalize robot command: unpenalize <team> <robot_id>. Sets robot penalty to NONE_PENALTY"}
         };
@@ -72,6 +83,9 @@ std::string GameController::handleCommand(std::string command) {
             return "Invalid mvr command format. Usage: mvr <team> <robot_id> <x> <y> <theta>";
         }
 
+        // lowercase the team name for consistency
+        team = toLower(team);
+
         return handleMoveRobot(team, robotId, x, y, theta);
     }
 
@@ -94,14 +108,18 @@ std::string GameController::handleCommand(std::string command) {
             return "Invalid penalize command format. Usage: penalize <team> <robot_id> <penalty_type>";
         }
 
+        // lowercase the team name for consistency
+        team = toLower(team);
+        penaltyStr = toLower(penaltyStr);
+
         Penalty penalty;
-        if (penaltyStr == "LEAVING_THE_FIELD") {
+        if (penaltyStr == "leaving_the_field") {
             penalty = LEAVING_THE_FIELD;
-        } else if (penaltyStr == "PUSHING") {
+        } else if (penaltyStr == "pushing") {
             penalty = PUSHING;
-        } else if (penaltyStr == "FOUL") {
+        } else if (penaltyStr == "foul") {
             penalty = FOUL;
-        } else if (penaltyStr == "ILLEGAL_DEFENSE") {
+        } else if (penaltyStr == "illegal_defense") {
             penalty = ILLEGAL_DEFENSE;
         } else {
             return "Invalid penalty type: " + penaltyStr;
@@ -119,6 +137,9 @@ std::string GameController::handleCommand(std::string command) {
         if (!(iss >> cmd >> team >> robotId)) {
             return "Invalid unpenalize command format. Usage: unpenalize <team> <robot_id>";
         }
+
+        // lowercase the team name for consistency
+        team = toLower(team);
 
         return handlePenalizeRobot(team, robotId, NONE_PENALTY);
     }
@@ -155,7 +176,7 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
     bool robotFound = false;
     std::shared_ptr<Robot> targetRobot = nullptr;
     for (TeamInGame& t : teamsInGame_) {
-        if (t.getTeam()->name == team) {
+        if (toLower(t.getTeam()->name) == team) {
             teamFound = true;
             for (std::shared_ptr<Robot> robot : t.getTeam()->robots) {
                 if (robot->number == robotId) {
@@ -177,23 +198,37 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
     }
 
     std::string trunkBodyName = targetRobot->name + "_Trunk";
+    std::cout << "Looking for body: " << trunkBodyName << std::endl;
     int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, trunkBodyName.c_str());
     if (bodyId < 0) {
         return "Error: Could not find body for robot " + team + "-" + std::to_string(robotId);
     }
 
     int jntadr = mujContext_->model->body_jntadr[bodyId];
+    if (jntadr < 0) {
+        return "Error: Body has no joint for robot " + team + "-" + std::to_string(robotId);
+    }
     int qposadr = mujContext_->model->jnt_qposadr[jntadr];
+
+    std::cout << "Robot move: bodyId=" << bodyId << ", jntadr=" << jntadr << ", qposadr=" << qposadr << std::endl;
 
     mujContext_->data->qpos[qposadr + 0] = x;
     mujContext_->data->qpos[qposadr + 1] = y;
 
-    double halfTheta = theta * 0.5;
+    // Convert theta from degrees to radians
+    double thetaRad = theta * M_PI / 180.0;
+    double halfTheta = thetaRad * 0.5;
     mujContext_->data->qpos[qposadr + 3] = std::cos(halfTheta);  // w
-    mujContext_->data->qpos[qposadr + 4] = 0;                    // x
-    mujContext_->data->qpos[qposadr + 5] = 0;                    // y
+    mujContext_->data->qpos[qposadr + 4] = 0;                      // x
+    mujContext_->data->qpos[qposadr + 5] = 0;                      // y
     mujContext_->data->qpos[qposadr + 6] = std::sin(halfTheta);  // z
-    mj_forward(mujContext_->model, mujContext_->data);
+
+    int qveladr = mujContext_->model->jnt_dofadr[jntadr];
+    for (int i = 0; i < 6; ++i) {
+        mujContext_->data->qvel[qveladr + i] = 0.0;
+    }
+
+    request_mjforward = true;
 
     return "Robot " + team + "-" + std::to_string(robotId) + " moved to (" + std::to_string(x) + ", " + std::to_string(y) + ", "
            + std::to_string(theta) + ")";
@@ -215,22 +250,92 @@ std::string GameController::handleMoveBall(double x, double y) {
 
     mujContext_->data->qpos[qposadr + 0] = x;
     mujContext_->data->qpos[qposadr + 1] = y;
-    mj_forward(mujContext_->model, mujContext_->data);
+    request_mjforward = true;
 
     return "Ball moved to (" + std::to_string(x) + ", " + std::to_string(y) + ")";
 }
 
 std::string GameController::handlePenalizeRobot(std::string team, int robotId, Penalty penalty) {
     
+    double redTeamPenalization_y = 5.f; // y position for Red team penalization area
+    double redTeamInitialPenalization_x = -4.9; // x position for Red team penalization area
+    
+    double blueTeamPenalization_y = -5.f; // y position for Blue team penalization area
+    double blueTeamInitialPenalization_x = 4.9; // x position for Blue team penalization area
+
+    double penalizationOffset = 0.5f; // Offset between robots in penalization area. Red goes +x direction, Blue goes -x direction
+
     for (TeamInGame& t : teamsInGame_) {
-        if (t.getTeam()->name == team) {
-            RobotInGame rig =  t.getRobotInGame(robotId);
-            rig.setPenalized(penalty, gameTime_);
-            break;
+        if (toLower(t.getTeam()->name) == team) {
+            
+
+            // If robot is already penalized with the same penalty, do nothing
+            for (const RobotInGame& rig : t.getRobotsInGame()) {
+                if (rig.getRobot()->number == robotId) {
+                    if(rig.getPenalty() == penalty){
+                        return "Robot " + team + "-" + std::to_string(robotId) + " is already set to penalty " + penaltyToString(penalty);
+                    }
+                    break;
+                }
+            }
+
+            if(penalty == NONE_PENALTY){
+                // Red robots go in: redTeamInitialPenalization_x, redTeamPenalization_y - 0.5, -90
+                // Blue robots go in: blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90
+
+                std::cout << "Unpenalizing robot " << team << "-" << robotId << std::endl;
+
+                if(team == "red"){
+                    std::cout << "Moving to: " << redTeamInitialPenalization_x << ", " << redTeamPenalization_y - 0.5 << std::endl;
+                    handleMoveRobot(team, robotId, redTeamInitialPenalization_x, redTeamPenalization_y - 0.5, -90);
+                }
+                else if(team == "blue"){
+                    std::cout << "Moving to: " << blueTeamInitialPenalization_x << ", " << blueTeamPenalization_y + 0.5 << std::endl;
+                    handleMoveRobot(team, robotId, blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90);
+                }
+            }
+            else{
+                // Red robots go in: redTeamInitialPenalization_x + n*offset, redTeamPenalization_y, 90
+                // Blue robots go in: blueTeamInitialPenalization_x - n*offset, blueTeamPenalization_y, -90
+
+                std::cout << "Penalizing robot " << team << "-" << robotId << " with penalty " << penaltyToString(penalty) << std::endl;
+
+                int penalizedCount = 0;
+                for (const RobotInGame& other_rig : t.getRobotsInGame()) {
+                    if (other_rig.getRobot()->number == robotId) continue; // Skip the robot being penalized
+
+                    std::cout << "Checking robot " << team << "-" << static_cast<int>(other_rig.getRobot()->number) << " for penalization." << std::endl;
+                    std::cout << "Current penalty: " << penaltyToString(other_rig.getPenalty()) << std::endl;
+                    if (other_rig.getPenalty() != NONE_PENALTY) {
+                        penalizedCount++;
+                    }
+                }
+
+                std::cout << "Total penalized robots in team " << team << ": " << penalizedCount << std::endl;
+
+                if(team == "red"){
+                    std::cout << "Moving to: " << redTeamInitialPenalization_x + penalizedCount * penalizationOffset << ", " << redTeamPenalization_y << std::endl;
+                    double penalization_x = redTeamInitialPenalization_x + penalizedCount * penalizationOffset;
+                    handleMoveRobot(team, robotId, penalization_x, redTeamPenalization_y, 90);
+                }
+                else if(team == "blue"){
+                    std::cout << "Moving to: " << blueTeamInitialPenalization_x - penalizedCount * penalizationOffset << ", " << blueTeamPenalization_y << std::endl;
+                    double penalization_x = blueTeamInitialPenalization_x - penalizedCount * penalizationOffset;
+                    handleMoveRobot(team, robotId, penalization_x, blueTeamPenalization_y, -90);
+                }
+            }
+
+            RobotInGame* rig = t.getRobotInGame(robotId);
+            if (!rig) {
+                return "Robot " + std::to_string(robotId) + " not found in team '" + team + "'";
+            }
+            rig->setPenalized(penalty, gameTime_);
+
+            return "Robot " + team + "-" + std::to_string(robotId) + " penalization set to " + penaltyToString(penalty);
         }
     }
 
-    return "Penalize command received for robot " + std::to_string(robotId) + " in team '" + team + "'";
+    return "Team '" + team + "' not found.";
 }
 
 std::string GameController::handleGoal(){
@@ -270,15 +375,22 @@ void GameController::updateGameTime(double time) {
 
 void GameController::updateScore(int redTeamScore, int blueTeamScore) {
     for (TeamInGame& t : teamsInGame_) {
-        if (t.getTeam()->name == "Red") {
+        std::string teamNameLower = toLower(t.getTeam()->name);
+        if (teamNameLower == "red") {
             t.setScore(redTeamScore);
-        } else if (t.getTeam()->name == "Blue") {
+        } else if (teamNameLower == "blue") {
             t.setScore(blueTeamScore);
         }
     }
 }
 
 void GameController::update(){
+    if(request_mjforward){
+        if (mujContext_ && mujContext_->model && mujContext_->data) {
+            mj_forward(mujContext_->model, mujContext_->data);
+        }
+        request_mjforward = false;
+    }
 
     // Update sim time
     if (mujContext_ && mujContext_->data) {
