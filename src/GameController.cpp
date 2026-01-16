@@ -2,13 +2,28 @@
 
 namespace spqr {
 
+GameController::GameController(MujocoContext* mujContext) : mujContext_(mujContext) {
+    for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
+        TeamInGame teamInGame(team);
+        teamsInGame_.emplace_back(teamInGame);
+        for (const std::shared_ptr<Robot>& robot : team->robots) {
+            teamInGame.addRobotInGame(robot);
+        }
+    }
+} 
+
 std::map<std::string, std::string> GameController::availableCommands() const {
-    return {{"initial", "Set game phase to INITIAL"},
-            {"ready", "Set game phase to READY"},
-            {"set", "Set game phase to SET"},
-            {"play", "Set game phase to PLAY"},
-            {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta>"},
-            {"mvb", "Move ball command: mvb <x> <y>"}};
+    return 
+        {
+        {"initial", "Set game phase to INITIAL"},
+        {"ready", "Set game phase to READY"},
+        {"set", "Set game phase to SET"},
+        {"play", "Set game phase to PLAY"},
+        {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta>"},
+        {"mvb", "Move ball command: mvb <x> <y>"},
+        {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_DEFENSE"},
+        {"unpenalize", "Unpenalize robot command: unpenalize <team> <robot_id>. Sets robot penalty to NONE_PENALTY"}
+        };
 }
 
 bool GameController::isCommandValid(const std::string& command) const {
@@ -56,6 +71,45 @@ std::string GameController::handleCommand(std::string command) {
         return handleMoveBall(x, y);
     }
 
+    else if (command.rfind("penalize", 0) == 0) {
+        // penalize <team> <robot_id> <penalty_type>
+        std::istringstream iss(command);
+        std::string cmd, team, penaltyStr;
+        int robotId;
+
+        if (!(iss >> cmd >> team >> robotId >> penaltyStr)) {
+            return "Invalid penalize command format. Usage: penalize <team> <robot_id> <penalty_type>";
+        }
+
+        Penalty penalty;
+        if (penaltyStr == "LEAVING_THE_FIELD") {
+            penalty = LEAVING_THE_FIELD;
+        } else if (penaltyStr == "PUSHING") {
+            penalty = PUSHING;
+        } else if (penaltyStr == "FOUL") {
+            penalty = FOUL;
+        } else if (penaltyStr == "ILLEGAL_DEFENSE") {
+            penalty = ILLEGAL_DEFENSE;
+        } else {
+            return "Invalid penalty type: " + penaltyStr;
+        }
+
+        return handlePenalizeRobot(team, robotId, penalty);
+    }
+
+    else if (command.rfind("unpenalize", 0) == 0) {
+        // unpenalize <team> <robot_id>
+        std::istringstream iss(command);
+        std::string cmd, team;
+        int robotId;
+
+        if (!(iss >> cmd >> team >> robotId)) {
+            return "Invalid unpenalize command format. Usage: unpenalize <team> <robot_id>";
+        }
+
+        return handlePenalizeRobot(team, robotId, NONE_PENALTY);
+    }
+
     return "Unknown command: " + command;
 }
 
@@ -84,35 +138,29 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
         return "Invalid position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
 
-    // Validate team exists
     bool teamFound = false;
     bool robotFound = false;
-    std::shared_ptr<Team> targetTeam = nullptr;
-
-    for (std::shared_ptr<Team> t : TeamManager::instance().getTeams()) {
-        if (t->name == team) {
+    std::shared_ptr<Robot> targetRobot = nullptr;
+    for (TeamInGame& t : teamsInGame_) {
+        if (t.getTeam()->name == team) {
             teamFound = true;
-            targetTeam = t;
+            for (std::shared_ptr<Robot> robot : t.getTeam()->robots) {
+                if (robot->number == robotId) {
+                    robotFound = true;
+                    targetRobot = robot;
+                    break;
+                }
+            }
             break;
         }
     }
 
     if (!teamFound) {
-        return "Team '" + team + "' not found. Available teams: " + getAvailableTeams();
-    }
-
-    // Validate robot exists in the team and move it
-    std::shared_ptr<Robot> targetRobot = nullptr;
-    for (std::shared_ptr<Robot> robot : targetTeam->robots) {
-        if (robot->number == robotId) {
-            robotFound = true;
-            targetRobot = robot;
-            break;
-        }
+        return "Team '" + team + "' not found.";
     }
 
     if (!robotFound) {
-        return "Robot " + std::to_string(robotId) + " not found in team '" + team + "'. Available robots: " + getAvailableRobots(targetTeam);
+        return "Robot " + std::to_string(robotId) + " not found in team '" + team + "'.";
     }
 
     std::string trunkBodyName = targetRobot->name + "_Trunk";
@@ -143,7 +191,6 @@ std::string GameController::handleMoveBall(double x, double y) {
         return "Invalid ball position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
 
-    // Implementation for moving ball can be added here
     std::string bodyName = "ball";
     int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, bodyName.c_str());
     if (bodyId < 0) {
@@ -160,6 +207,44 @@ std::string GameController::handleMoveBall(double x, double y) {
     return "Ball moved to (" + std::to_string(x) + ", " + std::to_string(y) + ")";
 }
 
+std::string GameController::handlePenalizeRobot(std::string team, int robotId, Penalty penalty) {
+    
+    for (TeamInGame& t : teamsInGame_) {
+        if (t.getTeam()->name == team) {
+            RobotInGame rig =  t.getRobotInGame(robotId);
+            rig.setPenalized(penalty, gameTime_);
+            break;
+        }
+    }
+
+    return "Penalize command received for robot " + std::to_string(robotId) + " in team '" + team + "'";
+}
+
+std::string GameController::handleGoal(){
+    double ball_x = mujContext_->data->qpos[mujContext_->model->jnt_qposadr[mj_name2id(mujContext_->model, mjOBJ_JOINT, "ball_joint")] + 0];
+    double ball_y = mujContext_->data->qpos[mujContext_->model->jnt_qposadr[mj_name2id(mujContext_->model, mjOBJ_JOINT, "ball_joint")] + 1];
+    
+    // Ball Radius: 11 cm, Goal Width: 2.6 m, Field Length: 14 m, Line Width = Goal Post Widt: 8 cm
+    double field_length_half = 7.0;
+    double ball_radius = 0.11;
+    double goal_width_half = 1.3;
+    double line_width = 0.08; // Line Width = Goal Post Width   
+
+    double effective_goal_width_half = goal_width_half - line_width/2 - ball_radius;
+    double effective_field_length_half = field_length_half + ball_radius;
+
+    if(ball_y >= effective_goal_width_half || ball_y <= -effective_goal_width_half) 
+        return "None";
+
+    if(ball_x >= effective_field_length_half) 
+        return "Red";
+    else if(ball_x <= -effective_field_length_half) 
+        return "Blue";
+    
+    return "None";
+}
+
+
 void GameController::updateSimTime() {
     if (mujContext_ && mujContext_->data) {
         simTime_ = mujContext_->data->time;
@@ -171,28 +256,51 @@ void GameController::updateGameTime(double time) {
 }
 
 void GameController::updateScore(int redTeamScore, int blueTeamScore) {
-    scoreRedTeam_ = redTeamScore;
-    scoreBlueTeam_ = blueTeamScore;
+    for (TeamInGame& t : teamsInGame_) {
+        if (t.getTeam()->name == "Red") {
+            t.setScore(redTeamScore);
+        } else if (t.getTeam()->name == "Blue") {
+            t.setScore(blueTeamScore);
+        }
+    }
 }
 
-std::string GameController::getAvailableTeams() {
-    std::string teams = "";
-    for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
-        if (!teams.empty())
-            teams += ", ";
-        teams += team->name;
-    }
-    return teams.empty() ? "none" : teams;
-}
+void GameController::update(){
 
-std::string GameController::getAvailableRobots(std::shared_ptr<Team> team) {
-    std::string robots = "";
-    for (std::shared_ptr<Robot> robot : team->robots) {
-        if (!robots.empty())
-            robots += ", ";
-        robots += std::to_string(robot->number);
+    // Update sim time
+    if (mujContext_ && mujContext_->data) {
+        simTime_ = mujContext_->data->time;
     }
-    return robots.empty() ? "none" : robots;
+
+    if(currentPhase_ == PLAY){
+        // Update game time - increment by 1 second when a full second has elapsed
+        if (simTime_ - lastGameTimeUpdateSimTime_ >= 1.0) {
+            gameTime_ += 1.0;
+            lastGameTimeUpdateSimTime_ = simTime_;
+        }
+        
+        // Handle Goal
+        std::string scoringTeam = handleGoal();
+        if(scoringTeam != "None"){
+            if(scoringTeam == "Red"){
+                int redScore, blueScore;
+                std::tie(redScore, blueScore) = getScore();
+                redScore += 1;
+                updateScore(redScore, blueScore);
+            }
+            else if(scoringTeam == "Blue"){
+                int redScore, blueScore;
+                std::tie(redScore, blueScore) = getScore();
+                blueScore += 1;
+                updateScore(redScore, blueScore);
+            }
+
+            // Reset ball position to center
+            handleMoveBall(0.0, 0.0);
+        }
+
+    }
+
 }
 
 bool GameController::checkFieldBounds(double x, double y) {

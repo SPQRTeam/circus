@@ -4,7 +4,6 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <algorithm>
 
 #include "GameController.h"
 
