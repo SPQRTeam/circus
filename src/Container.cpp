@@ -67,20 +67,30 @@ Container::~Container() {
 
 void Container::create(const std::string& robot_name, const std::string& image,
                        const std::vector<std::string>& binds) {
+    // Get DISPLAY environment variable from host
+    const char* display_env = std::getenv("DISPLAY");
+    std::string display = display_env ? display_env : ":0";
+    // Prepare binds including X11 socket
+    std::vector<std::string> all_binds = binds;
+    all_binds.push_back("/tmp/.X11-unix:/tmp/.X11-unix:rw");
     nlohmann::json payload;
     payload["Image"] = image;
+    payload["HostConfig"] = {
+        {"Binds", all_binds},
+        {"IpcMode", "host"},
+        {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
+        {"SecurityOpt", {"seccomp=unconfined"}},
+        {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
+        {"Privileged", true}
+    };
 
-    payload["HostConfig"]
-        = {{"Binds", binds},
-           {"IpcMode", "host"},
-           {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
-           {"SecurityOpt", {"seccomp=unconfined"}},
-           {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
-           {"Privileged", true}};
-
-    payload["Env"] = {"ROBOT_NAME=" + robot_name, "SERVER_IP=172.17.0.1",
-                      "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort)};
-
+    payload["Env"] = {
+        "ROBOT_NAME=" + robot_name,
+        "SERVER_IP=172.17.0.1",
+        "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
+        "DISPLAY=" + display,
+        "QT_X11_NO_MITSHM=1"  // Fixes some Qt/X11 issues in containers
+    };
     payload["Tty"] = true;
     payload["OpenStdin"] = true;
 
