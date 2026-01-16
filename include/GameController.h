@@ -11,25 +11,25 @@
 
 namespace spqr {
 
-enum GamePhase { INITIAL, READY, SET, PLAY };
+enum GamePhase { INITIAL, READY, SET, PLAYING };
 inline std::string gamePhaseToString(GamePhase phase) {
     switch (phase) {
         case INITIAL: return "INITIAL";
         case READY: return "READY";
         case SET: return "SET";
-        case PLAY: return "PLAY";
+        case PLAYING: return "PLAYING";
         default: return "UNKNOWN_PHASE";
     }
 }
 
-enum Penalty { NONE_PENALTY, LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_DEFENSE }; // TODO: check true penalties
+enum Penalty { NONE_PENALTY, LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_POSITION };
 inline std::string penaltyToString(Penalty penalty) {
     switch (penalty) {
         case NONE_PENALTY: return "NONE_PENALTY";
         case LEAVING_THE_FIELD: return "LEAVING_THE_FIELD";
         case PUSHING: return "PUSHING";
         case FOUL: return "FOUL";
-        case ILLEGAL_DEFENSE: return "ILLEGAL_DEFENSE";
+        case ILLEGAL_POSITION: return "ILLEGAL_POSITION";
         default: return "UNKNOWN_PENALTY";
     }
 }

@@ -43,10 +43,10 @@ std::map<std::string, std::string> GameController::availableCommands() const {
         {"initial", "Set game phase to INITIAL"},
         {"ready", "Set game phase to READY"},
         {"set", "Set game phase to SET"},
-        {"play", "Set game phase to PLAY"},
+        {"play", "Set game phase to PLAYING"},
         {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta> [m, m, deg]"},
         {"mvb", "Move ball command: mvb <x> <y> [m, m]"},
-        {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_DEFENSE"},
+        {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_POSITION"},
         {"unpenalize", "Unpenalize robot command: unpenalize <team> <robot_id>. Sets robot penalty to NONE_PENALTY"}
         };
 }
@@ -120,8 +120,8 @@ std::string GameController::handleCommand(std::string command) {
             penalty = PUSHING;
         } else if (penaltyStr == "foul") {
             penalty = FOUL;
-        } else if (penaltyStr == "illegal_defense") {
-            penalty = ILLEGAL_DEFENSE;
+        } else if (penaltyStr == "illegal_position") {
+            penalty = ILLEGAL_POSITION;
         } else {
             return "Invalid penalty type: " + penaltyStr;
         }
@@ -156,7 +156,7 @@ std::string GameController::handleGamePhase(std::string phase) {
     } else if (phase == "set") {
         currentPhase_ = SET;
     } else if (phase == "play") {
-        currentPhase_ = PLAY;
+        currentPhase_ = PLAYING;
     } else {
         return "Invalid game phase: " + phase;
     }
@@ -420,7 +420,7 @@ void GameController::update(){
         simTime_ = mujContext_->data->time;
     }
 
-    if(currentPhase_ == PLAY){
+    if(currentPhase_ == PLAYING){
         // Update game time - increment by 1 second when a full second has elapsed
         if (simTime_ - lastUpdateGameTime_ >= 1.0) {
             gameTime_ += 1.0;
@@ -445,13 +445,11 @@ void GameController::update(){
 
             // Reset ball position to center
             handleMoveBall(0.0, 0.0);
+            currentPhase_ = SET; // Reset game phase to SET after a goal
             lastUpdateScore_ = simTime_;
         }
 
     }
-
-    int redScore, blueScore;
-    std::tie(redScore, blueScore) = getScore();
 }
 
 bool GameController::checkFieldBounds(double x, double y) {
