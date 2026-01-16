@@ -276,19 +276,30 @@ class RobotManager {
                             }
 
                             std::string robotName = obj.as<std::string>();
-
-                            // Send message with initial state
-                            std::lock_guard<std::mutex> lock(mutex_);
-                            for (auto& r : robots_) {
-                                if (r->name == robotName) {
-                                    r->isConnected = true;
+                            msgpack::sbuffer sbuf;
+                            std::map<std::string, msgpack::object> answ;
+                            bool answOk = false;
+                            // Pack initial message
+                            {
+                                std::lock_guard<std::mutex> lock(mutex_);
+                                for (auto& r : robots_) {
+                                    if (r->name == robotName) {
+                                        r->isConnected = true;
+                                        answ = r->sendMessage();
+                                        answOk = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (answOk){
+                                msgpack::pack(sbuf, answ);
+                                if(sbuf.size() > 0) {
                                     std::cout << "Connected Robot: " << robotName << "\n";
                                     std::cout << "Sending initial message to " << robotName << std::endl;
-                                    auto answ = r->sendMessage();
-                                    msgpack::sbuffer sbuf;
-                                    msgpack::pack(sbuf, answ);
-                                    send(client_fd, sbuf.data(), sbuf.size(), 0);
-                                    break;
+                                    ssize_t bytes_sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
+                                    if (bytes_sent <= 0) {
+                                        perror("Sending initial message");
+                                    }
                                 }
                             }
                         }
@@ -311,21 +322,33 @@ class RobotManager {
                             continue;
 
                         std::string messageRecipient = it->second.as<std::string>();
-
-                        std::unique_lock lock(mutex_);
-                        for (auto& r : robots_) {
-                            if (r->name == messageRecipient) {
-                                if (!r->isReady) {
-                                    r->isReady = true;
-                                    std::cout << "Robot ready: " << r->name << std::endl;
-                                    areAllRobotsReadyWrapper();
+                        msgpack::sbuffer sbuf(1024*1024*7);
+                        std::map<std::string, msgpack::object> answ;
+                        bool answOk = false;
+                        {
+                            std::unique_lock lock(mutex_);
+                            for (auto& r : robots_) {
+                                if (r->name == messageRecipient) {
+                                    if (!r->isReady) {
+                                        r->isReady = true;
+                                        std::cout << "Robot ready: " << r->name << std::endl;
+                                        areAllRobotsReadyWrapper();
+                                    }
+                                    r->receiveMessage(data_map);
+                                    answ = r->sendMessage();
+                                    answOk = true;
+                                    break;
                                 }
-                                r->receiveMessage(data_map);
-                                auto answ = r->sendMessage();
-                                msgpack::sbuffer sbuf;
-                                msgpack::pack(sbuf, answ);
-                                send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
-                                break;
+                            }
+                        }
+
+                        if (answOk){
+                            msgpack::pack(sbuf, answ);
+                            if(sbuf.size() > 0){
+                                ssize_t bytes_sent = send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
+                                if (bytes_sent <= 0) {
+                                    perror("Sending message");
+                                }
                             }
                         }
                     }
