@@ -53,10 +53,6 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     // Initialize GameController (without MujocoContext for now)
     gameController = std::make_unique<GameController>(nullptr);
 
-    // Create GameControllerPanel on the left
-    // gameControllerPanel = new GameControllerPanel(gameController.get(), this);
-    // contentLayout->addWidget(gameControllerPanel);
-
     if (!scenePath) {
         viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
         viewportPlaceholder->setAlignment(Qt::AlignCenter);
