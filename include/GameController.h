@@ -12,9 +12,17 @@
 namespace spqr {
 
 enum GamePhase { INITIAL, READY, SET, PLAY };
-enum Penalty { NONE_PENALTY, LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_DEFENSE }; // TODO: check true penalties
+inline std::string gamePhaseToString(GamePhase phase) {
+    switch (phase) {
+        case INITIAL: return "INITIAL";
+        case READY: return "READY";
+        case SET: return "SET";
+        case PLAY: return "PLAY";
+        default: return "UNKNOWN_PHASE";
+    }
+}
 
-// Convert a Penalty enum to a readable string label.
+enum Penalty { NONE_PENALTY, LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_DEFENSE }; // TODO: check true penalties
 inline std::string penaltyToString(Penalty penalty) {
     switch (penalty) {
         case NONE_PENALTY: return "NONE_PENALTY";
@@ -36,13 +44,9 @@ class RobotInGame {
         }
 
         void setPenalized(Penalty penalty, int gameTimeWhenPenalized) {
-            std::cout << "Setting penalty for robot " << robot_->name << " to " << penaltyToString(penalty)
-                      << " at game time " << gameTimeWhenPenalized << std::endl;
             isPenalized_ = (penalty != NONE_PENALTY);
             currentPenalty_ = penalty;
             timeOfLastPenalty_ = (isPenalized_) ? gameTimeWhenPenalized : -1;
-
-            std::cout << "Robot " << robot_->name << " penalization status: " << penaltyToString(currentPenalty_) << std::endl;
         }
 
         Penalty getPenalty() const {
@@ -165,8 +169,9 @@ class GameController {
         GamePhase currentPhase_ = INITIAL;
         double simTime_ = 0.0;
         double gameTime_ = 0.0;
-        double lastGameTimeUpdateSimTime_ = 0.0;
-        int gameDuration_ = 600;  // default 10 minutes
+        int gameDuration_ = 600;          // 10 minutes
+        double lastUpdateGameTime_ = 0.0; // Sim time of last game time update
+        double lastUpdateScore_ = 0.0;    // Sim time of last score update
 
         float minX = -8.0f;
         float maxX = 8.0f;

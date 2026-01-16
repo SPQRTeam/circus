@@ -33,7 +33,8 @@ void GameController::reset() {
     currentPhase_ = INITIAL;
     simTime_ = 0.0;
     gameTime_ = 0.0;
-    lastGameTimeUpdateSimTime_ = 0.0;
+    lastUpdateGameTime_ = 0.0;
+    lastUpdateScore_ = 0.0;
 } 
 
 std::map<std::string, std::string> GameController::availableCommands() const {
@@ -166,21 +167,21 @@ std::string GameController::handleGamePhase(std::string phase) {
     return "Game phase changed to: " + upperPhase;
 }
 
-std::string GameController::handleMoveRobot(std::string team, int robotId, double x, double y, double theta) {
+std::string GameController::handleMoveRobot(std::string team,
+                                            int robotId,
+                                            double x,
+                                            double y,
+                                            double theta) {
     // Validate position bounds
     if (!checkFieldBounds(x, y)) {
         return "Invalid position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
 
-    bool teamFound = false;
-    bool robotFound = false;
     std::shared_ptr<Robot> targetRobot = nullptr;
     for (TeamInGame& t : teamsInGame_) {
         if (toLower(t.getTeam()->name) == team) {
-            teamFound = true;
-            for (std::shared_ptr<Robot> robot : t.getTeam()->robots) {
+            for (const std::shared_ptr<Robot>& robot : t.getTeam()->robots) {
                 if (robot->number == robotId) {
-                    robotFound = true;
                     targetRobot = robot;
                     break;
                 }
@@ -189,71 +190,105 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
         }
     }
 
-    if (!teamFound) {
-        return "Team '" + team + "' not found.";
-    }
-
-    if (!robotFound) {
+    if (!targetRobot) {
         return "Robot " + std::to_string(robotId) + " not found in team '" + team + "'.";
     }
 
     std::string trunkBodyName = targetRobot->name + "_Trunk";
-    std::cout << "Looking for body: " << trunkBodyName << std::endl;
     int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, trunkBodyName.c_str());
     if (bodyId < 0) {
-        return "Error: Could not find body for robot " + team + "-" + std::to_string(robotId);
+        return "Error: Could not find body '" + trunkBodyName + "'";
     }
 
+    // Body must have exactly one joint
     int jntadr = mujContext_->model->body_jntadr[bodyId];
-    if (jntadr < 0) {
-        return "Error: Body has no joint for robot " + team + "-" + std::to_string(robotId);
+    int jntnum = mujContext_->model->body_jntnum[bodyId];
+
+    if (jntnum != 1) {
+        return "Error: Robot trunk must have exactly one joint";
     }
+
+    // Joint must be free
+    if (mujContext_->model->jnt_type[jntadr] != mjJNT_FREE) {
+        return "Error: Robot trunk joint is not a free joint";
+    }
+
     int qposadr = mujContext_->model->jnt_qposadr[jntadr];
+    int qveladr = mujContext_->model->jnt_dofadr[jntadr];
 
-    std::cout << "Robot move: bodyId=" << bodyId << ", jntadr=" << jntadr << ", qposadr=" << qposadr << std::endl;
+    // Safety bounds
+    if (qposadr < 0 || qposadr + 6 >= mujContext_->model->nq) {
+        return "Error: Invalid qpos address";
+    }
 
+    // Position (keep height)
     mujContext_->data->qpos[qposadr + 0] = x;
     mujContext_->data->qpos[qposadr + 1] = y;
+    // qposadr + 2 = z → unchanged
 
-    // Convert theta from degrees to radians
+    // Orientation (yaw only)
     double thetaRad = theta * M_PI / 180.0;
-    double halfTheta = thetaRad * 0.5;
-    mujContext_->data->qpos[qposadr + 3] = std::cos(halfTheta);  // w
-    mujContext_->data->qpos[qposadr + 4] = 0;                      // x
-    mujContext_->data->qpos[qposadr + 5] = 0;                      // y
-    mujContext_->data->qpos[qposadr + 6] = std::sin(halfTheta);  // z
+    double halfTheta = 0.5 * thetaRad;
 
-    int qveladr = mujContext_->model->jnt_dofadr[jntadr];
+    double qw = std::cos(halfTheta);
+    double qz = std::sin(halfTheta);
+    double norm = std::sqrt(qw * qw + qz * qz);
+
+    mujContext_->data->qpos[qposadr + 3] = qw / norm;
+    mujContext_->data->qpos[qposadr + 4] = 0.0;
+    mujContext_->data->qpos[qposadr + 5] = 0.0;
+    mujContext_->data->qpos[qposadr + 6] = qz / norm;
+
+    // Zero linear + angular velocity (VERY IMPORTANT)
     for (int i = 0; i < 6; ++i) {
         mujContext_->data->qvel[qveladr + i] = 0.0;
     }
 
+    // Defer mj_forward to simulation loop
     request_mjforward = true;
 
-    return "Robot " + team + "-" + std::to_string(robotId) + " moved to (" + std::to_string(x) + ", " + std::to_string(y) + ", "
-           + std::to_string(theta) + ")";
+    return "Robot " + team + "-" + std::to_string(robotId) +
+           " moved to (" + std::to_string(x) + ", " +
+           std::to_string(y) + ", " +
+           std::to_string(theta) + ")";
 }
+
 
 std::string GameController::handleMoveBall(double x, double y) {
     if (!checkFieldBounds(x, y)) {
         return "Invalid ball position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
 
-    std::string bodyName = "ball";
-    int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, bodyName.c_str());
+    int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, "ball");
     if (bodyId < 0) {
         return "Error: Could not find ball body in the simulation.";
     }
 
     int jntadr = mujContext_->model->body_jntadr[bodyId];
-    int qposadr = mujContext_->model->jnt_qposadr[jntadr];
 
+    // Safety checks (important)
+    if (mujContext_->model->jnt_type[jntadr] != mjJNT_FREE) {
+        return "Error: ball joint is not a free joint";
+    }
+
+    int qposadr = mujContext_->model->jnt_qposadr[jntadr];
+    int qveladr = mujContext_->model->jnt_dofadr[jntadr];
+
+    // Position (keep height)
     mujContext_->data->qpos[qposadr + 0] = x;
     mujContext_->data->qpos[qposadr + 1] = y;
+
+    // Zero linear + angular velocity
+    for (int i = 0; i < 6; i++) {
+        mujContext_->data->qvel[qveladr + i] = 0.0;
+    }
+
+    // Defer forward call to sim loop
     request_mjforward = true;
 
     return "Ball moved to (" + std::to_string(x) + ", " + std::to_string(y) + ")";
 }
+
 
 std::string GameController::handlePenalizeRobot(std::string team, int robotId, Penalty penalty) {
     
@@ -283,14 +318,10 @@ std::string GameController::handlePenalizeRobot(std::string team, int robotId, P
                 // Red robots go in: redTeamInitialPenalization_x, redTeamPenalization_y - 0.5, -90
                 // Blue robots go in: blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90
 
-                std::cout << "Unpenalizing robot " << team << "-" << robotId << std::endl;
-
                 if(team == "red"){
-                    std::cout << "Moving to: " << redTeamInitialPenalization_x << ", " << redTeamPenalization_y - 0.5 << std::endl;
                     handleMoveRobot(team, robotId, redTeamInitialPenalization_x, redTeamPenalization_y - 0.5, -90);
                 }
                 else if(team == "blue"){
-                    std::cout << "Moving to: " << blueTeamInitialPenalization_x << ", " << blueTeamPenalization_y + 0.5 << std::endl;
                     handleMoveRobot(team, robotId, blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90);
                 }
             }
@@ -298,28 +329,20 @@ std::string GameController::handlePenalizeRobot(std::string team, int robotId, P
                 // Red robots go in: redTeamInitialPenalization_x + n*offset, redTeamPenalization_y, 90
                 // Blue robots go in: blueTeamInitialPenalization_x - n*offset, blueTeamPenalization_y, -90
 
-                std::cout << "Penalizing robot " << team << "-" << robotId << " with penalty " << penaltyToString(penalty) << std::endl;
-
                 int penalizedCount = 0;
                 for (const RobotInGame& other_rig : t.getRobotsInGame()) {
                     if (other_rig.getRobot()->number == robotId) continue; // Skip the robot being penalized
 
-                    std::cout << "Checking robot " << team << "-" << static_cast<int>(other_rig.getRobot()->number) << " for penalization." << std::endl;
-                    std::cout << "Current penalty: " << penaltyToString(other_rig.getPenalty()) << std::endl;
                     if (other_rig.getPenalty() != NONE_PENALTY) {
                         penalizedCount++;
                     }
                 }
 
-                std::cout << "Total penalized robots in team " << team << ": " << penalizedCount << std::endl;
-
                 if(team == "red"){
-                    std::cout << "Moving to: " << redTeamInitialPenalization_x + penalizedCount * penalizationOffset << ", " << redTeamPenalization_y << std::endl;
                     double penalization_x = redTeamInitialPenalization_x + penalizedCount * penalizationOffset;
                     handleMoveRobot(team, robotId, penalization_x, redTeamPenalization_y, 90);
                 }
                 else if(team == "blue"){
-                    std::cout << "Moving to: " << blueTeamInitialPenalization_x - penalizedCount * penalizationOffset << ", " << blueTeamPenalization_y << std::endl;
                     double penalization_x = blueTeamInitialPenalization_x - penalizedCount * penalizationOffset;
                     handleMoveRobot(team, robotId, penalization_x, blueTeamPenalization_y, -90);
                 }
@@ -399,14 +422,14 @@ void GameController::update(){
 
     if(currentPhase_ == PLAY){
         // Update game time - increment by 1 second when a full second has elapsed
-        if (simTime_ - lastGameTimeUpdateSimTime_ >= 1.0) {
+        if (simTime_ - lastUpdateGameTime_ >= 1.0) {
             gameTime_ += 1.0;
-            lastGameTimeUpdateSimTime_ = simTime_;
+            lastUpdateGameTime_ = simTime_;
         }
         
         // Handle Goal
         std::string scoringTeam = handleGoal();
-        if(scoringTeam != "None"){
+        if(scoringTeam != "None" && (simTime_ - lastUpdateScore_ >= 1.0)){
             if(scoringTeam == "Red"){
                 int redScore, blueScore;
                 std::tie(redScore, blueScore) = getScore();
@@ -422,10 +445,13 @@ void GameController::update(){
 
             // Reset ball position to center
             handleMoveBall(0.0, 0.0);
+            lastUpdateScore_ = simTime_;
         }
 
     }
 
+    int redScore, blueScore;
+    std::tie(redScore, blueScore) = getScore();
 }
 
 bool GameController::checkFieldBounds(double x, double y) {
