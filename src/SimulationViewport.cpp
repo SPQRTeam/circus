@@ -6,6 +6,8 @@
 #include <qpoint.h>
 #include <yaml-cpp/node/node.h>
 
+#include "RobotManager.h"
+#include "sensors/Sensor.h"
 #include "Utils.h"
 
 namespace spqr {

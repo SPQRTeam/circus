@@ -1,4 +1,5 @@
-FROM ros:humble-ros-base
+FROM osrf/ros:humble-desktop-full
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install dependencies
@@ -28,6 +29,7 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libdecor-0-0 \
     ament-cmake \
+    x11-apps \
     && rm -rf /var/lib/apt/lists/*
 
 # copy configs

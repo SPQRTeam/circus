@@ -94,6 +94,16 @@ class BoosterK1 : public Robot {
         return msg;
     }
 
+    std::map<std::string, Sensor*> getSensors() override {
+        std::map<std::string, Sensor*> sensors;
+        sensors["pose"] = pose;
+        sensors["imu"] = imu;
+        sensors["joints"] = joints;
+        sensors["left_camera"] = cameras[0];
+        sensors["right_camera"] = cameras[1];
+        return sensors;
+    }
+
     void update() override {
         pose->update();
         imu->update();

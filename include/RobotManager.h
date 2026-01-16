@@ -151,6 +151,61 @@ class RobotManager {
     RobotManager(const RobotManager&) = delete;
     RobotManager& operator=(const RobotManager&) = delete;
 
+
+    // Source - https://stackoverflow.com/a
+    // Posted by Some programmer dude, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-01-12, License - CC BY-SA 3.0
+
+    // TODO: la recv_all o non funziona, o vuole sapere perfettamente quale è il numero di bytes da leggere
+    //       Se il numerodi bytes indicato è maggiore di quello che bisogna leggere, si blocca.
+    //       Quindi può essere usato solo con un protocollo TCP-like, dove prima viene mandato un messaggio
+    //       indicante il numero di bytes del messaggio che seguirà
+    ssize_t recv_all(int fd, void *buf, size_t len)
+    {
+        size_t toread = len;
+        char  *bufptr = (char*) buf;
+
+        while (toread > 0)
+        {
+            ssize_t rsz = recv(fd, bufptr, toread, 0);
+            if (rsz <= 0)
+                return rsz;  /* Error or other end closed cnnection */
+
+            toread -= rsz;  /* Read less next time */
+            bufptr += rsz;  /* Next buffer position to read into */
+        }
+
+        return len;
+    }
+
+    // Source - https://stackoverflow.com/a
+    // Posted by Arun, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-01-12, License - CC BY-SA 3.0
+    // TCP Communication, it sends before the size of the message and then the message itself
+    ssize_t send_all(int fd, char *buf, size_t len)
+    {
+        // First, send the size of the message
+        uint32_t msg_size = htonl(len);
+        ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
+        if (bytes_sent != sizeof(msg_size)) {
+            return -1;
+        }
+
+        ssize_t total = 0; // how many bytes we've sent
+        size_t bytesleft = len; // how many we have left to send
+        ssize_t n = 0;
+        while(total < len) {
+            n = send(fd, buf+total, bytesleft, 0);
+            if (n == -1) { 
+                /* print/log error details */
+                return -1;
+            }
+            total += n;
+            bytesleft -= n;
+        }
+        return total; 
+    }
+
     void _serverInternal(int port) {
         int server_fd = socket(AF_INET, SOCK_STREAM, 0);
         if (server_fd < 0)
@@ -158,6 +213,17 @@ class RobotManager {
 
         int opt = 1;
         setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        int send_buf_size = 10 * 1024 * 1024;
+        if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF,
+                    &send_buf_size, sizeof(send_buf_size)) < 0) {
+            perror("setsockopt(SO_SNDBUF)");
+        }
+        int recv_buf_size = 10 * 1024 * 1024;
+        if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF,
+                    &recv_buf_size, sizeof(recv_buf_size)) < 0) {
+            perror("setsockopt(SO_RCVBUF)");
+        }
+        
 
         sockaddr_in address{};
         address.sin_family = AF_INET;

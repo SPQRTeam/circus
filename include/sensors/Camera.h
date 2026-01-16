@@ -1,11 +1,19 @@
 #pragma once
+#include <mujoco/mjrender.h>
+#include <mujoco/mjvisualize.h>
 #include <mujoco/mujoco.h>
 
 #include <msgpack.hpp>
 #include <vector>
+#include <string>
+#include <cstring>
 
 #include "MujocoContext.h"
 #include "sensors/Sensor.h"
+
+#include <QImage>
+#include <QOpenGLFunctions>
+#include <filesystem>
 
 namespace spqr {
 
