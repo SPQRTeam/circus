@@ -36,9 +36,8 @@ class Camera : public Sensor {
     }
 
     void doUpdate() override {
-        mjrRect viewport = {0, 0, w, h};
-        mjr_render(viewport, &mujContext->scene, &mujContext->ctx);
-        mjr_readPixels(image.data(), nullptr, viewport, &mujContext->ctx);
+        // Camera rendering must happen in the OpenGL thread (paintGL), not here
+        // This method is called from the simulation thread which has no GL context
     }
 
     void renderAndCapture() {
