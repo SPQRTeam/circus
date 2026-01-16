@@ -50,8 +50,6 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     contentWidget->setLayout(contentLayout);
     mainLayout->addWidget(contentWidget);
 
-    // Initialize GameController (without MujocoContext for now)
-    gameController = std::make_unique<GameController>(nullptr);
 
     if (!scenePath) {
         viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
@@ -129,14 +127,14 @@ void AppWindow::loadScene(const QString& yaml_file) {
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
         // Update GameController with MujocoContext
-        gameController = std::make_unique<GameController>(mujContext.get());
+        GameController::instance().bindMujoco(mujContext.get());
 
         // Recreate GameControllerPanel with updated GameController
         if (gameControllerPanel) {
             contentLayout->removeWidget(gameControllerPanel);
             gameControllerPanel->deleteLater();
         }
-        gameControllerPanel = new GameControllerPanel(gameController.get(), this);
+        gameControllerPanel = new GameControllerPanel(this);
         contentLayout->insertWidget(0, gameControllerPanel);
 
         RobotManager::instance().startContainers();

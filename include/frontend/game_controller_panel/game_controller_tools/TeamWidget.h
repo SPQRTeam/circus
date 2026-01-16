@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "GameController.h"
 #include "Team.h"
 
 namespace spqr {
@@ -14,8 +13,8 @@ class TeamWidget : public QWidget {
         Q_OBJECT
 
     public:
-        TeamWidget(std::string teamName, GameController* gameController, QWidget* parent = nullptr)
-            : teamName_(teamName), gameController_(gameController), QWidget(parent) {
+        TeamWidget(std::string teamName, QWidget* parent = nullptr)
+            : teamName_(teamName), QWidget(parent) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #0a0a0a; "
@@ -77,7 +76,6 @@ class TeamWidget : public QWidget {
         }
 
         std::string teamName_;
-        GameController* gameController_;
         QListWidget* robotList_;
 };
 

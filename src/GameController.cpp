@@ -2,7 +2,11 @@
 
 namespace spqr {
 
-GameController::GameController(MujocoContext* mujContext) : mujContext_(mujContext) {
+void GameController::bindMujoco(MujocoContext* mujContext) {
+    mujContext_ = mujContext;
+
+    // Rebuild teams in game from current TeamManager state
+    teamsInGame_.clear();
     for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
         TeamInGame teamInGame(team);
         teamsInGame_.emplace_back(teamInGame);
@@ -10,6 +14,15 @@ GameController::GameController(MujocoContext* mujContext) : mujContext_(mujConte
             teamInGame.addRobotInGame(robot);
         }
     }
+}
+
+void GameController::reset() {
+    mujContext_ = nullptr;
+    teamsInGame_.clear();
+    currentPhase_ = INITIAL;
+    simTime_ = 0.0;
+    gameTime_ = 0.0;
+    lastGameTimeUpdateSimTime_ = 0.0;
 } 
 
 std::map<std::string, std::string> GameController::availableCommands() const {

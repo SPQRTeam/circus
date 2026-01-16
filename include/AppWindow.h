@@ -13,7 +13,6 @@
 #include <QVariantMap>
 #include <memory>
 
-#include "GameController.h"
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
@@ -47,7 +46,6 @@ class AppWindow : public QMainWindow {
         ToolsPanel* toolsPanel = nullptr;
 
         std::unique_ptr<MujocoContext> mujContext;
-        std::unique_ptr<GameController> gameController;
         std::unique_ptr<SimulationViewport> viewport;
         std::unique_ptr<SimulationThread> sim;
 };

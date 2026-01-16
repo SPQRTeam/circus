@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include "GameController.h"
 #include "RobotManager.h"
 
 namespace spqr {
@@ -20,6 +21,7 @@ void SimulationThread::run() {
         if (!paused_) {
             mj_step(model_, data_);
             RobotManager::instance().update();
+            GameController::instance().update();
 
             next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
             std::this_thread::sleep_until(next_step_time);

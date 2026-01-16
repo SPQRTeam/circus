@@ -9,7 +9,6 @@
 #include <QWidget>
 #include <cmath>
 
-#include "GameController.h"
 #include "frontend/game_controller_panel/GameControllerPanelHeader.h"
 #include "frontend/game_controller_panel/game_controller_tools/ConsoleWidget.h"
 #include "frontend/game_controller_panel/game_controller_tools/TeamWidget.h"
@@ -20,7 +19,7 @@ class GameControllerPanel : public QWidget {
         Q_OBJECT
 
     public:
-        GameControllerPanel(GameController* gameController, QWidget* parent = nullptr) : gameController_(gameController), QWidget(parent) {
+        GameControllerPanel(QWidget* parent = nullptr) : QWidget(parent) {
             // Main horizontal layout
             QHBoxLayout* mainLayout = new QHBoxLayout(this);
             mainLayout->setContentsMargins(5, 0, 5, 0);
@@ -234,14 +233,13 @@ class GameControllerPanel : public QWidget {
         }
 
         QWidget* createConsoleWidget() {
-            return new ConsoleWidget(gameController_, contentContainer_);
+            return new ConsoleWidget(contentContainer_);
         }
 
         QWidget* createTeamWidget(std::string teamName) {
-            return new TeamWidget(teamName, gameController_, contentContainer_);
+            return new TeamWidget(teamName, contentContainer_);
         }
 
-        GameController* gameController_;
         GameControllerPanelHeader* header_;
         QWidget* contentContainer_;
 

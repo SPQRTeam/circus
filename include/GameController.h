@@ -73,8 +73,14 @@ class TeamInGame {
 
 class GameController {
     public:
-        GameController(MujocoContext *mujContext);
-        ~GameController() = default;
+        // Singleton access
+        static GameController& instance() {
+            static GameController gc;
+            return gc;
+        }
+
+        void bindMujoco(MujocoContext* mujContext);
+        void reset();
 
         GamePhase getCurrentPhase() const {
             return currentPhase_;
@@ -103,7 +109,7 @@ class GameController {
         void setGameDuration(int duration) {
             gameDuration_ = duration;
         }
-        
+
         std::map<std::string, std::string> availableCommands() const;
         bool isCommandValid(const std::string &command) const;
         std::string handleCommand(std::string command);
@@ -118,9 +124,14 @@ class GameController {
         void update();
 
     private:
+        GameController() = default;
+        ~GameController() = default;
+        GameController(const GameController&) = delete;
+        GameController& operator=(const GameController&) = delete;
+
         bool checkFieldBounds(double x, double y);
 
-        MujocoContext *mujContext_;
+        MujocoContext *mujContext_ = nullptr;
         std::vector<TeamInGame> teamsInGame_;
 
         GamePhase currentPhase_ = INITIAL;

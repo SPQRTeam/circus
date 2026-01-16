@@ -13,7 +13,7 @@ class ConsoleWidget : public QWidget {
         Q_OBJECT
 
     public:
-        ConsoleWidget(GameController* gameController, QWidget* parent = nullptr) : gameController_(gameController), QWidget(parent) {
+        ConsoleWidget(QWidget* parent = nullptr) : QWidget(parent) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #0a0a0a; "
@@ -90,24 +90,22 @@ class ConsoleWidget : public QWidget {
             outputArea_->append(QString("> %1").arg(command));
 
             // Process game controller commands
-            if (gameController_) {
-                if (command == "clear") {
-                    outputArea_->clear();
-                    outputArea_->append("Game Controller Console ready.");
-                    return;
-                } else if (command == "help") {
-                    outputArea_->append(QString::fromStdString(helpMessage()));
-                    return;
-                }
+            if (command == "clear") {
+                outputArea_->clear();
+                outputArea_->append("Game Controller Console ready.");
+                return;
+            } else if (command == "help") {
+                outputArea_->append(QString::fromStdString(helpMessage()));
+                return;
+            }
 
-                std::string cmdStr = command.toStdString();
-                if (gameController_->isCommandValid(cmdStr)) {
-                    std::string res = gameController_->handleCommand(cmdStr);
-                    outputArea_->append(QString("%1").arg(QString::fromStdString(res)));
-                } else {
-                    outputArea_->append(QString("Unknown command: %1").arg(command));
-                    outputArea_->append(QString::fromStdString(helpMessage()));
-                }
+            std::string cmdStr = command.toStdString();
+            if (GameController::instance().isCommandValid(cmdStr)) {
+                std::string res = GameController::instance().handleCommand(cmdStr);
+                outputArea_->append(QString("%1").arg(QString::fromStdString(res)));
+            } else {
+                outputArea_->append(QString("Unknown command: %1").arg(command));
+                outputArea_->append(QString::fromStdString(helpMessage()));
             }
         }
 
@@ -116,7 +114,7 @@ class ConsoleWidget : public QWidget {
                                   "  clear   - Clear the console output\n"
                                   "  help    - Show this help message\n";
 
-            auto commands = gameController_->availableCommands();
+            auto commands = GameController::instance().availableCommands();
             for (const auto& [cmd, desc] : commands) {
                 helpMsg += "  " + cmd + " - " + desc + "\n";
             }
@@ -124,7 +122,6 @@ class ConsoleWidget : public QWidget {
             return helpMsg;
         }
 
-        GameController* gameController_;
         QTextEdit* outputArea_;
         QTextEdit* inputArea_;
 };
