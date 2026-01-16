@@ -54,8 +54,8 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     gameController = std::make_unique<GameController>(nullptr);
 
     // Create GameControllerPanel on the left
-    gameControllerPanel = new GameControllerPanel(gameController.get(), this);
-    contentLayout->addWidget(gameControllerPanel);
+    // gameControllerPanel = new GameControllerPanel(gameController.get(), this);
+    // contentLayout->addWidget(gameControllerPanel);
 
     if (!scenePath) {
         viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);

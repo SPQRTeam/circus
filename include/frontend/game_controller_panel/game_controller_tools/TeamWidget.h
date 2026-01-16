@@ -58,18 +58,6 @@ class TeamWidget : public QWidget {
                                       "}");
             layout->addWidget(robotList_);
 
-            // Placeholder info label
-            QLabel* infoLabel = new QLabel("Robot list will be populated from TeamManager", this);
-            infoLabel->setAlignment(Qt::AlignCenter);
-            infoLabel->setStyleSheet("QLabel { "
-                                     "  color: #666666; "
-                                     "  font-size: 10px; "
-                                     "  font-style: italic; "
-                                     "  background-color: transparent; "
-                                     "  border: none; "
-                                     "}");
-            layout->addWidget(infoLabel);
-
             setLayout(layout);
 
             loadRobots();
