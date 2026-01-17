@@ -44,6 +44,7 @@ std::map<std::string, std::string> GameController::availableCommands() const {
         {"ready", "Set game phase to READY"},
         {"set", "Set game phase to SET"},
         {"playing", "Set game phase to PLAYING"},
+        {"finish", "Set game phase to FINISH"},
         {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta> [m, m, deg]"},
         {"mvb", "Move ball command: mvb <x> <y> [m, m]"},
         {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_POSITION"},
@@ -66,7 +67,12 @@ std::string GameController::handleCommand(std::string command) {
         return "Unknown command: " + command;
     }
 
-    if ((command.rfind("initial", 0) == 0) || (command.rfind("ready", 0) == 0) || (command.rfind("set", 0) == 0) || (command.rfind("playing", 0) == 0)) {
+    if ((command.rfind("initial", 0) == 0) || 
+        (command.rfind("ready", 0) == 0) || 
+        (command.rfind("set", 0) == 0) || 
+        (command.rfind("playing", 0) == 0) || 
+        (command.rfind("finish", 0) == 0)
+    ) {
         std::istringstream iss(command);
         std::string cmd;
         iss >> cmd;
@@ -114,17 +120,11 @@ std::string GameController::handleCommand(std::string command) {
         penaltyStr = toLower(penaltyStr);
 
         Penalty penalty;
-        if (penaltyStr == "leaving_the_field") {
-            penalty = LEAVING_THE_FIELD;
-        } else if (penaltyStr == "pushing") {
-            penalty = PUSHING;
-        } else if (penaltyStr == "foul") {
-            penalty = FOUL;
-        } else if (penaltyStr == "illegal_position") {
-            penalty = ILLEGAL_POSITION;
-        } else {
-            return "Invalid penalty type: " + penaltyStr;
-        }
+        if (penaltyStr == "leaving_the_field")     penalty = LEAVING_THE_FIELD;
+        else if (penaltyStr == "pushing")          penalty = PUSHING;
+        else if (penaltyStr == "foul")             penalty = FOUL;
+        else if (penaltyStr == "illegal_position") penalty = ILLEGAL_POSITION;
+        else return "Invalid penalty type: " + penaltyStr;
 
         return handlePenalizeRobot(team, robotId, penalty);
     }
@@ -149,17 +149,14 @@ std::string GameController::handleCommand(std::string command) {
 }
 
 std::string GameController::handleGamePhase(std::string phase) {
-    if (phase == "initial") {
-        currentPhase_ = INITIAL;
-    } else if (phase == "ready") {
-        currentPhase_ = READY;
-    } else if (phase == "set") {
-        currentPhase_ = SET;
-    } else if (phase == "playing") {
-        currentPhase_ = PLAYING;
-    } else {
-        return "Invalid game phase: " + phase;
-    }
+    if (phase == "initial")      currentPhase_ = INITIAL;
+    else if (phase == "ready")   currentPhase_ = READY;
+    else if (phase == "set")     currentPhase_ = SET;
+    else if (phase == "playing") currentPhase_ = PLAYING;
+    else if (phase == "finish")  currentPhase_ = FINISH;
+    else return "Invalid game phase: " + phase;
+    
+    currentPhaseElapsedTime_ = 0.0;
 
     // Convert phase to uppercase for display
     std::string upperPhase = phase;
@@ -420,11 +417,46 @@ void GameController::update(){
         simTime_ = mujContext_->data->time;
     }
 
-    if(currentPhase_ == PLAYING){
-        // Update game time - increment by 1 second when a full second has elapsed
+    if (currentPhase_ != INITIAL && currentPhase_ != FINISH) {
+        // Update game time
         if (simTime_ - lastUpdateGameTime_ >= 1.0) {
             gameTime_ += 1.0;
             lastUpdateGameTime_ = simTime_;
+        }
+    }
+
+    // Update current phase elapsed time
+    if (simTime_ - lastUpdatecurrentPhaseElapsedTime_ >= 1.0) {
+        currentPhaseElapsedTime_ += 1.0;
+        lastUpdatecurrentPhaseElapsedTime_ = simTime_;
+    }
+
+
+    if(currentPhase_ == INITIAL){
+        // Transition to READY phase after initialPhaseDuration_
+        if (initialPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= initialPhaseDuration_){
+            currentPhase_ = READY;
+            currentPhaseElapsedTime_ = 0;
+        }
+    }
+    else if(currentPhase_ == READY){
+        // Transition to SET phase after readyPhaseDuration_
+        if(readyPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= readyPhaseDuration_){
+            currentPhase_ = SET;
+            currentPhaseElapsedTime_ = 0;
+        }
+    }
+    else if(currentPhase_ == SET){
+        // Transition to PLAYING phase after setPhaseDuration_
+        if(setPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= setPhaseDuration_){
+            currentPhase_ = PLAYING;
+            currentPhaseElapsedTime_ = 0;
+        }
+    }
+    else if(currentPhase_ == PLAYING){
+        if(playingPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= playingPhaseDuration_){
+            currentPhase_ = FINISH;
+            currentPhaseElapsedTime_ = 0;
         }
         
         // Handle Goal

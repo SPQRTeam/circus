@@ -11,13 +11,14 @@
 
 namespace spqr {
 
-enum GamePhase { INITIAL, READY, SET, PLAYING };
+enum GamePhase { INITIAL, READY, SET, PLAYING, FINISH };
 inline std::string gamePhaseToString(GamePhase phase) {
     switch (phase) {
         case INITIAL: return "INITIAL";
         case READY: return "READY";
         case SET: return "SET";
         case PLAYING: return "PLAYING";
+        case FINISH: return "FINISH";
         default: return "UNKNOWN_PHASE";
     }
 }
@@ -121,9 +122,27 @@ class GameController {
         double getGameTime() const {
             return gameTime_;
         }
-        int getGameDuration() const {
-            return gameDuration_;
+        double getCurrentPhaseElapsedTime() const {
+            return currentPhaseElapsedTime_;
         }
+
+        int getInitialPhaseDuration() const {
+            return initialPhaseDuration_;
+        }   
+        int getReadyPhaseDuration() const {
+            return readyPhaseDuration_;
+        }
+        int getSetPhaseDuration() const {
+            return setPhaseDuration_;
+        }
+        int getPlayingPhaseDuration() const {
+            return playingPhaseDuration_;
+        }
+
+        void setPlayingPhaseDuration(int duration) {
+            playingPhaseDuration_ = duration;
+        }
+
         std::tuple<int, int> getScore() const {
             int redScore = 0;
             int blueScore = 0;
@@ -137,9 +156,6 @@ class GameController {
                 }
             }
             return std::make_tuple(redScore, blueScore);
-        }
-        void setGameDuration(int duration) {
-            gameDuration_ = duration;
         }
 
         std::map<std::string, std::string> availableCommands() const;
@@ -169,7 +185,12 @@ class GameController {
         GamePhase currentPhase_ = INITIAL;
         double simTime_ = 0.0;
         double gameTime_ = 0.0;
-        int gameDuration_ = 600;          // 10 minutes
+        double currentPhaseElapsedTime_ = 0.0; // seconds
+        int initialPhaseDuration_ = 30;   // seconds
+        int readyPhaseDuration_ = 45;     // seconds
+        int setPhaseDuration_ = 15;       // seconds
+        int playingPhaseDuration_ = 600;  // seconds  (10 minutes)
+        int lastUpdatecurrentPhaseElapsedTime_ = 0.0; // Sim time of last phase elapsed time update
         double lastUpdateGameTime_ = 0.0; // Sim time of last game time update
         double lastUpdateScore_ = 0.0;    // Sim time of last score update
 

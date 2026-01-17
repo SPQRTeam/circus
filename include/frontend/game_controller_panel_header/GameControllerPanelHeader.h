@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QWidget>
 #include <QPushButton>
+#include <iostream>
 
 #include "GameController.h"
 
@@ -154,13 +155,44 @@ class GameControllerPanelHeader : public QWidget {
                                         .arg(gameTimeMinutes, 2, 10, QChar('0'))
                                         .arg(gameTimeSeconds, 2, 10, QChar('0')));
 
+            // Update current phase time (remaining time counting down)
+            GamePhase phase = gc.getCurrentPhase();
+            double phaseElapsedTime = gc.getCurrentPhaseElapsedTime();
+            double phaseRemainingTime = 0.0;
+
+            switch (phase) {
+                case INITIAL:
+                    phaseRemainingTime = gc.getInitialPhaseDuration() - phaseElapsedTime;
+                    break;
+                case READY:
+                    phaseRemainingTime = gc.getReadyPhaseDuration() - phaseElapsedTime;
+                    break;
+                case SET:
+                    phaseRemainingTime = gc.getSetPhaseDuration() - phaseElapsedTime;
+                    break;
+                case PLAYING:
+                    phaseRemainingTime = gc.getPlayingPhaseDuration() - phaseElapsedTime;
+                    break;
+                case FINISH:
+                    phaseRemainingTime = 0.0;
+                    break;
+            }
+
+            // Ensure remaining time is not negative
+            if (phaseRemainingTime < 0) phaseRemainingTime = 0.0;
+
+            int phaseMinutes = static_cast<int>(phaseRemainingTime) / 60;
+            int phaseSeconds = static_cast<int>(phaseRemainingTime) % 60;
+            gamePhaseTimeLabel_->setText(QString("%1:%2")
+                                            .arg(phaseMinutes, 2, 10, QChar('0'))
+                                            .arg(phaseSeconds, 2, 10, QChar('0')));
+
             // Update score
             auto [redScore, blueScore] = gc.getScore();
             redScoreLabel_->setText(QString::number(redScore));
             blueScoreLabel_->setText(QString::number(blueScore));
 
-            // Update game phase and button label (phase can be changed from other modules)
-            GamePhase phase = gc.getCurrentPhase();
+            // Update game phase label and button (phase already fetched above)
             gamePhaseLabel_->setText(QString::fromStdString(gamePhaseToString(phase)));
             updatePhaseButton(phase);
         }
@@ -181,7 +213,10 @@ class GameControllerPanelHeader : public QWidget {
                     gc.handleCommand("playing");
                     break;
                 case PLAYING:
-                    // Already at final phase, do nothing
+                    gc.handleCommand("finish");
+                    break;
+                case FINISH:
+                    // Do nothing
                     break;
             }
         }
@@ -207,10 +242,14 @@ class GameControllerPanelHeader : public QWidget {
                     phaseButton_->setStyleSheet(getButtonStyle(true));
                     break;
                 case PLAYING:
-                    phaseButton_->setText("Playing");
+                    phaseButton_->setText("Finish");
+                    phaseButton_->setEnabled(true);
+                    phaseButton_->setStyleSheet(getButtonStyle(true));
+                    break;
+                case FINISH:
+                    phaseButton_->setText("Finished");
                     phaseButton_->setEnabled(false);
                     phaseButton_->setStyleSheet(getButtonStyle(false));
-                    break;
             }
         }
 
