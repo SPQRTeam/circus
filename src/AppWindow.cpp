@@ -15,8 +15,8 @@
 #include "RobotManager.h"
 #include "SceneParser.h"
 #include "Team.h"
-#include "frontend/game_controller_panel/GameControllerPanel.h"
-#include "frontend/game_controller_panel/GameControllerPanelHeader.h"
+#include "frontend/game_controller_panel_column/GameControllerPanelColumnContainer.h"
+#include "frontend/game_controller_panel_header/GameControllerPanelHeaderContainer.h"
 
 namespace spqr {
 
@@ -42,7 +42,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     centralWidget->setLayout(mainLayout);
     setCentralWidget(centralWidget);
 
-    // Create horizontal layout for GameControllerPanel and viewport
+    // Create horizontal layout for GameControllerPanelColumnContainer and viewport
     contentLayout = new QHBoxLayout();
     contentLayout->setContentsMargins(0, 0, 0, 0);
     contentLayout->setSpacing(0);
@@ -130,21 +130,21 @@ void AppWindow::loadScene(const QString& yaml_file) {
         // Update GameController with MujocoContext
         GameController::instance().bindMujoco(mujContext.get());
 
-        // Recreate GameControllerPanelHeader
-        if (gameControllerPanelHeader) {
-            mainLayout->removeWidget(gameControllerPanelHeader);
-            gameControllerPanelHeader->deleteLater();
+        // Recreate GameControllerPanelHeaderContainer
+        if (gameControllerPanelHeaderContainer) {
+            mainLayout->removeWidget(gameControllerPanelHeaderContainer);
+            gameControllerPanelHeaderContainer->deleteLater();
         }
-        gameControllerPanelHeader = new GameControllerPanelHeader(this);
-        mainLayout->insertWidget(0, gameControllerPanelHeader);
+        gameControllerPanelHeaderContainer = new GameControllerPanelHeaderContainer(this);
+        mainLayout->insertWidget(0, gameControllerPanelHeaderContainer);
 
-        // Recreate GameControllerPanel with updated GameController
-        if (gameControllerPanel) {
-            contentLayout->removeWidget(gameControllerPanel);
-            gameControllerPanel->deleteLater();
+        // Recreate GameControllerPanelColumnContainer with updated GameController
+        if (gameControllerPanelColumnContainer) {
+            contentLayout->removeWidget(gameControllerPanelColumnContainer);
+            gameControllerPanelColumnContainer->deleteLater();
         }
-        gameControllerPanel = new GameControllerPanel(this);
-        contentLayout->insertWidget(0, gameControllerPanel);
+        gameControllerPanelColumnContainer = new GameControllerPanelColumnContainer(this);
+        contentLayout->insertWidget(0, gameControllerPanelColumnContainer);
 
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
@@ -161,8 +161,8 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         // Add viewport with margins and spacing
         contentLayout->addWidget(viewportContainer);
-        contentLayout->setContentsMargins(0, 5, 5, 0);
-        contentLayout->setSpacing(5);  // Space between GameControllerPanel and viewport
+        contentLayout->setContentsMargins(0, 0, 5, 0);
+        contentLayout->setSpacing(5);  // Space between GameControllerPanelColumnContainer and viewport
 
         toolsPanel = new ToolsPanel(false, *mujContext, this);
         mainLayout->addWidget(toolsPanel);

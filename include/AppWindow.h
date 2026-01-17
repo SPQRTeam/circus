@@ -16,8 +16,8 @@
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
-#include "frontend/game_controller_panel/GameControllerPanel.h"
-#include "frontend/game_controller_panel/GameControllerPanelHeader.h"
+#include "frontend/game_controller_panel_column/GameControllerPanelColumnContainer.h"
+#include "frontend/game_controller_panel_header/GameControllerPanelHeaderContainer.h"
 #include "frontend/tools_panel/ToolsPanel.h"
 
 namespace spqr {
@@ -43,8 +43,8 @@ class AppWindow : public QMainWindow {
         QWidget* viewportContainer = nullptr;
         QLabel* viewportPlaceholder = nullptr;
 
-        GameControllerPanel* gameControllerPanel = nullptr;
-        GameControllerPanelHeader* gameControllerPanelHeader = nullptr;
+        GameControllerPanelColumnContainer* gameControllerPanelColumnContainer = nullptr;
+        GameControllerPanelHeaderContainer* gameControllerPanelHeaderContainer = nullptr;
         ToolsPanel* toolsPanel = nullptr;
 
         std::unique_ptr<MujocoContext> mujContext;

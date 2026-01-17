@@ -9,17 +9,17 @@
 #include <QWidget>
 #include <cmath>
 
-#include "frontend/game_controller_panel/GameControllerPanelColumn.h"
-#include "frontend/game_controller_panel/game_controller_tools/ConsoleWidget.h"
-#include "frontend/game_controller_panel/game_controller_tools/TeamWidget.h"
+#include "frontend/game_controller_panel_column/GameControllerPanelColumn.h"
+#include "frontend/game_controller_panel_column/game_controller_column_tools/ConsoleWidget.h"
+#include "frontend/game_controller_panel_column/game_controller_column_tools/TeamWidget.h"
 
 namespace spqr {
 
-class GameControllerPanel : public QWidget {
+class GameControllerPanelColumnContainer : public QWidget {
         Q_OBJECT
 
     public:
-        GameControllerPanel(QWidget* parent = nullptr) : QWidget(parent) {
+        GameControllerPanelColumnContainer(QWidget* parent = nullptr) : QWidget(parent) {
             // Main horizontal layout
             QHBoxLayout* mainLayout = new QHBoxLayout(this);
             mainLayout->setContentsMargins(5, 0, 5, 0);
@@ -37,7 +37,7 @@ class GameControllerPanel : public QWidget {
             contentContainer_->hide();  // Start collapsed
 
             QVBoxLayout* contentLayout = new QVBoxLayout(contentContainer_);
-            contentLayout->setContentsMargins(0, 0, 0, 0);
+            contentLayout->setContentsMargins(5, 0, 0, 0);
             contentLayout->setSpacing(0);
 
             contentContainer_->setLayout(contentLayout);
@@ -50,9 +50,9 @@ class GameControllerPanel : public QWidget {
             setFixedWidth(column_->width() + 5);
 
             // Connect header signals
-            connect(column_, &GameControllerPanelColumn::consoleButtonClicked, this, &GameControllerPanel::onConsoleButtonClicked);
-            connect(column_, &GameControllerPanelColumn::team1ButtonClicked, this, &GameControllerPanel::onTeam1ButtonClicked);
-            connect(column_, &GameControllerPanelColumn::team2ButtonClicked, this, &GameControllerPanel::onTeam2ButtonClicked);
+            connect(column_, &GameControllerPanelColumn::consoleButtonClicked, this, &GameControllerPanelColumnContainer::onConsoleButtonClicked);
+            connect(column_, &GameControllerPanelColumn::team1ButtonClicked, this, &GameControllerPanelColumnContainer::onTeam1ButtonClicked);
+            connect(column_, &GameControllerPanelColumn::team2ButtonClicked, this, &GameControllerPanelColumnContainer::onTeam2ButtonClicked);
 
             // Start collapsed
             isExpanded_ = false;
