@@ -169,6 +169,7 @@ class GameController {
         void updateSimTime();
         void updateGameTime(double time);
         void updateScore(int redTeamScore, int blueTeamScore);
+        void updateBallContact();
         void update();
 
     private:
@@ -186,13 +187,17 @@ class GameController {
         double simTime_ = 0.0;
         double gameTime_ = 0.0;
         double currentPhaseElapsedTime_ = 0.0; // seconds
+        
         int initialPhaseDuration_ = 30;   // seconds
         int readyPhaseDuration_ = 45;     // seconds
         int setPhaseDuration_ = 15;       // seconds
         int playingPhaseDuration_ = 600;  // seconds  (10 minutes)
-        int lastUpdatecurrentPhaseElapsedTime_ = 0.0; // Sim time of last phase elapsed time update
+
+        double lastUpdatecurrentPhaseElapsedTime_ = 0.0; // Sim time of last phase elapsed time update
         double lastUpdateGameTime_ = 0.0; // Sim time of last game time update
         double lastUpdateScore_ = 0.0;    // Sim time of last score update
+
+        std::string lastBallContactTeam_ = "None";
 
         float minX = -8.0f;
         float maxX = 8.0f;

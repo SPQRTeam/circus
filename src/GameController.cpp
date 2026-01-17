@@ -404,6 +404,42 @@ void GameController::updateScore(int redTeamScore, int blueTeamScore) {
     }
 }
 
+void GameController::updateBallContact() {
+    if (!mujContext_ || !mujContext_->data) return;
+    
+    int ballBodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, "ball");
+    if (ballBodyId < 0) return;
+    
+    // Iterate through all contacts
+    for (int i = 0; i < mujContext_->data->ncon; ++i) {
+        mjContact& con = mujContext_->data->contact[i];
+        
+        // Get body IDs for both geoms in contact
+        int body1 = mujContext_->model->geom_bodyid[con.geom1];
+        int body2 = mujContext_->model->geom_bodyid[con.geom2];
+        
+        int otherBody = -1;
+        if (body1 == ballBodyId) otherBody = body2;
+        else if (body2 == ballBodyId) otherBody = body1;
+        else continue;  // Ball not involved in this contact
+        
+        // Check which team this body belongs to
+        const char* bodyName = mj_id2name(mujContext_->model, mjOBJ_BODY, otherBody);
+        if (!bodyName) continue;
+        
+        std::string bodyNameStr(bodyName);
+        for (TeamInGame& t : teamsInGame_) {
+            for (const auto& robot : t.getTeam()->robots) {
+                // Check if this body belongs to this robot (e.g., contains robot name)
+                if (bodyNameStr.find(robot->name) != std::string::npos) {
+                    lastBallContactTeam_ = t.getTeam()->name;
+                    return;
+                }
+            }
+        }
+    }
+}
+
 void GameController::update(){
     if(request_mjforward){
         if (mujContext_ && mujContext_->model && mujContext_->data) {
@@ -480,8 +516,11 @@ void GameController::update(){
             currentPhase_ = SET; // Reset game phase to SET after a goal
             lastUpdateScore_ = simTime_;
         }
-
     }
+
+    // Update ball contact
+    updateBallContact();
+    std::cout << "Last Ball Contact Team: " << lastBallContactTeam_ << std::endl;
 }
 
 bool GameController::checkFieldBounds(double x, double y) {
