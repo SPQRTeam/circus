@@ -1,140 +1,157 @@
 #pragma once
 
-#include <QPushButton>
-#include <QResizeEvent>
-#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QTimer>
 #include <QWidget>
 
+#include "GameController.h"
+
 namespace spqr {
-
-enum class GameControllerView { NONE, CONSOLE, TEAM1, TEAM2 };
-
-enum class GameControllerView;
 
 class GameControllerPanelHeader : public QWidget {
         Q_OBJECT
 
     public:
         GameControllerPanelHeader(QWidget* parent = nullptr) : QWidget(parent) {
-            // Create background widget
-            background_ = new QWidget(this);
-            background_->setStyleSheet("QWidget { "
-                                       "  background-color: #333333; "
-                                       "  border: 1px solid #555555; "
-                                       "  border-radius: 3px; "
-                                       "}");
-            background_->lower();  // Send to back
+            setAttribute(Qt::WA_StyledBackground, true);
+            setStyleSheet("QWidget { "
+                          "  background-color: #333333; "
+                          "  border: 1px solid #555555; "
+                          "  border-radius: 3px; "
+                          "}");
 
-            // Set fixed width for the button column
-            setFixedWidth(50);
+            // Set fixed height for the header
+            setFixedHeight(40);
 
-            // Vertical layout for the buttons
-            QVBoxLayout* layout = new QVBoxLayout(this);
-            layout->setContentsMargins(5, 5, 5, 5);
-            layout->setSpacing(5);
+            // Main horizontal layout
+            QHBoxLayout* layout = new QHBoxLayout(this);
+            layout->setContentsMargins(10, 5, 10, 5);
+            layout->setSpacing(20);
 
-            // Console button (at the top)
-            consoleButton_ = new QPushButton("C", this);
-            consoleButton_->setToolTip("Console");
-            consoleButton_->setStyleSheet(getButtonStyle());
-            consoleButton_->setFixedSize(40, 40);
-            connect(consoleButton_, &QPushButton::clicked, this, &GameControllerPanelHeader::consoleButtonClicked);
-            layout->addWidget(consoleButton_);
+            // Game Time label
+            QLabel* gameTimeTitle = new QLabel("Game Time:", this);
+            gameTimeTitle->setStyleSheet(getLabelTitleStyle());
+            layout->addWidget(gameTimeTitle);
 
-            // Team 1 button
-            team1Button_ = new QPushButton("T1", this);
-            team1Button_->setToolTip("Team 1");
-            team1Button_->setStyleSheet(getButtonStyle());
-            team1Button_->setFixedSize(40, 40);
-            connect(team1Button_, &QPushButton::clicked, this, &GameControllerPanelHeader::team1ButtonClicked);
-            layout->addWidget(team1Button_);
+            gameTimeLabel_ = new QLabel("00:00", this);
+            gameTimeLabel_->setStyleSheet(getLabelValueStyle());
+            layout->addWidget(gameTimeLabel_);
 
-            // Team 2 button
-            team2Button_ = new QPushButton("T2", this);
-            team2Button_->setToolTip("Team 2");
-            team2Button_->setStyleSheet(getButtonStyle());
-            team2Button_->setFixedSize(40, 40);
-            connect(team2Button_, &QPushButton::clicked, this, &GameControllerPanelHeader::team2ButtonClicked);
-            layout->addWidget(team2Button_);
+            // Add spacing
+            layout->addSpacing(30);
 
-            // Add stretch to push buttons to the top
+            // Score label
+            QLabel* scoreTitle = new QLabel("Score:", this);
+            scoreTitle->setStyleSheet(getLabelTitleStyle());
+            layout->addWidget(scoreTitle);
+
+            // Red team score
+            QLabel* redLabel = new QLabel("Red", this);
+            redLabel->setStyleSheet(getTeamLabelStyle("#cc4444"));
+            layout->addWidget(redLabel);
+
+            redScoreLabel_ = new QLabel("0", this);
+            redScoreLabel_->setStyleSheet(getLabelValueStyle());
+            layout->addWidget(redScoreLabel_);
+
+            // Separator
+            QLabel* separator = new QLabel("-", this);
+            separator->setStyleSheet(getLabelValueStyle());
+            layout->addWidget(separator);
+
+            // Blue team score
+            blueScoreLabel_ = new QLabel("0", this);
+            blueScoreLabel_->setStyleSheet(getLabelValueStyle());
+            layout->addWidget(blueScoreLabel_);
+
+            QLabel* blueLabel = new QLabel("Blue", this);
+            blueLabel->setStyleSheet(getTeamLabelStyle("#4444cc"));
+            layout->addWidget(blueLabel);
+
+            // Add spacing
+            layout->addSpacing(30);
+
+            // Game Phase label
+            QLabel* phaseTitle = new QLabel("Phase:", this);
+            phaseTitle->setStyleSheet(getLabelTitleStyle());
+            layout->addWidget(phaseTitle);
+
+            gamePhaseLabel_ = new QLabel("INITIAL", this);
+            gamePhaseLabel_->setStyleSheet(getLabelValueStyle());
+            layout->addWidget(gamePhaseLabel_);
+
+            // Add stretch to push everything to the left
             layout->addStretch();
 
             setLayout(layout);
+
+            // Setup timer for periodic updates
+            updateTimer_ = new QTimer(this);
+            connect(updateTimer_, &QTimer::timeout, this, &GameControllerPanelHeader::updateDisplay);
+            updateTimer_->start(100);  // Update every 100ms
         }
 
-        // void setActiveButton(GameControllerView view);
-        void setActiveButton(GameControllerView view) {
-            // Reset all buttons to normal style
-            consoleButton_->setStyleSheet(getButtonStyle());
-            team1Button_->setStyleSheet(getButtonStyle());
-            team2Button_->setStyleSheet(getButtonStyle());
+        virtual ~GameControllerPanelHeader() = default;
 
-            // Set active button style
-            switch (view) {
-                case GameControllerView::CONSOLE:
-                    consoleButton_->setStyleSheet(getActiveButtonStyle());
-                    break;
-                case GameControllerView::TEAM1:
-                    team1Button_->setStyleSheet(getActiveButtonStyle());
-                    break;
-                case GameControllerView::TEAM2:
-                    team2Button_->setStyleSheet(getActiveButtonStyle());
-                    break;
-                case GameControllerView::NONE:
-                    // All buttons are already reset
-                    break;
-            }
-        }
+    private slots:
+        void updateDisplay() {
+            GameController& gc = GameController::instance();
 
-    signals:
-        void consoleButtonClicked();
-        void team1ButtonClicked();
-        void team2ButtonClicked();
+            // Update game time
+            double gameTime = gc.getGameTime();
+            int minutes = static_cast<int>(gameTime) / 60;
+            int seconds = static_cast<int>(gameTime) % 60;
+            gameTimeLabel_->setText(QString("%1:%2")
+                                        .arg(minutes, 2, 10, QChar('0'))
+                                        .arg(seconds, 2, 10, QChar('0')));
 
-    protected:
-        void resizeEvent(QResizeEvent* event) override {
-            QWidget::resizeEvent(event);
-            if (background_) {
-                background_->setGeometry(0, 0, width(), height());
-            }
+            // Update score
+            auto [redScore, blueScore] = gc.getScore();
+            redScoreLabel_->setText(QString::number(redScore));
+            blueScoreLabel_->setText(QString::number(blueScore));
+
+            // Update game phase
+            GamePhase phase = gc.getCurrentPhase();
+            gamePhaseLabel_->setText(QString::fromStdString(gamePhaseToString(phase)));
         }
 
     private:
-        QString getButtonStyle() {
-            return "QPushButton { "
-                   "  background-color: #444444; "
-                   "  color: white; "
-                   "  border: 1px solid #666666; "
-                   "  border-radius: 3px; "
-                   "  font-size: 11px; "
-                   "  font-weight: bold; "
-                   "} "
-                   "QPushButton:hover { "
-                   "  background-color: #595959; "
-                   "  border: 1px solid #006778; "
-                   "} ";
+        QString getLabelTitleStyle() {
+            return "QLabel { "
+                   "  color: #888888; "
+                   "  font-size: 12px; "
+                   "  background-color: transparent; "
+                   "  border: none; "
+                   "}";
         }
 
-        QString getActiveButtonStyle() {
-            return "QPushButton { "
-                   "  background-color: #006778; "
-                   "  color: white; "
-                   "  border: 1px solid #00a0b0; "
-                   "  border-radius: 3px; "
-                   "  font-size: 11px; "
+        QString getLabelValueStyle() {
+            return "QLabel { "
+                   "  color: #00a0b0; "
+                   "  font-size: 14px; "
                    "  font-weight: bold; "
-                   "} "
-                   "QPushButton:hover { "
-                   "  background-color: #007888; "
-                   "  border: 1px solid #00c0d0; "
-                   "} ";
+                   "  background-color: transparent; "
+                   "  border: none; "
+                   "}";
         }
 
-        QWidget* background_;
-        QPushButton* consoleButton_;
-        QPushButton* team1Button_;
-        QPushButton* team2Button_;
+        QString getTeamLabelStyle(const QString& color) {
+            return QString("QLabel { "
+                           "  color: %1; "
+                           "  font-size: 12px; "
+                           "  font-weight: bold; "
+                           "  background-color: transparent; "
+                           "  border: none; "
+                           "}")
+                .arg(color);
+        }
+
+        QLabel* gameTimeLabel_;
+        QLabel* redScoreLabel_;
+        QLabel* blueScoreLabel_;
+        QLabel* gamePhaseLabel_;
+        QTimer* updateTimer_;
 };
 
 }  // namespace spqr

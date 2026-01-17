@@ -9,7 +9,7 @@
 #include <QWidget>
 #include <cmath>
 
-#include "frontend/game_controller_panel/GameControllerPanelHeader.h"
+#include "frontend/game_controller_panel/GameControllerPanelColumn.h"
 #include "frontend/game_controller_panel/game_controller_tools/ConsoleWidget.h"
 #include "frontend/game_controller_panel/game_controller_tools/TeamWidget.h"
 
@@ -26,8 +26,8 @@ class GameControllerPanel : public QWidget {
             mainLayout->setSpacing(0);
 
             // Create the header (left column with buttons)
-            header_ = new GameControllerPanelHeader(this);
-            mainLayout->addWidget(header_, 0, Qt::AlignLeft);
+            column_ = new GameControllerPanelColumn(this);
+            mainLayout->addWidget(column_, 0, Qt::AlignLeft);
 
             // Create the content container
             contentContainer_ = new QWidget(this);
@@ -47,12 +47,12 @@ class GameControllerPanel : public QWidget {
 
             // Set size policy to prevent expanding
             setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-            setFixedWidth(header_->width() + 5);
+            setFixedWidth(column_->width() + 5);
 
             // Connect header signals
-            connect(header_, &GameControllerPanelHeader::consoleButtonClicked, this, &GameControllerPanel::onConsoleButtonClicked);
-            connect(header_, &GameControllerPanelHeader::team1ButtonClicked, this, &GameControllerPanel::onTeam1ButtonClicked);
-            connect(header_, &GameControllerPanelHeader::team2ButtonClicked, this, &GameControllerPanel::onTeam2ButtonClicked);
+            connect(column_, &GameControllerPanelColumn::consoleButtonClicked, this, &GameControllerPanel::onConsoleButtonClicked);
+            connect(column_, &GameControllerPanelColumn::team1ButtonClicked, this, &GameControllerPanel::onTeam1ButtonClicked);
+            connect(column_, &GameControllerPanelColumn::team2ButtonClicked, this, &GameControllerPanel::onTeam2ButtonClicked);
 
             // Start collapsed
             isExpanded_ = false;
@@ -67,7 +67,7 @@ class GameControllerPanel : public QWidget {
             return isExpanded_;
         }
         int getExpandedWidth() const {
-            return isExpanded_ ? (header_->width() + contentContainer_->width()) : header_->width() + 5;
+            return isExpanded_ ? (column_->width() + contentContainer_->width()) : column_->width() + 5;
         }
 
     signals:
@@ -107,12 +107,12 @@ class GameControllerPanel : public QWidget {
                     int newWidth = initialWidth_ + deltaX;
 
                     // Clamp width between min and max (fixed values, not dynamic)
-                    int minWidth = header_->width() + 250 + 5;  // 250 is base minExpandedWidth
-                    int maxWidth = header_->width() + 600 + 5;  // 600 is max allowed width
+                    int minWidth = column_->width() + 250 + 5;  // 250 is base minExpandedWidth
+                    int maxWidth = column_->width() + 600 + 5;  // 600 is max allowed width
                     newWidth = std::max(minWidth, std::min(maxWidth, newWidth));
 
                     // Update content container width
-                    int contentWidth = newWidth - header_->width() - 5;
+                    int contentWidth = newWidth - column_->width() - 5;
                     contentContainer_->setMinimumWidth(contentWidth);
                     contentContainer_->setMaximumWidth(contentWidth);
                     setFixedWidth(newWidth);
@@ -175,8 +175,8 @@ class GameControllerPanel : public QWidget {
             contentContainer_->hide();
             isExpanded_ = false;
             currentView_ = GameControllerView::NONE;
-            header_->setActiveButton(GameControllerView::NONE);
-            setFixedWidth(header_->width() + 5);
+            column_->setActiveButton(GameControllerView::NONE);
+            setFixedWidth(column_->width() + 5);
             emit expansionChanged(false);
         }
 
@@ -226,8 +226,8 @@ class GameControllerPanel : public QWidget {
                 contentContainer_->show();
                 isExpanded_ = true;
                 currentView_ = view;
-                header_->setActiveButton(view);
-                setFixedWidth(header_->width() + contentContainer_->minimumWidth() + 5);
+                column_->setActiveButton(view);
+                setFixedWidth(column_->width() + contentContainer_->minimumWidth() + 5);
                 emit expansionChanged(true);
             }
         }
@@ -240,7 +240,7 @@ class GameControllerPanel : public QWidget {
             return new TeamWidget(teamName, contentContainer_);
         }
 
-        GameControllerPanelHeader* header_;
+        GameControllerPanelColumn* column_;
         QWidget* contentContainer_;
 
         bool isExpanded_ = false;

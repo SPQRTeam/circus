@@ -17,6 +17,7 @@
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
 #include "frontend/game_controller_panel/GameControllerPanel.h"
+#include "frontend/game_controller_panel/GameControllerPanelHeader.h"
 #include "frontend/tools_panel/ToolsPanel.h"
 
 namespace spqr {
@@ -43,6 +44,7 @@ class AppWindow : public QMainWindow {
         QLabel* viewportPlaceholder = nullptr;
 
         GameControllerPanel* gameControllerPanel = nullptr;
+        GameControllerPanelHeader* gameControllerPanelHeader = nullptr;
         ToolsPanel* toolsPanel = nullptr;
 
         std::unique_ptr<MujocoContext> mujContext;

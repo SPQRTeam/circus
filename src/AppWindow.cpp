@@ -16,6 +16,7 @@
 #include "SceneParser.h"
 #include "Team.h"
 #include "frontend/game_controller_panel/GameControllerPanel.h"
+#include "frontend/game_controller_panel/GameControllerPanelHeader.h"
 
 namespace spqr {
 
@@ -128,6 +129,14 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         // Update GameController with MujocoContext
         GameController::instance().bindMujoco(mujContext.get());
+
+        // Recreate GameControllerPanelHeader
+        if (gameControllerPanelHeader) {
+            mainLayout->removeWidget(gameControllerPanelHeader);
+            gameControllerPanelHeader->deleteLater();
+        }
+        gameControllerPanelHeader = new GameControllerPanelHeader(this);
+        mainLayout->insertWidget(0, gameControllerPanelHeader);
 
         // Recreate GameControllerPanel with updated GameController
         if (gameControllerPanel) {

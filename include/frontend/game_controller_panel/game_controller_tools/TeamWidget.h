@@ -26,7 +26,7 @@ class TeamWidget : public QWidget {
             layout->setSpacing(5);
 
             // Header label
-            QLabel* header = new QLabel(QString("Team %1 - Robots").arg(teamName), this);
+            QLabel* header = new QLabel(QString("Team %1 - Robots").arg(QString::fromStdString(teamName)), this);
             header->setStyleSheet("QLabel { "
                                   "  color: #00a0b0; "
                                   "  font-size: 14px; "

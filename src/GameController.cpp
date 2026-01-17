@@ -43,7 +43,7 @@ std::map<std::string, std::string> GameController::availableCommands() const {
         {"initial", "Set game phase to INITIAL"},
         {"ready", "Set game phase to READY"},
         {"set", "Set game phase to SET"},
-        {"play", "Set game phase to PLAYING"},
+        {"playing", "Set game phase to PLAYING"},
         {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta> [m, m, deg]"},
         {"mvb", "Move ball command: mvb <x> <y> [m, m]"},
         {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_POSITION"},
@@ -66,7 +66,7 @@ std::string GameController::handleCommand(std::string command) {
         return "Unknown command: " + command;
     }
 
-    if ((command.rfind("initial", 0) == 0) || (command.rfind("ready", 0) == 0) || (command.rfind("set", 0) == 0) || (command.rfind("play", 0) == 0)) {
+    if ((command.rfind("initial", 0) == 0) || (command.rfind("ready", 0) == 0) || (command.rfind("set", 0) == 0) || (command.rfind("playing", 0) == 0)) {
         std::istringstream iss(command);
         std::string cmd;
         iss >> cmd;
@@ -155,7 +155,7 @@ std::string GameController::handleGamePhase(std::string phase) {
         currentPhase_ = READY;
     } else if (phase == "set") {
         currentPhase_ = SET;
-    } else if (phase == "play") {
+    } else if (phase == "playing") {
         currentPhase_ = PLAYING;
     } else {
         return "Invalid game phase: " + phase;
