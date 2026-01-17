@@ -1,0 +1,3 @@
+viewport:
+  # decides whether scrolling up on the mouse wheel zooms in or out.
+  flipZoom: false

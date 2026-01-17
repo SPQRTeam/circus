@@ -2,6 +2,7 @@
 #include <mujoco/mujoco.h>
 
 #include <QMainWindow>
+#include <QToolBar>
 #include <QVBoxLayout>
 #include <memory>
 
@@ -23,10 +24,19 @@ class AppWindow : public QMainWindow {
 
     QVBoxLayout* mainLayout;
     QWidget* viewportContainer;
+    QToolBar* controlToolbar;
+    QAction* startAction;
+    QAction* stopAction;
+    QAction* stepAction;
 
     std::unique_ptr<MujocoContext> mujContext;
     std::unique_ptr<SimulationViewport> viewport;
     std::unique_ptr<SimulationThread> sim;
+
+   private slots:
+    void startSimulation();
+    void stopSimulation();
+    void stepSimulation();
 };
 
 }  // namespace spqr

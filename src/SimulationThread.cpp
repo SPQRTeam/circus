@@ -34,4 +34,12 @@ void SimulationThread::stop() {
     wait();
 }
 
+bool SimulationThread::isRunning() const {
+    return QThread::isRunning();
+}
+
+void SimulationThread::setRunning(bool b) {
+    running_ = b;
+}
+
 }  // namespace spqr

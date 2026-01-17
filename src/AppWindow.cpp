@@ -3,12 +3,14 @@
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMetaObject>
 #include <csignal>
 
 #include "Constants.h"
 #include "MujocoContext.h"
 #include "RobotManager.h"
 #include "SceneParser.h"
+#include "Utils.h"
 
 namespace spqr {
 
@@ -20,6 +22,21 @@ AppWindow::AppWindow(int& argc, char** argv) {
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
     setWindowTitle(spqr::appName);
+
+    controlToolbar = new QToolBar("Simulation Controls", this);
+    addToolBar(Qt::TopToolBarArea, controlToolbar);
+
+    startAction = new QAction("Start", this);
+    stopAction = new QAction("Stop", this);
+    stepAction = new QAction("Step", this);
+
+    controlToolbar->addAction(startAction);
+    controlToolbar->addAction(stopAction);
+    controlToolbar->addAction(stepAction);
+
+    connect(startAction, &QAction::triggered, this, &AppWindow::startSimulation);
+    connect(stopAction, &QAction::triggered, this, &AppWindow::stopSimulation);
+    connect(stepAction, &QAction::triggered, this, &AppWindow::stepSimulation);
 
     QWidget* centralWidget = new QWidget;
     mainLayout = new QVBoxLayout;
@@ -57,6 +74,8 @@ void AppWindow::loadScene(const QString& yamlFile) {
         TeamManager::instance().clear();
         RobotManager::instance().stopCommunicationServer();
 
+        YAML::Node settingsRoot = loadYamlFile(circusSettingsPath);
+
         if (sim) {
             sim->stop();
             sim.reset();
@@ -72,7 +91,21 @@ void AppWindow::loadScene(const QString& yamlFile) {
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
-        viewport = std::make_unique<SimulationViewport>(*mujContext);
+        viewport = std::make_unique<SimulationViewport>(*mujContext, settingsRoot["viewport"]);
+
+        // Callback to start the simulation
+        // Simulation starts when the all the robots are ready
+        RobotManager::instance().setAreAllRobotsReadyCallback([this]() {
+            QMetaObject::invokeMethod(
+                this,
+                [this]() {
+                    if (sim) {
+                        std::cout << "Starting simulation!" << std::endl;
+                        sim->start();
+                    }
+                },
+                Qt::QueuedConnection);
+        });
 
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());
@@ -81,9 +114,30 @@ void AppWindow::loadScene(const QString& yamlFile) {
         mainLayout->addWidget(viewportContainer);
 
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
-        sim->start();
+
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error loading scene", e.what());
+    }
+}
+
+void AppWindow::startSimulation() {
+    if (sim && !sim->isRunning()) {
+        sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
+        sim->start();
+    }
+}
+
+void AppWindow::stopSimulation() {
+    if (sim && sim->isRunning()) {
+        sim->stop();
+    }
+}
+
+void AppWindow::stepSimulation() {
+    if (mujContext) {
+        mj_step(mujContext->model, mujContext->data);
+        RobotManager::instance().update();
+        viewport->update();
     }
 }
 

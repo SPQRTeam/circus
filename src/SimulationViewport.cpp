@@ -1,12 +1,16 @@
 #include "SimulationViewport.h"
 
 #include <mujoco/mjvisualize.h>
+#include <qevent.h>
 #include <qnamespace.h>
 #include <qpoint.h>
+#include <yaml-cpp/node/node.h>
+
+#include "Utils.h"
 
 namespace spqr {
 
-SimulationViewport::SimulationViewport(MujocoContext& mujContext)
+SimulationViewport::SimulationViewport(MujocoContext& mujContext, YAML::Node settingsNode)
     : model(mujContext.model),
       data(mujContext.data),
       cam(&mujContext.cam),
@@ -17,6 +21,12 @@ SimulationViewport::SimulationViewport(MujocoContext& mujContext)
     connect(timer, &QTimer::timeout, this, QOverload<>::of(&SimulationViewport::update));
     timer->start(16);
     mjv_defaultPerturb(&pert);
+    if (!settingsNode) {
+        throw std::runtime_error("Missing viewport settings");
+    }
+    viewportSettings = {
+        tryBool(settingsNode["flipZoom"], "flipZoom setting missing or not a bool: "),
+    };
 }
 
 void SimulationViewport::initializeGL() {
@@ -43,7 +53,8 @@ void SimulationViewport::paintGL() {
 }
 
 void SimulationViewport::wheelEvent(QWheelEvent* event) {
-    mjv_moveCamera(model, mjMOUSE_ZOOM, 0, -0.0005 * event->angleDelta().y(), scene, cam);
+    int flipping = viewportSettings.flipZoom ? -1 : 1;
+    mjv_moveCamera(model, mjMOUSE_ZOOM, 0, 0.0005 * flipping * event->angleDelta().y(), scene, cam);
 }
 
 void SimulationViewport::mousePressEvent(QMouseEvent* event) {
@@ -67,13 +78,15 @@ void SimulationViewport::mousePressEvent(QMouseEvent* event) {
                 pert.active = mjPERT_TRANSLATE;
                 mouseAction = mjMOUSE_MOVE_H;  // use horizontal-plane move when moving
             }
+        } else {  // i.e. selected_body < 0
+            if (event->modifiers() & Qt::ShiftModifier) {
+                mouseAction = mjMOUSE_ROTATE_V;
+            } else {
+                mouseAction = mjMOUSE_MOVE_H;
+            }
         }
-
-        if (event->modifiers() & Qt::ShiftModifier) {
-            mouseAction = mjMOUSE_ROTATE_V;
-        } else {
-            mouseAction = mjMOUSE_MOVE_H;
-        }
+    } else if (event->button() == Qt::MiddleButton) {
+        mouseAction = mjMOUSE_ROTATE_V;
     }
 }
 
@@ -104,7 +117,8 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
             mju_mulQuat(pert.refquat, qz, pert.refquat);
-        } else if (mouseAction == mjMOUSE_MOVE_H) {
+        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V
+                   || mouseAction == mjMOUSE_ROTATE_H) {
             mjv_movePerturb(model, data, mouseAction, reldx, reldy, scene, &pert);
         }
         mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
@@ -113,6 +127,34 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
     }
 
     lastMousePosition = event->position();
+}
+
+// Some blender-like commands in a totally blender-unlike flow
+void SimulationViewport::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_G) {
+        if (selectedRobot >= 0) {
+            pert.active = mjPERT_TRANSLATE;
+            mouseAction = mjMOUSE_MOVE_H;
+        }
+    }
+    if (event->key() == Qt::Key_R) {
+        if (selectedRobot >= 0) {
+            pert.active = mjPERT_ROTATE;
+            mouseAction = mjMOUSE_ROTATE_V;
+        }
+    }
+    if (event->key() == Qt::Key_H) {
+        if (mouseAction == mjMOUSE_MOVE_V)
+            mouseAction = mjMOUSE_MOVE_H;
+        if (mouseAction == mjMOUSE_ROTATE_V)
+            mouseAction = mjMOUSE_ROTATE_H;
+    }
+    if (event->key() == Qt::Key_V) {
+        if (mouseAction == mjMOUSE_MOVE_H)
+            mouseAction = mjMOUSE_MOVE_V;
+        if (mouseAction == mjMOUSE_ROTATE_H)
+            mouseAction = mjMOUSE_ROTATE_V;
+    }
 }
 
 int SimulationViewport::findBodyRoot(int bodyId) const {

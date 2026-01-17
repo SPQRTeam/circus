@@ -70,12 +70,19 @@ void Container::create(const std::string& robot_name, const std::string& image,
     nlohmann::json payload;
     payload["Image"] = image;
 
-    // Forcing networkMode to host is necessary to establish a communication between simulator and docker
-    // container.
-    payload["HostConfig"] = {{"NetworkMode", "host"}, {"Binds", binds}};
+    payload["HostConfig"]
+        = {{"Binds", binds},
+           {"IpcMode", "host"},
+           {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
+           {"SecurityOpt", {"seccomp=unconfined"}},
+           {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
+           {"Privileged", true}};
 
-    payload["Env"]
-        = {"ROBOT_NAME=" + robot_name, "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort)};
+    payload["Env"] = {"ROBOT_NAME=" + robot_name, "SERVER_IP=172.17.0.1",
+                      "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort)};
+
+    payload["Tty"] = true;
+    payload["OpenStdin"] = true;
 
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);

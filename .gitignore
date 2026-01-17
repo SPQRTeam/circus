@@ -427,3 +427,9 @@ build/
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+
+MUJOCO_LOG.TXT
+
+path_constants.yaml
+dockerfiles/booster_robotics_sdk
+dockerfiles/booster_robotics_sdk_ros2

@@ -2,6 +2,7 @@
 
 #include <mujoco/mujoco.h>
 #include <qpoint.h>
+#include <yaml-cpp/node/node.h>
 
 #include <QOpenGLWindow>
 #include <QTimer>
@@ -11,9 +12,13 @@
 #include "MujocoContext.h"
 namespace spqr {
 
+struct ViewportSettings {
+    bool flipZoom;
+};
+
 class SimulationViewport : public QOpenGLWindow {
    public:
-    SimulationViewport(MujocoContext& mujContext);
+    SimulationViewport(MujocoContext& mujContext, YAML::Node viewportSettings);
 
    protected:
     void initializeGL() override;
@@ -24,6 +29,7 @@ class SimulationViewport : public QOpenGLWindow {
     void mousePressEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
    private:
     QPointF lastMousePosition;
@@ -37,6 +43,8 @@ class SimulationViewport : public QOpenGLWindow {
     mjrContext* context;
     QTimer* timer;
     mjvPerturb pert;
+
+    struct ViewportSettings viewportSettings;
 
     /**
      * @brief Selects a body in the simulation based on relative x and y coordinates.

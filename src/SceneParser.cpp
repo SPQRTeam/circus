@@ -92,12 +92,13 @@ string SceneParser::buildMuJoCoXml() {
 
     // TODO: The simulation options can be parametrized. I don't know if we may want to change the parameters.
     xml_node option = mujoco.append_child("option");
-    option.append_attribute("timestep") = "0.01";
+    option.append_attribute("timestep") = "0.0001";
     option.append_attribute("iterations") = "50";
     option.append_attribute("tolerance") = "1e-10";
     option.append_attribute("solver") = "Newton";
     option.append_attribute("jacobian") = "dense";
     option.append_attribute("cone") = "pyramidal";
+    // option.append_attribute("gravity") = "0 0 -9.81";
 
     xml_node compiler = mujoco.append_child("compiler");
     compiler.append_attribute("angle") = "radian";
