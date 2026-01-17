@@ -28,7 +28,7 @@ class GameControllerPanelHeader : public QWidget {
 
             // Main horizontal layout
             QHBoxLayout* layout = new QHBoxLayout(this);
-            layout->setContentsMargins(10, 5, 10, 5);
+            layout->setContentsMargins(5, 5, 5, 5);
             layout->setSpacing(5);
 
             // Sim Time label
@@ -74,17 +74,15 @@ class GameControllerPanelHeader : public QWidget {
             gamePhaseTimeLabel_ = new QLabel("00:00", this);
             gamePhaseTimeLabel_->setStyleSheet(getLabelValueStyle());
             layout->addWidget(gamePhaseTimeLabel_);
-
-            // Add spacing
-            layout->addSpacing(10);
             
-            phaseButton = new QPushButton("Ready", this);
-            phaseButton->setToolTip("Console");
-            phaseButton->setStyleSheet(getButtonStyle());
-            layout->addWidget(phaseButton);
-
             // Add stretch to push score to the right
             layout->addStretch();
+
+            phaseButton_ = new QPushButton("Ready", this);
+            phaseButton_->setToolTip("Advance to next game phase");
+            phaseButton_->setStyleSheet(getButtonStyle());
+            connect(phaseButton_, &QPushButton::clicked, this, &GameControllerPanelHeader::onPhaseButtonClicked);
+            layout->addWidget(phaseButton_);
 
             // Score container with background
             QWidget* scoreContainer = new QWidget(this);
@@ -101,7 +99,7 @@ class GameControllerPanelHeader : public QWidget {
 
             // Red team score
             QLabel* redLabel = new QLabel("Red", scoreContainer);
-            redLabel->setStyleSheet(getScoreLabelStyle("#822434"));
+            redLabel->setStyleSheet(getScoreLabelStyle("#993546"));
             scoreLayout->addWidget(redLabel);
 
             redScoreLabel_ = new QLabel("0", scoreContainer);
@@ -119,7 +117,7 @@ class GameControllerPanelHeader : public QWidget {
             scoreLayout->addWidget(blueScoreLabel_);
 
             QLabel* blueLabel = new QLabel("Blue", scoreContainer);
-            blueLabel->setStyleSheet(getScoreLabelStyle("#006778"));
+            blueLabel->setStyleSheet(getScoreLabelStyle("#108296"));
             scoreLayout->addWidget(blueLabel);
 
             scoreContainer->setLayout(scoreLayout);
@@ -161,12 +159,61 @@ class GameControllerPanelHeader : public QWidget {
             redScoreLabel_->setText(QString::number(redScore));
             blueScoreLabel_->setText(QString::number(blueScore));
 
-            // Update game phase
+            // Update game phase and button label (phase can be changed from other modules)
             GamePhase phase = gc.getCurrentPhase();
             gamePhaseLabel_->setText(QString::fromStdString(gamePhaseToString(phase)));
+            updatePhaseButton(phase);
+        }
+
+        void onPhaseButtonClicked() {
+            GameController& gc = GameController::instance();
+            GamePhase currentPhase = gc.getCurrentPhase();
+
+            // Advance to next phase: Initial -> Ready -> Set -> Playing
+            switch (currentPhase) {
+                case INITIAL:
+                    gc.handleCommand("ready");
+                    break;
+                case READY:
+                    gc.handleCommand("set");
+                    break;
+                case SET:
+                    gc.handleCommand("playing");
+                    break;
+                case PLAYING:
+                    // Already at final phase, do nothing
+                    break;
+            }
         }
 
     private:
+        void updatePhaseButton(GamePhase phase) {
+            // Update button label based on current phase
+            // Button shows the NEXT phase to transition to
+            switch (phase) {
+                case INITIAL:
+                    phaseButton_->setText("Ready");
+                    phaseButton_->setEnabled(true);
+                    phaseButton_->setStyleSheet(getButtonStyle(true));
+                    break;
+                case READY:
+                    phaseButton_->setText("Set");
+                    phaseButton_->setEnabled(true);
+                    phaseButton_->setStyleSheet(getButtonStyle(true));
+                    break;
+                case SET:
+                    phaseButton_->setText("Playing");
+                    phaseButton_->setEnabled(true);
+                    phaseButton_->setStyleSheet(getButtonStyle(true));
+                    break;
+                case PLAYING:
+                    phaseButton_->setText("Playing");
+                    phaseButton_->setEnabled(false);
+                    phaseButton_->setStyleSheet(getButtonStyle(false));
+                    break;
+            }
+        }
+
         QString getLabelTitleStyle() {
             return "QLabel { "
                    "  color: #888888; "
@@ -197,30 +244,46 @@ class GameControllerPanelHeader : public QWidget {
                 .arg(color);
         }
         
-        QString getButtonStyle() {
-            return "QPushButton { "
-                   "  background-color: #444444; "
-                   "  color: white; "
-                   "  border: 1px solid #666666; "
-                   "  border-radius: 3px; "
-                   "  padding: 2px 2px 2px 2px; "
-                   "  width: 110px; "
-                   "  height: 25px; "
-                   "  font-size: 12px; "
-                   "  font-weight: bold; "
-                   "} "
-                   "QPushButton:hover { "
-                   "  background-color: #595959; "
-                   "  border: 1px solid #006778; "
-                   "} ";
+        QString getButtonStyle(bool enabled=true) {
+            if(enabled) 
+                return "QPushButton { "
+                    "  background-color: #444444; "
+                    "  color: white; "
+                    "  border: 1px solid #666666; "
+                    "  border-radius: 3px; "
+                    "  padding: 2px 2px 2px 2px; "
+                    "  width: 110px; "
+                    "  height: 25px; "
+                    "  font-size: 12px; "
+                    "  font-weight: bold; "
+                    "} "
+                    "QPushButton:hover { "
+                    "  background-color: #595959; "
+                    "  border: 1px solid #006778; "
+                    "} ";
+            else
+                return "QPushButton { "
+                    "  background-color: #666666; "
+                    "  color: #909090; "
+                    "  border: 1px solid #666666; "
+                    "  border-radius: 3px; "
+                    "  padding: 2px 2px 2px 2px; "
+                    "  width: 110px; "
+                    "  height: 25px; "
+                    "  font-size: 12px; "
+                    "  font-weight: bold; "
+                    "} "
+                    "QPushButton:hover { "
+                    "  background-color: #595959; "
+                    "  border: 1px solid #006778; "
+                    "} ";
         }
-
 
         QLabel* simTimeLabel_;
         QLabel* gameTimeLabel_;
         QLabel* gamePhaseLabel_;
         QLabel* gamePhaseTimeLabel_;
-        QPushButton* phaseButton;
+        QPushButton* phaseButton_;
         QLabel* redScoreLabel_;
         QLabel* blueScoreLabel_;
         QTimer* updateTimer_;
