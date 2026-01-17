@@ -1,9 +1,11 @@
 #pragma once
 
+#include <qlabel.h>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QTimer>
 #include <QWidget>
+#include <QPushButton>
 
 #include "GameController.h"
 
@@ -27,7 +29,19 @@ class GameControllerPanelHeader : public QWidget {
             // Main horizontal layout
             QHBoxLayout* layout = new QHBoxLayout(this);
             layout->setContentsMargins(10, 5, 10, 5);
-            layout->setSpacing(20);
+            layout->setSpacing(5);
+
+            // Sim Time label
+            QLabel* simTimeTitle = new QLabel("Sim Time:", this);
+            simTimeTitle->setStyleSheet(getLabelTitleStyle());
+            layout->addWidget(simTimeTitle);
+
+            simTimeLabel_ = new QLabel("00:00", this);
+            simTimeLabel_->setStyleSheet(getLabelValueStyle());
+            layout->addWidget(simTimeLabel_);
+
+            // Add spacing
+            layout->addSpacing(10);
 
             // Game Time label
             QLabel* gameTimeTitle = new QLabel("Game Time:", this);
@@ -39,50 +53,78 @@ class GameControllerPanelHeader : public QWidget {
             layout->addWidget(gameTimeLabel_);
 
             // Add spacing
-            layout->addSpacing(30);
-
-            // Score label
-            QLabel* scoreTitle = new QLabel("Score:", this);
-            scoreTitle->setStyleSheet(getLabelTitleStyle());
-            layout->addWidget(scoreTitle);
-
-            // Red team score
-            QLabel* redLabel = new QLabel("Red", this);
-            redLabel->setStyleSheet(getTeamLabelStyle("#cc4444"));
-            layout->addWidget(redLabel);
-
-            redScoreLabel_ = new QLabel("0", this);
-            redScoreLabel_->setStyleSheet(getLabelValueStyle());
-            layout->addWidget(redScoreLabel_);
-
-            // Separator
-            QLabel* separator = new QLabel("-", this);
-            separator->setStyleSheet(getLabelValueStyle());
-            layout->addWidget(separator);
-
-            // Blue team score
-            blueScoreLabel_ = new QLabel("0", this);
-            blueScoreLabel_->setStyleSheet(getLabelValueStyle());
-            layout->addWidget(blueScoreLabel_);
-
-            QLabel* blueLabel = new QLabel("Blue", this);
-            blueLabel->setStyleSheet(getTeamLabelStyle("#4444cc"));
-            layout->addWidget(blueLabel);
-
-            // Add spacing
-            layout->addSpacing(30);
+            layout->addSpacing(10);
 
             // Game Phase label
-            QLabel* phaseTitle = new QLabel("Phase:", this);
+            QLabel* phaseTitle = new QLabel("Game Phase:", this);
             phaseTitle->setStyleSheet(getLabelTitleStyle());
             layout->addWidget(phaseTitle);
 
-            gamePhaseLabel_ = new QLabel("INITIAL", this);
+            gamePhaseLabel_ = new QLabel("Initial", this);
             gamePhaseLabel_->setStyleSheet(getLabelValueStyle());
             layout->addWidget(gamePhaseLabel_);
 
-            // Add stretch to push everything to the left
+            // Add spacing
+            layout->addSpacing(10);
+
+            QLabel* phaseTimeTitle = new QLabel("Phase Time:", this);
+            phaseTimeTitle->setStyleSheet(getLabelTitleStyle());
+            layout->addWidget(phaseTimeTitle);
+
+            gamePhaseTimeLabel_ = new QLabel("00:00", this);
+            gamePhaseTimeLabel_->setStyleSheet(getLabelValueStyle());
+            layout->addWidget(gamePhaseTimeLabel_);
+
+            // Add spacing
+            layout->addSpacing(10);
+            
+            phaseButton = new QPushButton("Ready", this);
+            phaseButton->setToolTip("Console");
+            phaseButton->setStyleSheet(getButtonStyle());
+            layout->addWidget(phaseButton);
+
+            // Add stretch to push score to the right
             layout->addStretch();
+
+            // Score container with background
+            QWidget* scoreContainer = new QWidget(this);
+            scoreContainer->setAttribute(Qt::WA_StyledBackground, true);
+            scoreContainer->setStyleSheet("QWidget { "
+                                          "  background-color: #444444; "
+                                          "  border: 1px solid #666666; "
+                                          "  border-radius: 3px; "
+                                          "}");
+
+            QHBoxLayout* scoreLayout = new QHBoxLayout(scoreContainer);
+            scoreLayout->setContentsMargins(8, 2, 8, 2);
+            scoreLayout->setSpacing(8);
+
+            // Red team score
+            QLabel* redLabel = new QLabel("Red", scoreContainer);
+            redLabel->setStyleSheet(getScoreLabelStyle("#822434"));
+            scoreLayout->addWidget(redLabel);
+
+            redScoreLabel_ = new QLabel("0", scoreContainer);
+            redScoreLabel_->setStyleSheet(getScoreLabelStyle("#ffffff"));
+            scoreLayout->addWidget(redScoreLabel_);
+
+            // Separator
+            QLabel* separator = new QLabel("-", scoreContainer);
+            separator->setStyleSheet(getScoreLabelStyle("#ffffff"));
+            scoreLayout->addWidget(separator);
+
+            // Blue team score
+            blueScoreLabel_ = new QLabel("0", scoreContainer);
+            blueScoreLabel_->setStyleSheet(getScoreLabelStyle("#ffffff"));
+            scoreLayout->addWidget(blueScoreLabel_);
+
+            QLabel* blueLabel = new QLabel("Blue", scoreContainer);
+            blueLabel->setStyleSheet(getScoreLabelStyle("#006778"));
+            scoreLayout->addWidget(blueLabel);
+
+            scoreContainer->setLayout(scoreLayout);
+            layout->addWidget(scoreContainer);
+
 
             setLayout(layout);
 
@@ -98,13 +140,21 @@ class GameControllerPanelHeader : public QWidget {
         void updateDisplay() {
             GameController& gc = GameController::instance();
 
+            // Update sim time
+            double simTime = gc.getSimTime();
+            int simTimeMinutes = static_cast<int>(simTime) / 60;
+            int simTimeSeconds = static_cast<int>(simTime) % 60;
+            simTimeLabel_->setText(QString("%1:%2")
+                                       .arg(simTimeMinutes, 2, 10, QChar('0'))
+                                       .arg(simTimeSeconds, 2, 10, QChar('0')));
+
             // Update game time
             double gameTime = gc.getGameTime();
-            int minutes = static_cast<int>(gameTime) / 60;
-            int seconds = static_cast<int>(gameTime) % 60;
+            int gameTimeMinutes = static_cast<int>(gameTime) / 60;
+            int gameTimeSeconds = static_cast<int>(gameTime) % 60;
             gameTimeLabel_->setText(QString("%1:%2")
-                                        .arg(minutes, 2, 10, QChar('0'))
-                                        .arg(seconds, 2, 10, QChar('0')));
+                                        .arg(gameTimeMinutes, 2, 10, QChar('0'))
+                                        .arg(gameTimeSeconds, 2, 10, QChar('0')));
 
             // Update score
             auto [redScore, blueScore] = gc.getScore();
@@ -120,7 +170,7 @@ class GameControllerPanelHeader : public QWidget {
         QString getLabelTitleStyle() {
             return "QLabel { "
                    "  color: #888888; "
-                   "  font-size: 12px; "
+                   "  font-size: 14px; "
                    "  background-color: transparent; "
                    "  border: none; "
                    "}";
@@ -128,7 +178,7 @@ class GameControllerPanelHeader : public QWidget {
 
         QString getLabelValueStyle() {
             return "QLabel { "
-                   "  color: #00a0b0; "
+                   "  color: #ffffffff; "
                    "  font-size: 14px; "
                    "  font-weight: bold; "
                    "  background-color: transparent; "
@@ -136,21 +186,43 @@ class GameControllerPanelHeader : public QWidget {
                    "}";
         }
 
-        QString getTeamLabelStyle(const QString& color) {
+        QString getScoreLabelStyle(const QString& color) {
             return QString("QLabel { "
                            "  color: %1; "
-                           "  font-size: 12px; "
+                           "  font-size: 16px; "
                            "  font-weight: bold; "
                            "  background-color: transparent; "
                            "  border: none; "
                            "}")
                 .arg(color);
         }
+        
+        QString getButtonStyle() {
+            return "QPushButton { "
+                   "  background-color: #444444; "
+                   "  color: white; "
+                   "  border: 1px solid #666666; "
+                   "  border-radius: 3px; "
+                   "  padding: 2px 2px 2px 2px; "
+                   "  width: 110px; "
+                   "  height: 25px; "
+                   "  font-size: 12px; "
+                   "  font-weight: bold; "
+                   "} "
+                   "QPushButton:hover { "
+                   "  background-color: #595959; "
+                   "  border: 1px solid #006778; "
+                   "} ";
+        }
 
+
+        QLabel* simTimeLabel_;
         QLabel* gameTimeLabel_;
+        QLabel* gamePhaseLabel_;
+        QLabel* gamePhaseTimeLabel_;
+        QPushButton* phaseButton;
         QLabel* redScoreLabel_;
         QLabel* blueScoreLabel_;
-        QLabel* gamePhaseLabel_;
         QTimer* updateTimer_;
 };
 
