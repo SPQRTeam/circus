@@ -67,7 +67,8 @@ class GameControllerPanelHeader : public QWidget {
 
             // Add spacing
             layout->addSpacing(10);
-
+            
+            // Phase Time label
             QLabel* phaseTimeTitle = new QLabel("Phase Time:", this);
             phaseTimeTitle->setStyleSheet(getLabelTitleStyle());
             layout->addWidget(phaseTimeTitle);
@@ -76,6 +77,32 @@ class GameControllerPanelHeader : public QWidget {
             gamePhaseTimeLabel_->setStyleSheet(getLabelValueStyle());
             layout->addWidget(gamePhaseTimeLabel_);
             
+            layout->addSpacing(10);
+
+            // SubPhase label (hidden by default)
+            subPhaseTitleLabel_ = new QLabel("Sub Phase:", this);
+            subPhaseTitleLabel_->setStyleSheet(getLabelTitleStyle());
+            subPhaseTitleLabel_->setVisible(false);
+            layout->addWidget(subPhaseTitleLabel_);
+
+            subPhaseLabel_ = new QLabel("None", this);
+            subPhaseLabel_->setStyleSheet(getLabelValueStyle());
+            subPhaseLabel_->setVisible(false);
+            layout->addWidget(subPhaseLabel_);
+
+            layout->addSpacing(10);
+
+            // SubPhase Time label (hidden by default)
+            subPhaseTimeTitleLabel_ = new QLabel("Sub Phase Time:", this);
+            subPhaseTimeTitleLabel_->setStyleSheet(getLabelTitleStyle());
+            subPhaseTimeTitleLabel_->setVisible(false);
+            layout->addWidget(subPhaseTimeTitleLabel_);
+
+            subPhaseTimeLabel_ = new QLabel("00:00", this);
+            subPhaseTimeLabel_->setStyleSheet(getLabelValueStyle());
+            subPhaseTimeLabel_->setVisible(false);
+            layout->addWidget(subPhaseTimeLabel_);
+
             // Add stretch to push score to the right
             layout->addStretch();
 
@@ -186,6 +213,30 @@ class GameControllerPanelHeader : public QWidget {
             gamePhaseTimeLabel_->setText(QString("%1:%2")
                                             .arg(phaseMinutes, 2, 10, QChar('0'))
                                             .arg(phaseSeconds, 2, 10, QChar('0')));
+
+            // Update sub-phase display (only visible when not NONESUBPHASE)
+            GameSubPhase subPhase = gc.getCurrentSubPhase();
+            bool showSubPhase = (subPhase != NONESUBPHASE);
+
+            subPhaseTitleLabel_->setVisible(showSubPhase);
+            subPhaseLabel_->setVisible(showSubPhase);
+            subPhaseTimeTitleLabel_->setVisible(showSubPhase);
+            subPhaseTimeLabel_->setVisible(showSubPhase);
+
+            if (showSubPhase) {
+                subPhaseLabel_->setText(QString::fromStdString(gameSubPhaseToString(subPhase)));
+
+                // Calculate sub-phase remaining time
+                double subPhaseElapsedTime = gc.getCurrentSubPhaseElapsedTime();
+                double subPhaseRemainingTime = gc.getSubPhaseDuration() - subPhaseElapsedTime;
+                if (subPhaseRemainingTime < 0) subPhaseRemainingTime = 0.0;
+
+                int subPhaseMinutes = static_cast<int>(subPhaseRemainingTime) / 60;
+                int subPhaseSeconds = static_cast<int>(subPhaseRemainingTime) % 60;
+                subPhaseTimeLabel_->setText(QString("%1:%2")
+                                                .arg(subPhaseMinutes, 2, 10, QChar('0'))
+                                                .arg(subPhaseSeconds, 2, 10, QChar('0')));
+            }
 
             // Update score
             auto [redScore, blueScore] = gc.getScore();
@@ -322,6 +373,10 @@ class GameControllerPanelHeader : public QWidget {
         QLabel* gameTimeLabel_;
         QLabel* gamePhaseLabel_;
         QLabel* gamePhaseTimeLabel_;
+        QLabel* subPhaseTitleLabel_;
+        QLabel* subPhaseLabel_;
+        QLabel* subPhaseTimeTitleLabel_;
+        QLabel* subPhaseTimeLabel_;
         QPushButton* phaseButton_;
         QLabel* redScoreLabel_;
         QLabel* blueScoreLabel_;

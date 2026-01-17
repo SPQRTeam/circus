@@ -3,14 +3,30 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <tuple>
 
 namespace spqr {
 
-// Helper function to convert string to lowercase
-static std::string toLower(const std::string& str) {
-    std::string result = str;
-    std::transform(result.begin(), result.end(), result.begin(), ::tolower);
-    return result;
+std::tuple<double, double> GameController::getBallPosition() const {
+    int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, "ball");
+    if (bodyId < 0) {
+        return std::make_tuple(-100.0, -100.0);
+    }
+
+    int jntadr = mujContext_->model->body_jntadr[bodyId];
+
+    // Safety checks (important)
+    if (mujContext_->model->jnt_type[jntadr] != mjJNT_FREE) {
+        return std::make_tuple(-100.0, -100.0);
+    }
+
+    int qposadr = mujContext_->model->jnt_qposadr[jntadr];
+    int qveladr = mujContext_->model->jnt_dofadr[jntadr];
+
+    return std::make_tuple(
+        mujContext_->data->qpos[qposadr + 0],
+        mujContext_->data->qpos[qposadr + 1]
+    );
 }
 
 void GameController::bindMujoco(MujocoContext* mujContext) {
@@ -45,6 +61,11 @@ std::map<std::string, std::string> GameController::availableCommands() const {
         {"set", "Set game phase to SET"},
         {"playing", "Set game phase to PLAYING"},
         {"finish", "Set game phase to FINISH"},
+        {"kickin", "Set sub-phase to KICKIN: kickin <team>"},
+        {"cornerkick", "Set sub-phase to CORNERKICK: cornerkick <team>"},
+        {"goalkick", "Set sub-phase to GOALKICK: goalkick <team>"},
+        {"penaltykick", "Set sub-phase to PENALTYKICK: penaltykick <team>"},
+        {"pushingfreekick", "Set sub-phase to PUSHINGFREEKICK: pushingfreekick <team>"},
         {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta> [m, m, deg]"},
         {"mvb", "Move ball command: mvb <x> <y> [m, m]"},
         {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_POSITION"},
@@ -74,9 +95,25 @@ std::string GameController::handleCommand(std::string command) {
         (command.rfind("finish", 0) == 0)
     ) {
         std::istringstream iss(command);
-        std::string cmd;
-        iss >> cmd;
-        return handleGamePhase(cmd);
+        std::string phase;
+        iss >> phase;
+        phase = toLower(phase);
+        return handleGamePhase(phase);
+    }
+
+    else if (command.rfind("kickoff", 0) == 0 ||
+             command.rfind("kickin", 0) == 0 ||
+             command.rfind("cornerkick", 0) == 0 ||
+             command.rfind("goalkick", 0) == 0 ||
+             command.rfind("penaltykick", 0) == 0 ||
+             command.rfind("pushingfreekick", 0) == 0
+    ) {
+        std::istringstream iss(command);
+        std::string subPhase, team;
+        iss >> subPhase >> team;
+        subPhase = toLower(subPhase);
+        team = toLower(team);
+        return handleGameSubPhase(subPhase, team);
     }
 
     else if (command.rfind("mvr", 0) == 0) {
@@ -149,7 +186,7 @@ std::string GameController::handleCommand(std::string command) {
 }
 
 std::string GameController::handleGamePhase(std::string phase) {
-    if (phase == "initial")      currentPhase_ = INITIAL;
+    if      (phase == "initial") currentPhase_ = INITIAL;
     else if (phase == "ready")   currentPhase_ = READY;
     else if (phase == "set")     currentPhase_ = SET;
     else if (phase == "playing") currentPhase_ = PLAYING;
@@ -164,11 +201,88 @@ std::string GameController::handleGamePhase(std::string phase) {
     return "Game phase changed to: " + upperPhase;
 }
 
-std::string GameController::handleMoveRobot(std::string team,
-                                            int robotId,
-                                            double x,
-                                            double y,
-                                            double theta) {
+std::string GameController::handleGameSubPhase(std::string subPhase, std::string team) {
+    
+    if(subPhase == "penaltykick" && team == "none") {
+        return "Penaltykick sub-phase requires a valid team name.";
+    }
+    if(subPhase == "pushingfreekick" && team == "none") {
+        return "Pushingfreekick sub-phase requires a valid team name.";
+    }
+    
+    if      (subPhase == "kickoff")         currentSubPhase_ = KICKOFF;
+    else if (subPhase == "kickin")          currentSubPhase_ = KICKIN;
+    else if (subPhase == "cornerkick")      currentSubPhase_ = CORNERKICK;
+    else if (subPhase == "goalkick")        currentSubPhase_ = GOALKICK;
+    else if (subPhase == "penaltykick")     currentSubPhase_ = PENALTYKICK;
+    else if (subPhase == "pushingfreekick") currentSubPhase_ = PUSHINGFREEKICK;
+    else return "Invalid game sub-phase: " + subPhase;
+
+    std::tuple<double, double> currentBallPos = getBallPosition();
+    double ballX = std::get<0>(currentBallPos);
+    double ballY = std::get<1>(currentBallPos);
+
+    // For all sub-phases except KICKOFF, if team is "none", assign to team that did not last touch the ball
+    if(currentSubPhase_ != KICKOFF && team == "none") {
+        if(lastBallContactTeam_ == "red") team = "blue";
+        else if(lastBallContactTeam_ == "blue") team = "red";
+        lastBallContactTeam_ = "none";
+    }
+    
+    // For Kickoff, the team is always the one that did not score last. If it is the first kickoff, default to red.
+    else if(currentSubPhase_ == KICKOFF) { 
+        if(lastTeamToScore_ == "red") team = "blue";
+        else team = "red";
+        lastBallContactTeam_ = "none";
+        kickOffTeam_ = team;
+    }
+        
+
+    if(currentSubPhase_ == KICKOFF){
+        handleMoveBall(0.f, 0.f);
+    }
+
+    else if(currentSubPhase_ == KICKIN) {
+        double targetY = (ballY >= 0.0) ? (fieldDimensions["height"] / 2.0) : -(fieldDimensions["height"] / 2.0);
+        std::cout << "Target Y for kickin: " << targetY << std::endl;
+        handleMoveBall(ballX, targetY);
+    }
+    
+    else if(currentSubPhase_ == CORNERKICK) {
+        // If last team to touch the ball was red -> kick off for blue -> X > 0
+        // If ball is on left side of the field -> kick off from left corner -> Y > 0
+        int signX = (team == "blue") ? -1 : 1;
+        int signY = (ballY >= 0.0) ? 1 : -1;
+        double ballTargetX = signX * fieldDimensions["width"]/2.f;
+        double ballTargetY = signY * fieldDimensions["height"]/2.f;
+        handleMoveBall(ballTargetX, ballTargetY);
+    }
+
+    else if(currentSubPhase_ == GOALKICK) {
+        // If last team to touch the ball was red -> kick off for blue -> X > 0
+        // If ball is on left side of the field -> kick off from left corner of goal area -> Y > 0
+        int signX = (team == "blue") ? 1 : -1;
+        int signY = (ballY >= 0.0) ? 1 : -1;
+        double ballTargetX = signX * (fieldDimensions["width"]/2.f - fieldDimensions["goal_area_width"]);
+        double ballTargetY = signY * fieldDimensions["goal_area_height"] / 2.0;
+        handleMoveBall(ballTargetX, ballTargetY);
+    }
+
+    else if(currentSubPhase_ == PENALTYKICK) {
+        int signX = (team == "blue") ? -1 : 1;
+        double ballTargetX = signX * (fieldDimensions["width"]/2.f - fieldDimensions["penalty_mark_distance"]); // 1 meter from the edge of the field
+        double ballTargetY = 0.0;
+        handleMoveBall(ballTargetX, ballTargetY);
+    }
+
+    else if(currentSubPhase_ == PUSHINGFREEKICK) {
+        handleMoveBall(ballX, ballY);
+    }
+
+    return "Game sub-phase changed to: " + gameSubPhaseToString(currentSubPhase_);
+}
+
+std::string GameController::handleMoveRobot(std::string team, int robotId, double x, double y, double theta) {
     // Validate position bounds
     if (!checkFieldBounds(x, y)) {
         return "Invalid position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
@@ -252,10 +366,11 @@ std::string GameController::handleMoveRobot(std::string team,
 
 
 std::string GameController::handleMoveBall(double x, double y) {
+    std::cout << "Requested move ball to (" << x << ", " << y << ")" << std::endl;
     if (!checkFieldBounds(x, y)) {
         return "Invalid ball position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
-
+    std::cout << "Moving ball to (" << x << ", " << y << ")" << std::endl;
     int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, "ball");
     if (bodyId < 0) {
         return "Error: Could not find ball body in the simulation.";
@@ -358,28 +473,60 @@ std::string GameController::handlePenalizeRobot(std::string team, int robotId, P
     return "Team '" + team + "' not found.";
 }
 
-std::string GameController::handleGoal(){
-    double ball_x = mujContext_->data->qpos[mujContext_->model->jnt_qposadr[mj_name2id(mujContext_->model, mjOBJ_JOINT, "ball_joint")] + 0];
-    double ball_y = mujContext_->data->qpos[mujContext_->model->jnt_qposadr[mj_name2id(mujContext_->model, mjOBJ_JOINT, "ball_joint")] + 1];
-    
-    // Ball Radius: 11 cm, Goal Width: 2.6 m, Field Length: 14 m, Line Width = Goal Post Widt: 8 cm
-    double field_length_half = 7.0;
-    double ball_radius = 0.11;
-    double goal_width_half = 1.3;
-    double line_width = 0.08; // Line Width = Goal Post Width   
+std::tuple<std::string, std::string> GameController::handleBallEvent(){
+    std::tuple<double, double> currentBallPos = getBallPosition();
+    double ballX =  std::get<0>(currentBallPos);
+    double ballY =  std::get<1>(currentBallPos);
 
-    double effective_goal_width_half = goal_width_half - line_width/2 - ball_radius;
-    double effective_field_length_half = field_length_half + ball_radius;
+    // Goal
+    if(ballY <= (fieldDimensions["goal_width"] / 2.0) - fieldDimensions["ball_radius"] &&  
+       ballY >= -(fieldDimensions["goal_width"] / 2.0 ) + fieldDimensions["ball_radius"]){ // Ball is inside the goal for Y coordinate
+        if(ballX >= (fieldDimensions["width"] / 2.0) + fieldDimensions["ball_radius"]) { // Goal for red
+            return std::make_tuple("kickoff", "blue");
+        }
+        else if(ballX <= -(fieldDimensions["width"] / 2.0) - fieldDimensions["ball_radius"]) { // Goal for blue
+            return std::make_tuple("kickoff", "red");
+        }
+        else {
+            return std::make_tuple("none", "none");
+        }
+    }
 
-    if(ball_y >= effective_goal_width_half || ball_y <= -effective_goal_width_half) 
-        return "None";
+    if(ballY <= (fieldDimensions["height"] / 2.0) + fieldDimensions["ball_radius"] &&
+       ballY >= (-fieldDimensions["height"] / 2.0) - fieldDimensions["ball_radius"]){ // Ball is inside the field for Y coordinate
+        
+        if(ballX >= (fieldDimensions["width"] / 2.0) + fieldDimensions["ball_radius"]) { // Ball goes out over the blue goal line
+            if(lastBallContactTeam_ == "red") {
+                return std::make_tuple("goalkick", "blue");
+            }
+            else {
+                return std::make_tuple("cornerkick", "red");
+            }
+        }
+        
+        else if(ballX <= -(fieldDimensions["width"] / 2.0) - fieldDimensions["ball_radius"]) { // Ball goes out over the red goal line
+            if(lastBallContactTeam_ == "blue") {
+                return std::make_tuple("goalkick", "red");
+            }
+            else {
+                return std::make_tuple("cornerkick", "blue");
+            }
+        }
 
-    if(ball_x >= effective_field_length_half) 
-        return "Red";
-    else if(ball_x <= -effective_field_length_half) 
-        return "Blue";
-    
-    return "None";
+    }
+
+    if(ballY > (fieldDimensions["height"] / 2.0) + fieldDimensions["ball_radius"] ||
+       ballY < (-fieldDimensions["height"] / 2.0) - fieldDimensions["ball_radius"]) { // Ball goes out over the sidelines
+        
+        if(lastBallContactTeam_ == "red") {
+            return std::make_tuple("kickin", "blue");
+        }
+        else {
+            return std::make_tuple("kickin", "red");
+        }
+    }
+
+    return std::make_tuple("none", "none");
 }
 
 
@@ -433,6 +580,7 @@ void GameController::updateBallContact() {
                 // Check if this body belongs to this robot (e.g., contains robot name)
                 if (bodyNameStr.find(robot->name) != std::string::npos) {
                     lastBallContactTeam_ = t.getTeam()->name;
+                    currentSubPhase_ = NONESUBPHASE;
                     return;
                 }
             }
@@ -447,6 +595,9 @@ void GameController::update(){
         }
         request_mjforward = false;
     }
+
+    // Update ball contact
+    updateBallContact();
 
     // Update sim time
     if (mujContext_ && mujContext_->data) {
@@ -465,6 +616,14 @@ void GameController::update(){
     if (simTime_ - lastUpdatecurrentPhaseElapsedTime_ >= 1.0) {
         currentPhaseElapsedTime_ += 1.0;
         lastUpdatecurrentPhaseElapsedTime_ = simTime_;
+    }
+
+    // Update subphase elapsed time
+    if (currentSubPhase_ != NONESUBPHASE) {
+        if (simTime_ - lastUpdateSubPhaseElapsedTime_ >= 1.0) {
+            currentSubPhaseElapsedTime_ += 1.0;
+            lastUpdateSubPhaseElapsedTime_ = simTime_;
+        }
     }
 
 
@@ -494,37 +653,51 @@ void GameController::update(){
             currentPhase_ = FINISH;
             currentPhaseElapsedTime_ = 0;
         }
+
+        if(currentSubPhase_ != NONESUBPHASE){
+            // After a set time in sub-phase, return to NONE sub-phase
+            if(subPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= subPhaseDuration_){
+                currentSubPhase_ = NONESUBPHASE;
+            }
+        }
         
         // Handle Goal
-        std::string scoringTeam = handleGoal();
-        if(scoringTeam != "None" && (simTime_ - lastUpdateScore_ >= 1.0)){
-            if(scoringTeam == "Red"){
-                int redScore, blueScore;
-                std::tie(redScore, blueScore) = getScore();
-                redScore += 1;
-                updateScore(redScore, blueScore);
-            }
-            else if(scoringTeam == "Blue"){
-                int redScore, blueScore;
-                std::tie(redScore, blueScore) = getScore();
-                blueScore += 1;
-                updateScore(redScore, blueScore);
-            }
+        std::tuple<std::string, std::string> ballEvent = handleBallEvent();
+        std::string subPhase = std::get<0>(ballEvent);
+        std::string team = std::get<1>(ballEvent);
 
-            // Reset ball position to center
-            handleMoveBall(0.0, 0.0);
-            currentPhase_ = SET; // Reset game phase to SET after a goal
-            lastUpdateScore_ = simTime_;
+        if(subPhase == "kickoff"){
+            std::string scoringTeam = team == "red" ? "blue" : "red";
+            if((simTime_ - lastUpdateScore_ >= 1.0)){
+                if(scoringTeam == "red"){
+                    int redScore, blueScore;
+                    std::tie(redScore, blueScore) = getScore();
+                    redScore += 1;
+                    updateScore(redScore, blueScore);
+                }
+                else if(scoringTeam == "blue"){
+                    int redScore, blueScore;
+                    std::tie(redScore, blueScore) = getScore();
+                    blueScore += 1;
+                    updateScore(redScore, blueScore);
+                }
+                lastTeamToScore_ = scoringTeam;
+                currentPhase_ = SET; // Reset game phase to SET after a goal
+                lastUpdateScore_ = simTime_;
+            }
         }
+
+        handleGameSubPhase(subPhase, team);
+
+
+        std::cout << "Game Phase: " << gamePhaseToString(currentPhase_) << std::endl;
+        std::cout << " -> Sub-Phase: " << gameSubPhaseToString(currentSubPhase_) << std::endl;
+        std::cout << " -> Ball Position: (" << std::get<0>(getBallPosition()) << ", " << std::get<1>(getBallPosition()) << ")" << std::endl;
+        std::cout << " -> Last Ball Contact Team: " << lastBallContactTeam_ << std::endl;
+        std::cout << " ---------------------------- " << std::endl;
     }
-
-    // Update ball contact
-    updateBallContact();
-    std::cout << "Last Ball Contact Team: " << lastBallContactTeam_ << std::endl;
 }
 
-bool GameController::checkFieldBounds(double x, double y) {
-    return (x > minX && x < maxX && y > minY && y < maxY);
-}
+
 
 }  // namespace spqr
