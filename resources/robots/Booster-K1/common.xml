@@ -22,7 +22,7 @@
     <mesh name="Booster-K1_Right_Hip_Yaw" file="Booster-K1/Right_Hip_Yaw.STL"/>
     <mesh name="Booster-K1_Right_Shank" file="Booster-K1/Right_Shank.STL"/>
     <mesh name="Booster-K1_Right_Ankle_Cross" file="Booster-K1/Right_Ankle_Cross.STL"/>
-    <mesh name="Booster-K1_Right_Foot" file="Booster-K1/Right_Foot.STL"/> 
+    <mesh name="Booster-K1_Right_Foot" file="Booster-K1/Right_Foot.STL"/>
 
     <!-- Loading numbers -->
     <mesh name="Booster-K1_num_1" file="../meshes/numbers/1.obj" scale="0.3 0.3 0.3"/>

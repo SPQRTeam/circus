@@ -13,8 +13,7 @@ class TeamWidget : public QWidget {
         Q_OBJECT
 
     public:
-        TeamWidget(std::string teamName, QWidget* parent = nullptr)
-            : teamName_(teamName), QWidget(parent) {
+        TeamWidget(std::string teamName, QWidget* parent = nullptr) : teamName_(teamName), QWidget(parent) {
             setAttribute(Qt::WA_StyledBackground, true);
             setStyleSheet("QWidget { "
                           "  background-color: #0a0a0a; "

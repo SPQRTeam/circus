@@ -6,52 +6,72 @@
 #include <tuple>
 
 #include "MujocoContext.h"
-#include "robots/Robot.h"
 #include "Team.h"
+#include "robots/Robot.h"
 
 namespace spqr {
 
 enum GamePhase { INITIAL, READY, SET, PLAYING, FINISH };
 inline std::string gamePhaseToString(GamePhase phase) {
     switch (phase) {
-        case INITIAL: return "INITIAL";
-        case READY: return "READY";
-        case SET: return "SET";
-        case PLAYING: return "PLAYING";
-        case FINISH: return "FINISH";
-        default: return "UNKNOWN_PHASE";
+        case INITIAL:
+            return "INITIAL";
+        case READY:
+            return "READY";
+        case SET:
+            return "SET";
+        case PLAYING:
+            return "PLAYING";
+        case FINISH:
+            return "FINISH";
+        default:
+            return "UNKNOWN_PHASE";
     }
 }
 
 enum GameSubPhase { BALLFREE, KICKOFF, KICKIN, CORNERKICK, GOALKICK, PENALTYKICK, PUSHINGFREEKICK };
 inline std::string gameSubPhaseToString(GameSubPhase subPhase) {
     switch (subPhase) {
-        case BALLFREE: return "BALLFREE";
-        case KICKOFF: return "KICKOFF";
-        case KICKIN: return "KICKIN";
-        case CORNERKICK: return "CORNERKICK";
-        case GOALKICK: return "GOALKICK";
-        case PENALTYKICK: return "PENALTYKICK";
-        case PUSHINGFREEKICK: return "PUSHINGFREEKICK";
-        default: return "UNKNOWN_SUBPHASE";
+        case BALLFREE:
+            return "BALLFREE";
+        case KICKOFF:
+            return "KICKOFF";
+        case KICKIN:
+            return "KICKIN";
+        case CORNERKICK:
+            return "CORNERKICK";
+        case GOALKICK:
+            return "GOALKICK";
+        case PENALTYKICK:
+            return "PENALTYKICK";
+        case PUSHINGFREEKICK:
+            return "PUSHINGFREEKICK";
+        default:
+            return "UNKNOWN_SUBPHASE";
     }
 }
 
 enum Penalty { NONE_PENALTY, LEAVING_THE_FIELD, PUSHING, FOUL, ILLEGAL_POSITION };
 inline std::string penaltyToString(Penalty penalty) {
     switch (penalty) {
-        case NONE_PENALTY: return "NONE_PENALTY";
-        case LEAVING_THE_FIELD: return "LEAVING_THE_FIELD";
-        case PUSHING: return "PUSHING";
-        case FOUL: return "FOUL";
-        case ILLEGAL_POSITION: return "ILLEGAL_POSITION";
-        default: return "UNKNOWN_PENALTY";
+        case NONE_PENALTY:
+            return "NONE_PENALTY";
+        case LEAVING_THE_FIELD:
+            return "LEAVING_THE_FIELD";
+        case PUSHING:
+            return "PUSHING";
+        case FOUL:
+            return "FOUL";
+        case ILLEGAL_POSITION:
+            return "ILLEGAL_POSITION";
+        default:
+            return "UNKNOWN_PENALTY";
     }
 }
 
 class RobotInGame {
     public:
-        RobotInGame(std::shared_ptr<Robot> robot) : robot_(robot) {};
+        RobotInGame(std::shared_ptr<Robot> robot) : robot_(robot){};
         ~RobotInGame() = default;
 
         std::shared_ptr<Robot> getRobot() const {
@@ -77,7 +97,7 @@ class RobotInGame {
 
 class TeamInGame {
     public:
-        TeamInGame(std::shared_ptr<Team> team) : team_(team) {};
+        TeamInGame(std::shared_ptr<Team> team) : team_(team){};
         ~TeamInGame() = default;
 
         std::shared_ptr<Team> getTeam() const {
@@ -87,7 +107,7 @@ class TeamInGame {
         void addRobotInGame(RobotInGame rig) {
             robotsInGame_.emplace_back(rig);
         }
-        
+
         RobotInGame* getRobotInGame(int robotId) {
             for (RobotInGame& rig : robotsInGame_) {
                 if (rig.getRobot()->number == robotId) {
@@ -114,7 +134,6 @@ class TeamInGame {
         std::vector<RobotInGame> robotsInGame_;
         int score_ = 0;
 };
-
 
 class GameController {
     public:
@@ -151,7 +170,7 @@ class GameController {
 
         int getInitialPhaseDuration() const {
             return initialPhaseDuration_;
-        }   
+        }
         int getReadyPhaseDuration() const {
             return readyPhaseDuration_;
         }
@@ -188,7 +207,7 @@ class GameController {
         }
 
         std::map<std::string, std::string> availableCommands() const;
-        bool isCommandValid(const std::string &command) const;
+        bool isCommandValid(const std::string& command) const;
         std::string handleCommand(std::string command);
         std::string handleGamePhase(std::string phase);
         std::string handleGameSubPhase(std::string subPhase, std::string team);
@@ -209,54 +228,54 @@ class GameController {
         GameController(const GameController&) = delete;
         GameController& operator=(const GameController&) = delete;
 
-        MujocoContext *mujContext_ = nullptr;
+        MujocoContext* mujContext_ = nullptr;
         std::vector<TeamInGame> teamsInGame_;
 
-        double simTime_ = 0.0;                           // Simulation time in seconds
-        double gameTime_ = 0.0;                          // Game time in seconds
-        double lastUpdateGameTime_ = 0.0;                // Sim time of last game time update
-        double lastUpdateScore_ = 0.0;                   // Sim time of last score update
-        
-        GamePhase currentPhase_ = INITIAL;               // Current game phase
-        int initialPhaseDuration_ = 30;                  // seconds
-        int readyPhaseDuration_ = 45;                    // seconds
-        int setPhaseDuration_ = 15;                      // seconds
-        int playingPhaseDuration_ = 600;                 // seconds  (10 minutes)
-        double currentPhaseElapsedTime_ = 0.0;           // seconds
-        double lastUpdatecurrentPhaseElapsedTime_ = 0.0; // Sim time of last phase elapsed time update
+        double simTime_ = 0.0;             // Simulation time in seconds
+        double gameTime_ = 0.0;            // Game time in seconds
+        double lastUpdateGameTime_ = 0.0;  // Sim time of last game time update
+        double lastUpdateScore_ = 0.0;     // Sim time of last score update
 
-        GameSubPhase currentSubPhase_ = BALLFREE;        // Current game sub-phase
-        int kickOffSubPhaseDuration_ = 10;               // seconds -> after this time, sub-phase returns to BALLFREE
-        int subPhaseDuration_ = 30;                      // seconds -> duration for other sub-phases differing from KICKOFF
-        double currentSubPhaseElapsedTime_ = 0.0;        // seconds
-        double lastUpdateSubPhaseElapsedTime_ = 0.0;     // Sim time of last sub-phase elapsed time update
-        std::string currentSubPhaseTeam_ = "none";       // Team associated with current sub-phase
+        GamePhase currentPhase_ = INITIAL;                // Current game phase
+        int initialPhaseDuration_ = 30;                   // seconds
+        int readyPhaseDuration_ = 45;                     // seconds
+        int setPhaseDuration_ = 15;                       // seconds
+        int playingPhaseDuration_ = 600;                  // seconds  (10 minutes)
+        double currentPhaseElapsedTime_ = 0.0;            // seconds
+        double lastUpdatecurrentPhaseElapsedTime_ = 0.0;  // Sim time of last phase elapsed time update
 
-        std::string lastTeamToScore_ = "none";           // Last team to score <"red", "blue", "none">
-        std::string lastBallContactTeam_ = "none";       // Last team to contact the ball <"red", "blue", "none">
-        std::string kickOffTeam_ = "red";                // Team to kickoff <"red", "blue"> (example: CornerKick FOR red)
+        GameSubPhase currentSubPhase_ = BALLFREE;     // Current game sub-phase
+        int kickOffSubPhaseDuration_ = 10;            // seconds -> after this time, sub-phase returns to BALLFREE
+        int subPhaseDuration_ = 30;                   // seconds -> duration for other sub-phases differing from KICKOFF
+        double currentSubPhaseElapsedTime_ = 0.0;     // seconds
+        double lastUpdateSubPhaseElapsedTime_ = 0.0;  // Sim time of last sub-phase elapsed time update
+        std::string currentSubPhaseTeam_ = "none";    // Team associated with current sub-phase
 
-        bool request_mjforward = false;                  // Flag to request mj_forward() call in update()
+        std::string lastTeamToScore_ = "none";      // Last team to score <"red", "blue", "none">
+        std::string lastBallContactTeam_ = "none";  // Last team to contact the ball <"red", "blue", "none">
+        std::string kickOffTeam_ = "red";           // Team to kickoff <"red", "blue"> (example: CornerKick FOR red)
+
+        bool request_mjforward = false;  // Flag to request mj_forward() call in update()
 
         std::map<std::string, float> fieldDimensions = {
-            {"width", 14.0f},  // x dimension
-            {"height", 9.0f},   // y dimension
-            {"center_radius", 1.5f}, // center circle radius
-            {"goal_area_width", 1.0f}, // goal area width
-            {"goal_area_height", 4.0f}, // goal area height
-            {"penalty_area_width", 3.0f}, // penalty area width
-            {"penalty_area_height", 6.5f},   // penalty area width
-            {"goal_width", 2.6f}, // goal width
-            {"goal_height", 1.8f}, // goal height
-            {"goal_depth", 0.6f}, // goal depth
-            {"line_width", 0.08f}, // line thickness
+            {"width", 14.0f},                 // x dimension
+            {"height", 9.0f},                 // y dimension
+            {"center_radius", 1.5f},          // center circle radius
+            {"goal_area_width", 1.0f},        // goal area width
+            {"goal_area_height", 4.0f},       // goal area height
+            {"penalty_area_width", 3.0f},     // penalty area width
+            {"penalty_area_height", 6.5f},    // penalty area width
+            {"goal_width", 2.6f},             // goal width
+            {"goal_height", 1.8f},            // goal height
+            {"goal_depth", 0.6f},             // goal depth
+            {"line_width", 0.08f},            // line thickness
             {"penalty_mark_distance", 2.1f},  // distance of penalty mark from goal line"
-            {"ball_radius", 0.11f}  // ball radius
+            {"ball_radius", 0.11f}            // ball radius
         };
 
         bool checkFieldBounds(double x, double y) {
-            return (x >= -fieldDimensions["width"]/2 && x <= fieldDimensions["width"]/2 &&
-                    y >= -fieldDimensions["height"]/2 && y <= fieldDimensions["height"]/2);
+            return (x >= -fieldDimensions["width"] / 2 && x <= fieldDimensions["width"] / 2 && y >= -fieldDimensions["height"] / 2
+                    && y <= fieldDimensions["height"] / 2);
         }
 
         static std::string toLower(const std::string& str) {

@@ -1,11 +1,12 @@
 #pragma once
 
 #include <qlabel.h>
+
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QTimer>
 #include <QWidget>
-#include <QPushButton>
 #include <iostream>
 
 #include "GameController.h"
@@ -154,7 +155,6 @@ class GameControllerPanelHeader : public QWidget {
             scoreContainer->setLayout(scoreLayout);
             layout->addWidget(scoreContainer);
 
-
             setLayout(layout);
 
             // Setup timer for periodic updates
@@ -173,19 +173,16 @@ class GameControllerPanelHeader : public QWidget {
             double simTime = gc.getSimTime();
             int simTimeMinutes = static_cast<int>(simTime) / 60;
             int simTimeSeconds = static_cast<int>(simTime) % 60;
-            simTimeLabel_->setText(QString("%1:%2")
-                                       .arg(simTimeMinutes, 2, 10, QChar('0'))
-                                       .arg(simTimeSeconds, 2, 10, QChar('0')));
+            simTimeLabel_->setText(QString("%1:%2").arg(simTimeMinutes, 2, 10, QChar('0')).arg(simTimeSeconds, 2, 10, QChar('0')));
 
             // Update game time (countdown from playing duration to 0)
             double gameTime = gc.getGameTime();
             double gameRemainingTime = gc.getPlayingPhaseDuration() - gameTime;
-            if (gameRemainingTime < 0) gameRemainingTime = 0.0;
+            if (gameRemainingTime < 0)
+                gameRemainingTime = 0.0;
             int gameTimeMinutes = static_cast<int>(gameRemainingTime) / 60;
             int gameTimeSeconds = static_cast<int>(gameRemainingTime) % 60;
-            gameTimeLabel_->setText(QString("%1:%2")
-                                        .arg(gameTimeMinutes, 2, 10, QChar('0'))
-                                        .arg(gameTimeSeconds, 2, 10, QChar('0')));
+            gameTimeLabel_->setText(QString("%1:%2").arg(gameTimeMinutes, 2, 10, QChar('0')).arg(gameTimeSeconds, 2, 10, QChar('0')));
 
             // Update current phase time (remaining time counting down)
             GamePhase phase = gc.getCurrentPhase();
@@ -216,13 +213,12 @@ class GameControllerPanelHeader : public QWidget {
                 }
 
                 // Ensure remaining time is not negative
-                if (phaseRemainingTime < 0) phaseRemainingTime = 0.0;
+                if (phaseRemainingTime < 0)
+                    phaseRemainingTime = 0.0;
 
                 int phaseMinutes = static_cast<int>(phaseRemainingTime) / 60;
                 int phaseSeconds = static_cast<int>(phaseRemainingTime) % 60;
-                gamePhaseTimeLabel_->setText(QString("%1:%2")
-                                                .arg(phaseMinutes, 2, 10, QChar('0'))
-                                                .arg(phaseSeconds, 2, 10, QChar('0')));
+                gamePhaseTimeLabel_->setText(QString("%1:%2").arg(phaseMinutes, 2, 10, QChar('0')).arg(phaseSeconds, 2, 10, QChar('0')));
             }
 
             // Update sub-phase display (only visible when not BALLFREE)
@@ -251,13 +247,12 @@ class GameControllerPanelHeader : public QWidget {
                 double subPhaseElapsedTime = gc.getCurrentSubPhaseElapsedTime();
                 double subPhaseDuration = (subPhase == KICKOFF) ? gc.getKickOffSubPhaseDuration() : gc.getSubPhaseDuration();
                 double subPhaseRemainingTime = subPhaseDuration - subPhaseElapsedTime;
-                if (subPhaseRemainingTime < 0) subPhaseRemainingTime = 0.0;
+                if (subPhaseRemainingTime < 0)
+                    subPhaseRemainingTime = 0.0;
 
                 int subPhaseMinutes = static_cast<int>(subPhaseRemainingTime) / 60;
                 int subPhaseSeconds = static_cast<int>(subPhaseRemainingTime) % 60;
-                subPhaseTimeLabel_->setText(QString("%1:%2")
-                                                .arg(subPhaseMinutes, 2, 10, QChar('0'))
-                                                .arg(subPhaseSeconds, 2, 10, QChar('0')));
+                subPhaseTimeLabel_->setText(QString("%1:%2").arg(subPhaseMinutes, 2, 10, QChar('0')).arg(subPhaseSeconds, 2, 10, QChar('0')));
             }
 
             // Update score
@@ -342,7 +337,8 @@ class GameControllerPanelHeader : public QWidget {
                            "  font-weight: bold; "
                            "  background-color: transparent; "
                            "  border: none; "
-                           "}").arg(color);
+                           "}")
+                .arg(color);
         }
 
         QString getScoreLabelStyle(const QString& color) {
@@ -352,42 +348,43 @@ class GameControllerPanelHeader : public QWidget {
                            "  font-weight: bold; "
                            "  background-color: transparent; "
                            "  border: none; "
-                           "}").arg(color);
+                           "}")
+                .arg(color);
         }
-        
-        QString getButtonStyle(bool enabled=true) {
-            if(enabled) 
+
+        QString getButtonStyle(bool enabled = true) {
+            if (enabled)
                 return "QPushButton { "
-                    "  background-color: #444444; "
-                    "  color: white; "
-                    "  border: 1px solid #666666; "
-                    "  border-radius: 3px; "
-                    "  padding: 2px 2px 2px 2px; "
-                    "  width: 110px; "
-                    "  height: 25px; "
-                    "  font-size: 12px; "
-                    "  font-weight: bold; "
-                    "} "
-                    "QPushButton:hover { "
-                    "  background-color: #595959; "
-                    "  border: 1px solid #006778; "
-                    "} ";
+                       "  background-color: #444444; "
+                       "  color: white; "
+                       "  border: 1px solid #666666; "
+                       "  border-radius: 3px; "
+                       "  padding: 2px 2px 2px 2px; "
+                       "  width: 110px; "
+                       "  height: 25px; "
+                       "  font-size: 12px; "
+                       "  font-weight: bold; "
+                       "} "
+                       "QPushButton:hover { "
+                       "  background-color: #595959; "
+                       "  border: 1px solid #006778; "
+                       "} ";
             else
                 return "QPushButton { "
-                    "  background-color: #666666; "
-                    "  color: #909090; "
-                    "  border: 1px solid #666666; "
-                    "  border-radius: 3px; "
-                    "  padding: 2px 2px 2px 2px; "
-                    "  width: 110px; "
-                    "  height: 25px; "
-                    "  font-size: 12px; "
-                    "  font-weight: bold; "
-                    "} "
-                    "QPushButton:hover { "
-                    "  background-color: #595959; "
-                    "  border: 1px solid #006778; "
-                    "} ";
+                       "  background-color: #666666; "
+                       "  color: #909090; "
+                       "  border: 1px solid #666666; "
+                       "  border-radius: 3px; "
+                       "  padding: 2px 2px 2px 2px; "
+                       "  width: 110px; "
+                       "  height: 25px; "
+                       "  font-size: 12px; "
+                       "  font-weight: bold; "
+                       "} "
+                       "QPushButton:hover { "
+                       "  background-color: #595959; "
+                       "  border: 1px solid #006778; "
+                       "} ";
         }
 
         QLabel* simTimeLabel_;

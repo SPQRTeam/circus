@@ -19,7 +19,7 @@
             <geom size="0.09 0.09" pos="0.055 0.022 0.1" type="capsule" quat="0.997189 -0.074930 0 0" class="collision" name="torso_left"/>
             <geom size="0.09 0.09" pos="0.055 -0.022 0.1" type="capsule" quat="0.997189 0.074930 0 0" class="collision" name="torso_right"/>
             <site name="imu" pos="0 0 0"/>
-            
+
             <!-- Head 1 -->
             <body name="H1" pos="0.0625 0 0.243">
                 <inertial pos="-0.000508 -0.001403 0.057432" quat="0.763881 -0.0132172 0.00173419 0.645219" mass="0.44391" diaginertia="0.000241549 0.00022351 0.000149941"/>

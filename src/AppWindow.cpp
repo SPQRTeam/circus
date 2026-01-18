@@ -51,7 +51,6 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     contentWidget->setLayout(contentLayout);
     mainLayout->addWidget(contentWidget);
 
-
     if (!scenePath) {
         viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
         viewportPlaceholder->setAlignment(Qt::AlignCenter);
