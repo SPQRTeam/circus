@@ -86,17 +86,34 @@ class RobotInGame {
         void setPenalized(Penalty penalty, int gameTimeWhenPenalized) {
             isPenalized_ = (penalty != NONE_PENALTY);
             currentPenalty_ = penalty;
-            timeOfLastPenalty_ = (isPenalized_) ? gameTimeWhenPenalized : -1;
+            gameTimeWhenPenalized_ = (isPenalized_) ? gameTimeWhenPenalized : -1;
         }
 
         Penalty getPenalty() const {
             return currentPenalty_;
         }
 
+        bool getIsPenalized() const {
+            return isPenalized_;
+        }
+
+        double getPenalizationElapsedTime(int currentGameTime) const {
+            if (isPenalized_ && gameTimeWhenPenalized_ >= 0) {
+                return currentGameTime - gameTimeWhenPenalized_;
+            } 
+            else {
+                return 0.0;
+            }
+        }
+
+        double getGameTimeWhenPenalized() const {
+            return gameTimeWhenPenalized_;
+        }
+
     private:
         std::shared_ptr<Robot> robot_;
         bool isPenalized_ = false;
-        int timeOfLastPenalty_ = -1;
+        double gameTimeWhenPenalized_ = -1;
         Penalty currentPenalty_ = NONE_PENALTY;
 };
 
@@ -221,7 +238,7 @@ class GameController {
         std::string handleCommand(std::string command);
         std::string handleGamePhase(std::string phase);
         std::string handleGameSubPhase(std::string subPhase, std::string team);
-        std::string handleMoveRobot(std::string team, int robotId, double x, double y, double theta);
+        std::string handleMoveRobot(std::string team, int robotId, double x, double y, double theta, bool checkBounds=true);
         std::string handleMoveBall(double x, double y);
         std::string handlePenalizeRobot(std::string team, int robotId, Penalty penalty);
         std::tuple<std::string, std::string> handleBallEvent();
@@ -268,6 +285,8 @@ class GameController {
         std::string lastTeamToScore_ = "none";      // Last team to score <"red", "blue", "none">
         std::string lastBallContactTeam_ = "none";  // Last team to contact the ball <"red", "blue", "none">
         std::string kickOffTeam_ = "red";           // Team to kickoff <"red", "blue"> (example: CornerKick FOR red)
+
+        int penaltyDuration_ = 45;  // seconds
 
         bool request_mjforward = false;  // Flag to request mj_forward() call in update()
 

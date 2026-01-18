@@ -75,6 +75,7 @@ SceneParser::SceneParser(const string& yamlPath) {
         scene.simulationConfig.game.kickoff_subphase_duration = gameNode["kickoff_subphase_duration"].as<int>(10);
         scene.simulationConfig.game.other_subphase_duration = gameNode["other_subphase_duration"].as<int>(30);
         scene.simulationConfig.game.first_kickoff_team = gameNode["first_kickoff_team"].as<string>("red");
+        scene.simulationConfig.game.penalty_duration = gameNode["penalty_duration"].as<int>(45);
     }
 
     if (sceneRoot["ball"] && sceneRoot["ball"]["position"]) {

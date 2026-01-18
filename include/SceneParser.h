@@ -54,6 +54,7 @@ struct GameConfig {
         int kickoff_subphase_duration = 10;
         int other_subphase_duration = 30;
         std::string first_kickoff_team = "red";
+        int penalty_duration = 45;
 };
 
 struct SimulationConfig {

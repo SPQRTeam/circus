@@ -75,6 +75,8 @@ void GameController::configure(const SimulationConfig& config) {
     gameStateLogging_ = config.game.game_state_logging;
     gameStateLoggingPath_ = config.game.game_state_logging_path;
     gameStateLoggingInterval_ = config.game.game_state_logging_interval;
+
+    penaltyDuration_ = config.game.penalty_duration;
 }
 
 void GameController::reset() {
@@ -343,9 +345,9 @@ std::string GameController::handleGameSubPhase(std::string subPhase, std::string
     return "Game sub-phase changed to: " + gameSubPhaseToString(currentSubPhase_);
 }
 
-std::string GameController::handleMoveRobot(std::string team, int robotId, double x, double y, double theta) {
+std::string GameController::handleMoveRobot(std::string team, int robotId, double x, double y, double theta, bool checkBounds) {
     // Validate position bounds
-    if (!checkFieldBounds(x, y)) {
+    if (checkBounds && !checkFieldBounds(x, y)) {
         return "Invalid position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
 
@@ -481,16 +483,15 @@ std::string GameController::handlePenalizeRobot(std::string team, int robotId, P
             if (penalty == NONE_PENALTY) {
                 // Red robots go in: redTeamInitialPenalization_x, redTeamPenalization_y - 0.5, -90
                 // Blue robots go in: blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90
-
                 if (team == "red") {
-                    handleMoveRobot(team, robotId, redTeamInitialPenalization_x, redTeamPenalization_y - 0.5, -90);
+                    handleMoveRobot(team, robotId, redTeamInitialPenalization_x, redTeamPenalization_y - 0.5, -90, false);
                 } else if (team == "blue") {
-                    handleMoveRobot(team, robotId, blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90);
+                    handleMoveRobot(team, robotId, blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90, false);
                 }
-            } else {
+            } 
+            else {
                 // Red robots go in: redTeamInitialPenalization_x + n*offset, redTeamPenalization_y, 90
                 // Blue robots go in: blueTeamInitialPenalization_x - n*offset, blueTeamPenalization_y, -90
-
                 int penalizedCount = 0;
                 for (const RobotInGame& other_rig : t.getRobotsInGame()) {
                     if (other_rig.getRobot()->number == robotId)
@@ -503,10 +504,10 @@ std::string GameController::handlePenalizeRobot(std::string team, int robotId, P
 
                 if (team == "red") {
                     double penalization_x = redTeamInitialPenalization_x + penalizedCount * penalizationOffset;
-                    handleMoveRobot(team, robotId, penalization_x, redTeamPenalization_y, 90);
+                    handleMoveRobot(team, robotId, penalization_x, redTeamPenalization_y, 90, false);
                 } else if (team == "blue") {
                     double penalization_x = blueTeamInitialPenalization_x - penalizedCount * penalizationOffset;
-                    handleMoveRobot(team, robotId, penalization_x, blueTeamPenalization_y, -90);
+                    handleMoveRobot(team, robotId, penalization_x, blueTeamPenalization_y, -90, false);
                 }
             }
 
@@ -687,25 +688,40 @@ void GameController::update() {
         }
     }
 
+    // Update robot penalizations
+    for (TeamInGame& team : teamsInGame_) {
+        for (RobotInGame& robot : team.getRobotsInGame()) {
+            if (robot.getPenalty() != NONE_PENALTY) {
+                double penalizationTime = gameElapsedTime_ - robot.getGameTimeWhenPenalized();
+                if (penalizationTime >= penaltyDuration_) {
+                    handlePenalizeRobot(team.getTeam()->name, robot.getRobot()->number, NONE_PENALTY);
+                }
+            }
+        }
+    }
+
     if (currentPhase_ == INITIAL) {
         // Transition to READY phase after initialPhaseDuration_
         if (initialPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= initialPhaseDuration_) {
             currentPhase_ = READY;
             currentPhaseElapsedTime_ = 0;
         }
-    } else if (currentPhase_ == READY) {
+    } 
+    else if (currentPhase_ == READY) {
         // Transition to SET phase after readyPhaseDuration_
         if (readyPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= readyPhaseDuration_) {
             currentPhase_ = SET;
             currentPhaseElapsedTime_ = 0;
         }
-    } else if (currentPhase_ == SET) {
+    } 
+    else if (currentPhase_ == SET) {
         // Transition to PLAYING phase after setPhaseDuration_
         if (setPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= setPhaseDuration_) {
             currentPhase_ = PLAYING;
             currentPhaseElapsedTime_ = 0;
         }
-    } else if (currentPhase_ == PLAYING) {
+    } 
+    else if (currentPhase_ == PLAYING) {
         if (gameDuration_ > 0 && currentPhaseElapsedTime_ >= gameDuration_) {
             currentPhase_ = FINISH;
             currentPhaseElapsedTime_ = 0;
@@ -800,7 +816,9 @@ void GameController::logGameState() const {
         for (const RobotInGame& robot : team.getRobotsInGame()) {
             logFile << " - Robot " << team.getTeam()->name << "-" << static_cast<int>(robot.getRobot()->number) << std::endl;
             logFile << "   - Penalty: " << penaltyToString(robot.getPenalty()) << std::endl;
-        }
+            logFile << "   - GameTimeWhenPenalized: " << robot.getGameTimeWhenPenalized() << std::endl;
+            logFile << "   - PenalizationElapsedTime: " << robot.getPenalizationElapsedTime(gameElapsedTime_) << std::endl;
+         }
     }
 
     logFile << std::endl;
