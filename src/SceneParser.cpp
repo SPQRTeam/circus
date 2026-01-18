@@ -308,10 +308,28 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
                         } else {
                             geom.append_attribute("rgba") = rgbaStream.str().c_str();
                         }
-                        foundTrunk = true;
-                        break;  // Only set the first visual geom in Trunk
                     }
                 }
+
+                // Hide number geometries that don't match the robot's number
+                std::string correctNumName = robotSpec->name + "_num_" + std::to_string(robotSpec->number);
+                for (xml_node geom : current.children("geom")) {
+                    std::string geomName = geom.attribute("name").value();
+                    // Check if this is a number geom (starts with robotName_num_)
+                    std::string numPrefix = robotSpec->name + "_num_";
+                    if (geomName.rfind(numPrefix, 0) == 0) {
+                        if (geomName != correctNumName) {
+                            // Hide this number by setting alpha to 0
+                            xml_attribute rgbaAttr = geom.attribute("rgba");
+                            if (rgbaAttr) {
+                                rgbaAttr.set_value("1 1 1 0");
+                            } else {
+                                geom.append_attribute("rgba") = "1 1 1 0";
+                            }
+                        }
+                    }
+                }
+                foundTrunk = true;
             }
         }
 

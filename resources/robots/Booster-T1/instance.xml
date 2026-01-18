@@ -4,11 +4,22 @@
         <!-- Trunk -->
         <body name="Trunk" pos="0 0 1.68">
             <freejoint/>
+
+            <geom name="num_1" type="mesh" mesh="Booster-T1_num_1" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_2" type="mesh" mesh="Booster-T1_num_2" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_3" type="mesh" mesh="Booster-T1_num_3" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_4" type="mesh" mesh="Booster-T1_num_4" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_5" type="mesh" mesh="Booster-T1_num_5" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_6" type="mesh" mesh="Booster-T1_num_6" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_7" type="mesh" mesh="Booster-T1_num_7" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_8" type="mesh" mesh="Booster-T1_num_8" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+            <geom name="num_9" type="mesh" mesh="Booster-T1_num_9" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
+
             <geom class="visual" material="metal" mesh="Booster-T1_Trunk"/>
             <geom size="0.09 0.09" pos="0.055 0.022 0.1" type="capsule" quat="0.997189 -0.074930 0 0" class="collision" name="torso_left"/>
             <geom size="0.09 0.09" pos="0.055 -0.022 0.1" type="capsule" quat="0.997189 0.074930 0 0" class="collision" name="torso_right"/>
             <site name="imu" pos="0 0 0"/>
-
+            
             <!-- Head 1 -->
             <body name="H1" pos="0.0625 0 0.243">
                 <inertial pos="-0.000508 -0.001403 0.057432" quat="0.763881 -0.0132172 0.00173419 0.645219" mass="0.44391" diaginertia="0.000241549 0.00022351 0.000149941"/>

@@ -22,6 +22,17 @@
     <mesh name="Booster-K1_Right_Hip_Yaw" file="Booster-K1/Right_Hip_Yaw.STL"/>
     <mesh name="Booster-K1_Right_Shank" file="Booster-K1/Right_Shank.STL"/>
     <mesh name="Booster-K1_Right_Ankle_Cross" file="Booster-K1/Right_Ankle_Cross.STL"/>
-    <mesh name="Booster-K1_Right_Foot" file="Booster-K1/Right_Foot.STL"/>
+    <mesh name="Booster-K1_Right_Foot" file="Booster-K1/Right_Foot.STL"/> 
+
+    <!-- Loading numbers -->
+    <mesh name="Booster-K1_num_1" file="../meshes/numbers/1.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_2" file="../meshes/numbers/2.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_3" file="../meshes/numbers/3.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_4" file="../meshes/numbers/4.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_5" file="../meshes/numbers/5.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_6" file="../meshes/numbers/6.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_7" file="../meshes/numbers/7.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_8" file="../meshes/numbers/8.obj" scale="0.3 0.3 0.3"/>
+    <mesh name="Booster-K1_num_9" file="../meshes/numbers/9.obj" scale="0.3 0.3 0.3"/>
   </asset>
 </mujoco>
