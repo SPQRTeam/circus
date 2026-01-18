@@ -1,6 +1,7 @@
 #include "SimulationViewport.h"
 
 #include <mujoco/mjvisualize.h>
+#include <qevent.h>
 #include <qnamespace.h>
 #include <qpoint.h>
 
@@ -108,7 +109,7 @@ void SimulationViewport::paintGL() {
 }
 
 void SimulationViewport::wheelEvent(QWheelEvent* event) {
-    mjv_moveCamera(model, mjMOUSE_ZOOM, 0, -0.0005 * event->angleDelta().y(), scene, cam);
+    mjv_moveCamera(model, mjMOUSE_ZOOM, 0, 0.0005 * event->angleDelta().y(), scene, cam);
 }
 
 void SimulationViewport::mousePressEvent(QMouseEvent* event) {
@@ -132,13 +133,15 @@ void SimulationViewport::mousePressEvent(QMouseEvent* event) {
                 pert.active = mjPERT_TRANSLATE;
                 mouseAction = mjMOUSE_MOVE_H;  // use horizontal-plane move when moving
             }
+        } else {  // i.e. selected_body < 0
+            if (event->modifiers() & Qt::ShiftModifier) {
+                mouseAction = mjMOUSE_ROTATE_V;
+            } else {
+                mouseAction = mjMOUSE_MOVE_H;
+            }
         }
-
-        if (event->modifiers() & Qt::ShiftModifier) {
-            mouseAction = mjMOUSE_ROTATE_V;
-        } else {
-            mouseAction = mjMOUSE_MOVE_H;
-        }
+    } else if (event->button() == Qt::MiddleButton) {
+        mouseAction = mjMOUSE_ROTATE_V;
     }
 }
 
@@ -168,7 +171,8 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
             mju_mulQuat(pert.refquat, qz, pert.refquat);
-        } else if (mouseAction == mjMOUSE_MOVE_H) {
+        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V
+                   || mouseAction == mjMOUSE_ROTATE_H) {
             mjv_movePerturb(model, data, mouseAction, reldx, reldy, scene, &pert);
         }
         mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);

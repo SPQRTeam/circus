@@ -1,4 +1,6 @@
-image: ubuntu:22.04
+# advice: NO FINAL SLASH in the path_constants paths.
+
+image: spqr:booster
 volumes:
-  - "/home/daniaffch/Dev/spqrbooster2026/src/SimBridge/bridge/build:/app/BridgeSubscriber"
-  - "/home/daniaffch/Dev/spqrbooster2026/src/SimBridge/fake_framework/build:/app/fake_framework"
+  - "<simbridge>/tools/booster_motion:/app/booster_motion"
+  - "<simbridge>/build:/app/bridge"

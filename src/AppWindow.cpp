@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMetaObject>
 #include <csignal>
 #include <string>
 
@@ -104,6 +105,8 @@ void AppWindow::loadScene(const QString& yaml_file) {
         TeamManager::instance().clear();
         RobotManager::instance().stopCommunicationServer();
 
+        YAML::Node settingsRoot = loadYamlFile(circusSettingsPath);
+
         if (sim) {
             sim->stop();
             sim.reset();
@@ -125,6 +128,20 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
+
+        // Callback to start the simulation
+        // Simulation starts when the all the robots are ready
+        RobotManager::instance().setAreAllRobotsReadyCallback([this]() {
+            QMetaObject::invokeMethod(
+                this,
+                [this]() {
+                    if (sim) {
+                        std::cout << "Starting simulation!" << std::endl;
+                        sim->start();
+                    }
+                },
+                Qt::QueuedConnection);
+        });
 
         // Configure and bind GameController
         GameController::instance().configure(parser.getSceneInfo().simulationConfig);

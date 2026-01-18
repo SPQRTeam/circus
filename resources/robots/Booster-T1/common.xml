@@ -2,7 +2,13 @@
     <size njmax="500" nconmax="100" />
 
     <default>
-        <joint limited="true" damping="0.01" armature="0.01" frictionloss="0.0" />
+        <!--
+            Damping at 0.01 appears to be way too little (as of Dec 2025).
+            2 seems fine and has some vague motivation in some config file in Booster's booster-deploy repo.
+            1 seems to work fine too.
+            Armature could be a little higher, I dunno, but 1 is too high and makes it too springy.
+        -->
+        <joint limited="true" damping="2" armature="0.01" frictionloss="0.0" />
         <equality solref="0.001 2" />
 
         <default class="visual">

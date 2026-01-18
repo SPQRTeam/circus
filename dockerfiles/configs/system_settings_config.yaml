@@ -1,0 +1,4 @@
+audio_settings:
+  enable_dance_music: true
+debug_mode_settings:
+  enable_debug_mode: false
