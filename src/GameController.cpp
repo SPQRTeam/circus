@@ -63,6 +63,7 @@ void GameController::configure(const SimulationConfig& config) {
 
     // Apply game configuration
     gameDuration_ = config.game.game_duration;
+    automaticRestart_ = config.game.automatic_restart;
     initialPhaseDuration_ = config.game.initial_phase_duration;
     readyPhaseDuration_ = config.game.ready_phase_duration;
     setPhaseDuration_ = config.game.set_phase_duration;
@@ -77,14 +78,31 @@ void GameController::configure(const SimulationConfig& config) {
 }
 
 void GameController::reset() {
-    mujContext_ = nullptr;
-    teamsInGame_.clear();
-    currentPhase_ = INITIAL;
-    currentSubPhase_ = KICKOFF;
-    simTime_ = 0.0;
+
+    for (auto& teamInGame : teamsInGame_) {
+        teamInGame.setScore(0);
+        for (auto& robotInGame : teamInGame.getRobotsInGame()) {
+            robotInGame.setPenalized(NONE_PENALTY, 0);
+        }
+    }
+    
     gameElapsedTime_ = 0.0;
     lastUpdateGameTime_ = 0.0;
+    
+    currentPhase_ = INITIAL;
+    currentPhaseElapsedTime_ = 0.0;
+    lastUpdateCurrentPhaseElapsedTime_ = 0.0;
     lastUpdateScore_ = 0.0;
+    
+    currentSubPhase_ = KICKOFF;
+    currentSubPhaseElapsedTime_ = 0.0;
+    lastUpdateSubPhaseElapsedTime_ = 0.0;
+    currentSubPhaseTeam_ = "none";
+
+    lastBallContactTeam_ = "none";
+    kickOffTeam_ = "red";
+
+    handleMoveBall(0.f, 0.f);
 }
 
 std::map<std::string, std::string> GameController::availableCommands() const {
@@ -646,12 +664,19 @@ void GameController::update() {
             gameElapsedTime_ += 1.0;
             lastUpdateGameTime_ = simTime_;
         }
+
+        if(gameElapsedTime_ >= gameDuration_) {
+            currentPhase_ = FINISH;
+            if (automaticRestart_) {
+                reset();
+            }
+        }
     }
 
     // Update current phase elapsed time
-    if (currentPhase_ != PLAYING && simTime_ - lastUpdatecurrentPhaseElapsedTime_ >= 1.0) {
+    if (currentPhase_ != PLAYING && simTime_ - lastUpdateCurrentPhaseElapsedTime_ >= 1.0) {
         currentPhaseElapsedTime_ += 1.0;
-        lastUpdatecurrentPhaseElapsedTime_ = simTime_;
+        lastUpdateCurrentPhaseElapsedTime_ = simTime_;
     }
 
     // Update subphase elapsed time

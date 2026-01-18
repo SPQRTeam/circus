@@ -247,7 +247,8 @@ class GameController {
         int gameDuration_ = 600;                          // seconds  (10 minutes)
         double gameElapsedTime_ = 0.0;            // Game time in seconds
         double lastUpdateGameTime_ = 0.0;  // Sim time of last game time update
-        
+        bool automaticRestart_ = false;         // Whether to automatically restart the game after max_simulation_time is reached
+
         double lastUpdateScore_ = 0.0;     // Sim time of last score update
 
         GamePhase currentPhase_ = INITIAL;                // Current game phase
@@ -255,7 +256,7 @@ class GameController {
         int readyPhaseDuration_ = 45;                     // seconds
         int setPhaseDuration_ = 15;                       // seconds
         double currentPhaseElapsedTime_ = 0.0;            // seconds
-        double lastUpdatecurrentPhaseElapsedTime_ = 0.0;  // Sim time of last phase elapsed time update
+        double lastUpdateCurrentPhaseElapsedTime_ = 0.0;  // Sim time of last phase elapsed time update
 
         GameSubPhase currentSubPhase_ = KICKOFF;     // Current game sub-phase
         int kickOffSubPhaseDuration_ = 10;            // seconds -> after this time, sub-phase returns to BALLFREE
