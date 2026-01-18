@@ -38,11 +38,14 @@ struct FieldConfig {
         float ball_radius = 0.11f;
 };
 
+struct SimulationSettings {
+        int max_simulation_time = -1;  // -1 means no limit
+};
+
 struct GameConfig {
         bool game_state_logging = true;
         std::string game_state_logging_path = "game_state.log";
         float game_state_logging_interval = 1.0f;
-        int max_simulation_time = -1;
         int game_duration = 600;
         bool automatic_restart = true;
         int initial_phase_duration = 30;
@@ -54,6 +57,7 @@ struct GameConfig {
 };
 
 struct SimulationConfig {
+        SimulationSettings simulation;
         FieldConfig field;
         GameConfig game;
 };

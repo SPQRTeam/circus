@@ -55,10 +55,18 @@ SceneParser::SceneParser(const string& yamlPath) {
     scene.simulationConfig.field.penalty_mark_distance = fieldNode["penalty_mark_distance"].as<float>(2.1f);
     scene.simulationConfig.field.ball_radius = fieldNode["ball_radius"].as<float>(0.11f);
 
+    // Load simulation settings
+    if (simConfigRoot["simulation"]) {
+        const YAML::Node& simNode = simConfigRoot["simulation"];
+        scene.simulationConfig.simulation.max_simulation_time = simNode["max_simulation_time"].as<int>(-1);
+    }
+
     // Load game configuration
     if (simConfigRoot["game"]) {
         const YAML::Node& gameNode = simConfigRoot["game"];
-        scene.simulationConfig.game.max_simulation_time = gameNode["max_simulation_time"].as<int>(-1);
+        scene.simulationConfig.game.game_state_logging = gameNode["game_state_logging"].as<bool>(true);
+        scene.simulationConfig.game.game_state_logging_path = gameNode["game_state_logging_path"].as<string>("game_state.log");
+        scene.simulationConfig.game.game_state_logging_interval = gameNode["game_state_logging_interval"].as<float>(1.0f);
         scene.simulationConfig.game.game_duration = gameNode["game_duration"].as<int>(600);
         scene.simulationConfig.game.automatic_restart = gameNode["automatic_restart"].as<bool>(true);
         scene.simulationConfig.game.initial_phase_duration = gameNode["initial_phase_duration"].as<int>(30);

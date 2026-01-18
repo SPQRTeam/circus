@@ -23,6 +23,12 @@ void SimulationThread::run() {
             RobotManager::instance().update();
             GameController::instance().update();
 
+            if (maxSimulationTime_ > 0 && data_->time >= maxSimulationTime_) {
+                running_ = false;
+                emit maxSimulationTimeReached();
+                break;
+            }
+
             next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
             std::this_thread::sleep_until(next_step_time);
 
@@ -52,6 +58,10 @@ void SimulationThread::play() {
 
 bool SimulationThread::isPaused() {
     return paused_;
+}
+
+void SimulationThread::setMaxSimulationTime(int maxTime) {
+    maxSimulationTime_ = maxTime;
 }
 
 }  // namespace spqr

@@ -187,6 +187,8 @@ void AppWindow::loadScene(const QString& yaml_file) {
         });
 
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
+        sim->setMaxSimulationTime(parser.getSceneInfo().simulationConfig.simulation.max_simulation_time);
+        connect(sim.get(), &SimulationThread::maxSimulationTimeReached, this, &AppWindow::close);
         sim->start();
 
         // Set initial simulation state (playing when scene is loaded)

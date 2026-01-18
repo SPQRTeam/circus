@@ -1,3 +1,6 @@
+simulation:
+  max_simulation_time: -1                         # maximum simulation time in seconds (if -1 -> no limit)
+
 field:
   name: adult_size
   width: 14.0                                     # x dimension
@@ -19,7 +22,6 @@ game:
   game_state_logging_path: "game_state.log"       # path to the game state log file
   game_state_logging_interval: 0.1                # interval in seconds for logging game state
   
-  max_simulation_time: -1                         # maximum simulation time in seconds (if -1 -> no limit)
   game_duration: 600                              # total game duration in seconds
   automatic_restart: true                         # whether to automatically restart the game after it ends (up to max_simulation_time)
                       
