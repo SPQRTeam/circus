@@ -226,6 +226,16 @@ class GameControllerPanelHeader : public QWidget {
             if (showSubPhase) {
                 subPhaseLabel_->setText(QString::fromStdString(gameSubPhaseToString(subPhase)));
 
+                // Set color based on team
+                std::string subPhaseTeam = gc.getCurrentSubPhaseTeam();
+                QString color = "#ffffff";  // White by default
+                if (subPhaseTeam == "red") {
+                    color = "#993546";
+                } else if (subPhaseTeam == "blue") {
+                    color = "#108296";
+                }
+                subPhaseLabel_->setStyleSheet(getLabelValueStyle(color));
+
                 // Calculate sub-phase remaining time
                 double subPhaseElapsedTime = gc.getCurrentSubPhaseElapsedTime();
                 double subPhaseRemainingTime = gc.getSubPhaseDuration() - subPhaseElapsedTime;
@@ -313,14 +323,14 @@ class GameControllerPanelHeader : public QWidget {
                    "}";
         }
 
-        QString getLabelValueStyle() {
-            return "QLabel { "
-                   "  color: #ffffffff; "
-                   "  font-size: 14px; "
-                   "  font-weight: bold; "
-                   "  background-color: transparent; "
-                   "  border: none; "
-                   "}";
+        QString getLabelValueStyle(const QString& color = QString("#ffffff")) {
+            return QString("QLabel { "
+                           "  color: %1; "
+                           "  font-size: 14px; "
+                           "  font-weight: bold; "
+                           "  background-color: transparent; "
+                           "  border: none; "
+                           "}").arg(color);
         }
 
         QString getScoreLabelStyle(const QString& color) {
@@ -330,8 +340,7 @@ class GameControllerPanelHeader : public QWidget {
                            "  font-weight: bold; "
                            "  background-color: transparent; "
                            "  border: none; "
-                           "}")
-                .arg(color);
+                           "}").arg(color);
         }
         
         QString getButtonStyle(bool enabled=true) {

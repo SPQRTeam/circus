@@ -39,8 +39,12 @@ find_package(CURL QUIET)
 
 # Generate .clangd configuration after dependencies are found
 get_target_property(EIGEN_INCLUDE_DIR Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(QT_CORE_INCLUDE_DIRS Qt6::Core INTERFACE_INCLUDE_DIRECTORIES)
+# Extract the base Qt6 include path (get parent of QtCore path)
+list(GET QT_CORE_INCLUDE_DIRS 0 QT_CORE_PATH)
+get_filename_component(QT_INCLUDE_BASE "${QT_CORE_PATH}" DIRECTORY)
 file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
-  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n  Add:\n    - -I${CMAKE_CURRENT_SOURCE_DIR}/include\n    - -isystem${EIGEN_INCLUDE_DIR}\n")
+  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n  Add:\n    - -I${CMAKE_CURRENT_SOURCE_DIR}/include\n    - -isystem${EIGEN_INCLUDE_DIR}\n    - -isystem${QT_INCLUDE_BASE}\n    - -isystem${QT_INCLUDE_BASE}/QtCore\n    - -isystem${QT_INCLUDE_BASE}/QtWidgets\n    - -isystem${QT_INCLUDE_BASE}/QtGui\n    - -fPIC\n")
 
 # -------------------- yaml-cpp (config -> module -> manual) [robust]
 set(_YAML_HINT "/opt/homebrew/opt/yaml-cpp")

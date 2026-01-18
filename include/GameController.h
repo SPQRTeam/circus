@@ -145,6 +145,9 @@ class GameController {
         double getCurrentSubPhaseElapsedTime() const {
             return currentSubPhaseElapsedTime_;
         }
+        std::string getCurrentSubPhaseTeam() const {
+            return currentSubPhaseTeam_;
+        }
 
         int getInitialPhaseDuration() const {
             return initialPhaseDuration_;
@@ -221,13 +224,14 @@ class GameController {
         int subPhaseDuration_ = 30;                      // seconds
         double currentSubPhaseElapsedTime_ = 0.0;        // seconds
         double lastUpdateSubPhaseElapsedTime_ = 0.0;     // Sim time of last sub-phase elapsed time update
+        std::string currentSubPhaseTeam_ = "none";          // Team associated with current sub-phase
 
         double lastUpdateGameTime_ = 0.0;                // Sim time of last game time update
         double lastUpdateScore_ = 0.0;                   // Sim time of last score update
 
-        std::string lastTeamToScore_ = "none";           // Last team to score <"Red", "Blue", "none">
-        std::string lastBallContactTeam_ = "none";       // Last team to contact the ball <"Red", "Blue", "none">
-        std::string kickOffTeam_ = "red";                // Team to kickoff <"Red", "Blue">
+        std::string lastTeamToScore_ = "none";           // Last team to score <"red", "blue", "none">
+        std::string lastBallContactTeam_ = "none";       // Last team to contact the ball <"red", "blue", "none">
+        std::string kickOffTeam_ = "red";                // Team to kickoff <"red", "blue"> (example: CornerKick FOR red)
 
         bool request_mjforward = false;                  // Flag to request mj_forward() call in update()
 
