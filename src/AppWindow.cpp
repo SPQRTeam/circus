@@ -127,20 +127,6 @@ void AppWindow::loadScene(const QString& yaml_file) {
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
-        // Callback to start the simulation
-        // Simulation starts when the all the robots are ready
-        RobotManager::instance().setAreAllRobotsReadyCallback([this]() {
-            QMetaObject::invokeMethod(
-                this,
-                [this]() {
-                    if (sim) {
-                        std::cout << "Starting simulation!" << std::endl;
-                        sim->start();
-                    }
-                },
-                Qt::QueuedConnection);
-        });
-
         // Configure and bind GameController
         GameController::instance().configure(parser.getSceneInfo().simulationConfig);
         GameController::instance().bindMujoco(mujContext.get());
@@ -204,7 +190,20 @@ void AppWindow::loadScene(const QString& yaml_file) {
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
         sim->setMaxSimulationTime(parser.getSceneInfo().simulationConfig.simulation.max_simulation_time);
         connect(sim.get(), &SimulationThread::maxSimulationTimeReached, this, &AppWindow::close);
-        sim->start();
+
+        // Callback to start the simulation
+        // Simulation starts when the all the robots are ready
+        RobotManager::instance().setAreAllRobotsReadyCallback([this]() {
+            QMetaObject::invokeMethod(
+                this,
+                [this]() {
+                    if (sim) {
+                        std::cout << "Starting simulation!" << std::endl;
+                        sim->start();
+                    }
+                },
+                Qt::QueuedConnection);
+        });
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);

@@ -80,22 +80,21 @@ void GameController::configure(const SimulationConfig& config) {
 }
 
 void GameController::reset() {
-
     for (auto& teamInGame : teamsInGame_) {
         teamInGame.setScore(0);
         for (auto& robotInGame : teamInGame.getRobotsInGame()) {
             robotInGame.setPenalized(NONE_PENALTY, 0);
         }
     }
-    
+
     gameElapsedTime_ = 0.0;
     lastUpdateGameTime_ = 0.0;
-    
+
     currentPhase_ = INITIAL;
     currentPhaseElapsedTime_ = 0.0;
     lastUpdateCurrentPhaseElapsedTime_ = 0.0;
     lastUpdateScore_ = 0.0;
-    
+
     currentSubPhase_ = KICKOFF;
     currentSubPhaseElapsedTime_ = 0.0;
     lastUpdateSubPhaseElapsedTime_ = 0.0;
@@ -488,8 +487,7 @@ std::string GameController::handlePenalizeRobot(std::string team, int robotId, P
                 } else if (team == "blue") {
                     handleMoveRobot(team, robotId, blueTeamInitialPenalization_x, blueTeamPenalization_y + 0.5, 90, false);
                 }
-            } 
-            else {
+            } else {
                 // Red robots go in: redTeamInitialPenalization_x + n*offset, redTeamPenalization_y, 90
                 // Blue robots go in: blueTeamInitialPenalization_x - n*offset, blueTeamPenalization_y, -90
                 int penalizedCount = 0;
@@ -666,7 +664,7 @@ void GameController::update() {
             lastUpdateGameTime_ = simTime_;
         }
 
-        if(gameElapsedTime_ >= gameDuration_) {
+        if (gameElapsedTime_ >= gameDuration_) {
             currentPhase_ = FINISH;
             if (automaticRestart_) {
                 reset();
@@ -706,22 +704,19 @@ void GameController::update() {
             currentPhase_ = READY;
             currentPhaseElapsedTime_ = 0;
         }
-    } 
-    else if (currentPhase_ == READY) {
+    } else if (currentPhase_ == READY) {
         // Transition to SET phase after readyPhaseDuration_
         if (readyPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= readyPhaseDuration_) {
             currentPhase_ = SET;
             currentPhaseElapsedTime_ = 0;
         }
-    } 
-    else if (currentPhase_ == SET) {
+    } else if (currentPhase_ == SET) {
         // Transition to PLAYING phase after setPhaseDuration_
         if (setPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= setPhaseDuration_) {
             currentPhase_ = PLAYING;
             currentPhaseElapsedTime_ = 0;
         }
-    } 
-    else if (currentPhase_ == PLAYING) {
+    } else if (currentPhase_ == PLAYING) {
         if (gameDuration_ > 0 && currentPhaseElapsedTime_ >= gameDuration_) {
             currentPhase_ = FINISH;
             currentPhaseElapsedTime_ = 0;
@@ -818,7 +813,7 @@ void GameController::logGameState() const {
             logFile << "   - Penalty: " << penaltyToString(robot.getPenalty()) << std::endl;
             logFile << "   - GameTimeWhenPenalized: " << robot.getGameTimeWhenPenalized() << std::endl;
             logFile << "   - PenalizationElapsedTime: " << robot.getPenalizationElapsedTime(gameElapsedTime_) << std::endl;
-         }
+        }
     }
 
     logFile << std::endl;

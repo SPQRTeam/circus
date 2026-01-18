@@ -21,17 +21,17 @@ game:
   game_state_logging: true                        # whether to log game state changes to a file
   game_state_logging_path: "game_state.log"       # path to the game state log file
   game_state_logging_interval: 0.1                # interval in seconds for logging game state
-  
+
   game_duration: 600                              # total game duration in seconds
   automatic_restart: true                         # whether to automatically restart the game after it ends (up to max_simulation_time)
-                      
+
   initial_phase_duration: 30                      # duration of the initial phase in seconds
   ready_phase_duration: 45                        # duration of the ready phase in seconds
   set_phase_duration: 10                          # duration of the set phase in seconds
-                   
+
   kickoff_subphase_duration: 10                   # duration of the kickoff sub-phase in seconds
   other_subphase_duration: 30                     # duration of other sub-phases in seconds
-                 
+
   first_kickoff_team: "red"                       # name of the team that will take the first kickoff <red|blue>
 
   penalty_duration: 45                             # duration of a standard penalty in seconds

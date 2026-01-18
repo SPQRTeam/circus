@@ -108,7 +108,8 @@ class ConsoleWidget : public QWidget {
         }
 
         void onUpPressed() {
-            if (commandHistory_.isEmpty()) return;
+            if (commandHistory_.isEmpty())
+                return;
 
             if (historyIndex_ == -1) {
                 // Save current input before navigating history
@@ -122,7 +123,8 @@ class ConsoleWidget : public QWidget {
         }
 
         void onDownPressed() {
-            if (commandHistory_.isEmpty() || historyIndex_ == -1) return;
+            if (commandHistory_.isEmpty() || historyIndex_ == -1)
+                return;
 
             if (historyIndex_ < commandHistory_.size() - 1) {
                 historyIndex_++;

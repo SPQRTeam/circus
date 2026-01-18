@@ -191,7 +191,8 @@ string SceneParser::buildMuJoCoXml() {
     compiler.append_attribute("meshdir") = "resources/meshes/";
 
     xml_node include_node = mujoco.append_child("include");
-    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.simulationConfig.field.name + ".xml")).c_str();
+    include_node.append_attribute("file")
+        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.simulationConfig.field.name + ".xml")).c_str();
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");

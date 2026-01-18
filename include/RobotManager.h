@@ -86,33 +86,33 @@ class RobotManager {
         void startContainers() {
             startCommunicationServer(frameworkCommunicationPort);
 
-        YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
-        YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
+            YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
+            YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
 
             if (!configRoot["image"])
                 throw std::runtime_error("Missing 'image' key in YAML file");
 
-        std::string image = tryString(configRoot["image"], "'image' must be a string: ");
+            std::string image = tryString(configRoot["image"], "'image' must be a string: ");
 
             if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
                 throw std::runtime_error("'volumes' key missing or not a sequence");
 
-        std::vector<std::string> binds;
-        for (const auto& v : configRoot["volumes"]) {
-            std::string v2 = tryString(v, "Volume entry must be a string: ");
-            if (v2.starts_with("<")) {
-                int end = v2.find('>');
-                std::string name = v2.substr(1, end - 1);
+            std::vector<std::string> binds;
+            for (const auto& v : configRoot["volumes"]) {
+                std::string v2 = tryString(v, "Volume entry must be a string: ");
+                if (v2.starts_with("<")) {
+                    int end = v2.find('>');
+                    std::string name = v2.substr(1, end - 1);
 
-                if (!pathsRoot[name]) {
-                    throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
+                    if (!pathsRoot[name]) {
+                        throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
+                    }
+
+                    std::string name_str = tryString(pathsRoot[name], "path_constants entries must be strings: ");
+                    v2.replace(0, end + 1, name_str);
                 }
-
-                std::string name_str = tryString(pathsRoot[name], "path_constants entries must be strings: ");
-                v2.replace(0, end + 1, name_str);
+                binds.push_back(v2);
             }
-            binds.push_back(v2);
-        }
 
             for (std::shared_ptr<Robot> r : robots_) {
                 r->container = std::make_unique<Container>(r->name + "_container");
@@ -138,14 +138,14 @@ class RobotManager {
                 serverThread_.join();
         }
 
-    void setAreAllRobotsReadyCallback(std::function<void()> cb) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        areAllRobotsReadyCallback_ = std::move(cb);
-    }
+        void setAreAllRobotsReadyCallback(std::function<void()> cb) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            areAllRobotsReadyCallback_ = std::move(cb);
+        }
 
-   private:
-    RobotManager() = default;
-    ~RobotManager() = default;
+    private:
+        RobotManager() = default;
+        ~RobotManager() = default;
 
         RobotManager(const RobotManager&) = delete;
         RobotManager& operator=(const RobotManager&) = delete;
@@ -180,63 +180,63 @@ class RobotManager {
                     continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
                                // still true)
 
-            for (size_t i = 0; i < fds.size(); ++i) {
-                // An event occured for the i-th fd
-                if (fds[i].revents & POLLIN) {
-                    if (fds[i].fd == server_fd) {
-                        // The only event for the server is someone knocking
-                        int client_fd = accept(server_fd, nullptr, nullptr);
-                        if (client_fd >= 0) {
-                            fds.push_back({client_fd, POLLIN, 0});
+                for (size_t i = 0; i < fds.size(); ++i) {
+                    // An event occured for the i-th fd
+                    if (fds[i].revents & POLLIN) {
+                        if (fds[i].fd == server_fd) {
+                            // The only event for the server is someone knocking
+                            int client_fd = accept(server_fd, nullptr, nullptr);
+                            if (client_fd >= 0) {
+                                fds.push_back({client_fd, POLLIN, 0});
 
-                            // Receive initial message with robot name
-                            char buffer[MAX_MSG_SIZE];
-                            int n = read(client_fd, buffer, sizeof(buffer) - 1);
+                                // Receive initial message with robot name
+                                char buffer[MAX_MSG_SIZE];
+                                int n = read(client_fd, buffer, sizeof(buffer) - 1);
 
-                            if (n <= 0) {
-                                std::cerr << "Error reading the initial message.\n";
-                                // close(client_fd);
-                                continue;
-                            }
+                                if (n <= 0) {
+                                    std::cerr << "Error reading the initial message.\n";
+                                    // close(client_fd);
+                                    continue;
+                                }
 
-                            // unpack of the MsgPack message
-                            msgpack::object_handle oh = msgpack::unpack(buffer, n);
-                            msgpack::object obj = oh.get();
+                                // unpack of the MsgPack message
+                                msgpack::object_handle oh = msgpack::unpack(buffer, n);
+                                msgpack::object obj = oh.get();
 
-                            // First message is the robot name as a string
-                            if (obj.type != msgpack::type::STR) {
-                                std::cerr << "First message must be a string. Ignore it...\n";
-                                continue;
-                            }
+                                // First message is the robot name as a string
+                                if (obj.type != msgpack::type::STR) {
+                                    std::cerr << "First message must be a string. Ignore it...\n";
+                                    continue;
+                                }
 
-                            std::string robotName = obj.as<std::string>();
+                                std::string robotName = obj.as<std::string>();
 
-                            // Send message with initial state
-                            std::lock_guard<std::mutex> lock(mutex_);
-                            for (auto& r : robots_) {
-                                if (r->name == robotName) {
-                                    r->isConnected = true;
-                                    std::cout << "Connected Robot: " << robotName << "\n";
-                                    std::cout << "Sending initial message to " << robotName << std::endl;
-                                    auto answ = r->sendMessage();
-                                    msgpack::sbuffer sbuf;
-                                    msgpack::pack(sbuf, answ);
-                                    send(client_fd, sbuf.data(), sbuf.size(), 0);
-                                    break;
+                                // Send message with initial state
+                                std::lock_guard<std::mutex> lock(mutex_);
+                                for (auto& r : robots_) {
+                                    if (r->name == robotName) {
+                                        r->isConnected = true;
+                                        std::cout << "Connected Robot: " << robotName << "\n";
+                                        std::cout << "Sending initial message to " << robotName << std::endl;
+                                        auto answ = r->sendMessage();
+                                        msgpack::sbuffer sbuf;
+                                        msgpack::pack(sbuf, answ);
+                                        send(client_fd, sbuf.data(), sbuf.size(), 0);
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        // The events for other fds indicate either an incoming message or a closed connection
-                        // the read call disambiguates the two cases
-                        char buffer[MAX_MSG_SIZE];
-                        int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
-                        if (n <= 0) {
-                            close(fds[i].fd);
-                            fds.erase(fds.begin() + i);
-                            --i;
-                            continue;
-                        }
+                        } else {
+                            // The events for other fds indicate either an incoming message or a closed connection
+                            // the read call disambiguates the two cases
+                            char buffer[MAX_MSG_SIZE];
+                            int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                            if (n <= 0) {
+                                close(fds[i].fd);
+                                fds.erase(fds.begin() + i);
+                                --i;
+                                continue;
+                            }
 
                             msgpack::object_handle oh = msgpack::unpack(buffer, n);
                             auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
@@ -246,50 +246,50 @@ class RobotManager {
 
                             std::string messageRecipient = it->second.as<std::string>();
 
-                        std::unique_lock lock(mutex_);
-                        for (auto& r : robots_) {
-                            if (r->name == messageRecipient) {
-                                if (!r->isReady) {
-                                    r->isReady = true;
-                                    std::cout << "Robot ready: " << r->name << std::endl;
-                                    areAllRobotsReadyWrapper();
+                            std::unique_lock lock(mutex_);
+                            for (auto& r : robots_) {
+                                if (r->name == messageRecipient) {
+                                    if (!r->isReady) {
+                                        r->isReady = true;
+                                        std::cout << "Robot ready: " << r->name << std::endl;
+                                        areAllRobotsReadyWrapper();
+                                    }
+                                    r->receiveMessage(data_map);
+                                    auto answ = r->sendMessage();
+                                    msgpack::sbuffer sbuf;
+                                    msgpack::pack(sbuf, answ);
+                                    send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
+                                    break;
                                 }
-                                r->receiveMessage(data_map);
-                                auto answ = r->sendMessage();
-                                msgpack::sbuffer sbuf;
-                                msgpack::pack(sbuf, answ);
-                                send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
-                                break;
                             }
                         }
                     }
                 }
             }
+
+            for (auto& fd : fds)
+                close(fd.fd);
         }
 
-        for (auto& fd : fds)
-            close(fd.fd);
-    }
-
-    void areAllRobotsReadyWrapper() {
-        if (areAllRobotsReady() && areAllRobotsReadyCallback_) {
-            areAllRobotsReadyCallback_();
+        void areAllRobotsReadyWrapper() {
+            if (areAllRobotsReady() && areAllRobotsReadyCallback_) {
+                areAllRobotsReadyCallback_();
+            }
         }
-    }
-    bool areAllRobotsReady() const {
-        for (const auto& r : robots_)
-            if (!r->isReady)
-                return false;
-        std::cout << "All robots are ready!" << std::endl;
-        return true;
-    }
+        bool areAllRobotsReady() const {
+            for (const auto& r : robots_)
+                if (!r->isReady)
+                    return false;
+            std::cout << "All robots are ready!" << std::endl;
+            return true;
+        }
 
         std::atomic<bool> serverRunning_ = false;
         std::thread serverThread_;
 
-    mutable std::mutex mutex_;
-    std::vector<std::shared_ptr<Robot>> robots_;
-    std::function<void()> areAllRobotsReadyCallback_;
+        mutable std::mutex mutex_;
+        std::vector<std::shared_ptr<Robot>> robots_;
+        std::function<void()> areAllRobotsReadyCallback_;
 
         using RobotCreator
             = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&, const Eigen::Vector3d&,

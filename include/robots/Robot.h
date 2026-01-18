@@ -44,10 +44,10 @@ class Robot {
         std::unique_ptr<Container> container;
         std::shared_ptr<Team> team;
 
-    msgpack::zone buffer_zone_;
+        msgpack::zone buffer_zone_;
 
-    bool isConnected = false;
-    bool isReady = false;
+        bool isConnected = false;
+        bool isReady = false;
 };
 
 }  // namespace spqr

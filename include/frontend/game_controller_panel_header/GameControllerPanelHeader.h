@@ -178,7 +178,8 @@ class GameControllerPanelHeader : public QWidget {
             // Update game time (countdown from playing duration to 0)
             double gameTime = gc.getGameElapsedTime();
             double gameRemainingTime = gc.getGameDuration() - gameTime;
-            if (gameRemainingTime < 0) gameRemainingTime = 0.0;
+            if (gameRemainingTime < 0)
+                gameRemainingTime = 0.0;
             int gameTimeMinutes = static_cast<int>(gameRemainingTime) / 60;
             int gameTimeSeconds = static_cast<int>(gameRemainingTime) % 60;
             gameTimeLabel_->setText(QString("%1:%2").arg(gameTimeMinutes, 2, 10, QChar('0')).arg(gameTimeSeconds, 2, 10, QChar('0')));

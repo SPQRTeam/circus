@@ -100,8 +100,7 @@ class RobotInGame {
         double getPenalizationElapsedTime(int currentGameTime) const {
             if (isPenalized_ && gameTimeWhenPenalized_ >= 0) {
                 return currentGameTime - gameTimeWhenPenalized_;
-            } 
-            else {
+            } else {
                 return 0.0;
             }
         }
@@ -238,7 +237,7 @@ class GameController {
         std::string handleCommand(std::string command);
         std::string handleGamePhase(std::string phase);
         std::string handleGameSubPhase(std::string subPhase, std::string team);
-        std::string handleMoveRobot(std::string team, int robotId, double x, double y, double theta, bool checkBounds=true);
+        std::string handleMoveRobot(std::string team, int robotId, double x, double y, double theta, bool checkBounds = true);
         std::string handleMoveBall(double x, double y);
         std::string handlePenalizeRobot(std::string team, int robotId, Penalty penalty);
         std::tuple<std::string, std::string> handleBallEvent();
@@ -259,14 +258,14 @@ class GameController {
         MujocoContext* mujContext_ = nullptr;
         std::vector<TeamInGame> teamsInGame_;
 
-        double simTime_ = 0.0;             // Simulation time in seconds
-        
-        int gameDuration_ = 600;                          // seconds  (10 minutes)
-        double gameElapsedTime_ = 0.0;            // Game time in seconds
-        double lastUpdateGameTime_ = 0.0;  // Sim time of last game time update
-        bool automaticRestart_ = false;         // Whether to automatically restart the game after max_simulation_time is reached
+        double simTime_ = 0.0;  // Simulation time in seconds
 
-        double lastUpdateScore_ = 0.0;     // Sim time of last score update
+        int gameDuration_ = 600;           // seconds  (10 minutes)
+        double gameElapsedTime_ = 0.0;     // Game time in seconds
+        double lastUpdateGameTime_ = 0.0;  // Sim time of last game time update
+        bool automaticRestart_ = false;    // Whether to automatically restart the game after max_simulation_time is reached
+
+        double lastUpdateScore_ = 0.0;  // Sim time of last score update
 
         GamePhase currentPhase_ = INITIAL;                // Current game phase
         int initialPhaseDuration_ = 30;                   // seconds
@@ -275,7 +274,7 @@ class GameController {
         double currentPhaseElapsedTime_ = 0.0;            // seconds
         double lastUpdateCurrentPhaseElapsedTime_ = 0.0;  // Sim time of last phase elapsed time update
 
-        GameSubPhase currentSubPhase_ = KICKOFF;     // Current game sub-phase
+        GameSubPhase currentSubPhase_ = KICKOFF;      // Current game sub-phase
         int kickOffSubPhaseDuration_ = 10;            // seconds -> after this time, sub-phase returns to BALLFREE
         int subPhaseDuration_ = 30;                   // seconds -> duration for other sub-phases differing from KICKOFF
         double currentSubPhaseElapsedTime_ = 0.0;     // seconds

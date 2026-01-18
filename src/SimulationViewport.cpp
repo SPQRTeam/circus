@@ -171,8 +171,7 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
             mju_mulQuat(pert.refquat, qz, pert.refquat);
-        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V
-                   || mouseAction == mjMOUSE_ROTATE_H) {
+        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V || mouseAction == mjMOUSE_ROTATE_H) {
             mjv_movePerturb(model, data, mouseAction, reldx, reldy, scene, &pert);
         }
         mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
