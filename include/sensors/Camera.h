@@ -63,8 +63,12 @@ class Camera : public Sensor {
             mjrRect viewport = {0, 0, viewWidth, viewHeight};
             mjr_setBuffer(mjFB_OFFSCREEN, &mujContext->ctx);
 
+            // Create a copy of visualization options to disable number geoms (group 4) for robot cameras
+            mjvOption tempOpt = mujContext->opt;
+            tempOpt.geomgroup[4] = 0;  // Hide group 4 (robot number labels) from robot cameras
+
             // Update scene with this camera's viewpoint
-            mjv_updateScene(mujContext->model, mujContext->data, &mujContext->opt, nullptr, &cam, mjCAT_ALL, &tempScene);
+            mjv_updateScene(mujContext->model, mujContext->data, &tempOpt, nullptr, &cam, mjCAT_ALL, &tempScene);
 
             // Render the scene
             mjr_render(viewport, &tempScene, &mujContext->ctx);

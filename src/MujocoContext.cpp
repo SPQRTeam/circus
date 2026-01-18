@@ -25,6 +25,7 @@ MujocoContext::MujocoContext(const std::string& xmlString) {
     data = mj_makeData(model);
 
     mjv_defaultOption(&opt);
+    opt.geomgroup[4] = 1;  // Enable group 4 (robot number labels) for main viewport
     mjv_defaultCamera(&cam);
     mjv_makeScene(model, &scene, 10000);
 }

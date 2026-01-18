@@ -312,12 +312,21 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
                 }
 
                 // Hide number geometries that don't match the robot's number
+                // Also assign all number geoms to group 4 so they can be hidden from robot cameras
                 std::string correctNumName = robotSpec->name + "_num_" + std::to_string(robotSpec->number);
                 for (xml_node geom : current.children("geom")) {
                     std::string geomName = geom.attribute("name").value();
                     // Check if this is a number geom (starts with robotName_num_)
                     std::string numPrefix = robotSpec->name + "_num_";
                     if (geomName.rfind(numPrefix, 0) == 0) {
+                        // Set group 4 for all number geoms (invisible to robot cameras)
+                        xml_attribute groupAttr = geom.attribute("group");
+                        if (groupAttr) {
+                            groupAttr.set_value("4");
+                        } else {
+                            geom.append_attribute("group") = "4";
+                        }
+
                         if (geomName != correctNumName) {
                             // Hide this number by setting alpha to 0
                             xml_attribute rgbaAttr = geom.attribute("rgba");
