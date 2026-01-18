@@ -147,9 +147,6 @@ void AppWindow::loadScene(const QString& yaml_file) {
         gameControllerPanelColumnContainer = new GameControllerPanelColumnContainer(this);
         contentLayout->insertWidget(0, gameControllerPanelColumnContainer);
 
-        RobotManager::instance().startContainers();
-        RobotManager::instance().bindMujoco(mujContext.get());
-
         if (toolsPanel) {
             mainLayout->removeWidget(toolsPanel);
             toolsPanel->deleteLater();
@@ -204,6 +201,9 @@ void AppWindow::loadScene(const QString& yaml_file) {
                 },
                 Qt::QueuedConnection);
         });
+
+        RobotManager::instance().startContainers();
+        RobotManager::instance().bindMujoco(mujContext.get());
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);
