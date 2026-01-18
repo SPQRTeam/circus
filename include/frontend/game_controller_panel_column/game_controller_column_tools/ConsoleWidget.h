@@ -1,6 +1,8 @@
 #pragma once
 
+#include <QKeyEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -8,6 +10,30 @@
 #include "GameController.h"
 
 namespace spqr {
+
+class CommandLineEdit : public QLineEdit {
+        Q_OBJECT
+
+    public:
+        CommandLineEdit(QWidget* parent = nullptr) : QLineEdit(parent) {}
+
+    signals:
+        void upPressed();
+        void downPressed();
+
+    protected:
+        void keyPressEvent(QKeyEvent* event) override {
+            if (event->key() == Qt::Key_Up) {
+                emit upPressed();
+                event->accept();
+            } else if (event->key() == Qt::Key_Down) {
+                emit downPressed();
+                event->accept();
+            } else {
+                QLineEdit::keyPressEvent(event);
+            }
+        }
+};
 
 class ConsoleWidget : public QWidget {
         Q_OBJECT
@@ -45,18 +71,18 @@ class ConsoleWidget : public QWidget {
                                        "  font-family: monospace; "
                                        "  font-size: 11px; "
                                        "}");
-            outputArea_->setText("Game Controller Console ready.\n");
+            outputArea_->setText("Game Controller Console ready.\nType 'help' for a list of commands.\n");
             layout->addWidget(outputArea_, 1);
 
             // Input area (command input)
-            inputArea_ = new QTextEdit(this);
-            inputArea_->setMaximumHeight(60);
-            inputArea_->setStyleSheet("QTextEdit { "
+            inputArea_ = new CommandLineEdit(this);
+            inputArea_->setStyleSheet("QLineEdit { "
                                       "  background-color: #1a1a1a; "
                                       "  color: #ffffff; "
                                       "  border: 1px solid #006778; "
                                       "  font-family: monospace; "
                                       "  font-size: 11px; "
+                                      "  padding: 5px; "
                                       "}");
             inputArea_->setPlaceholderText("Enter command...");
             layout->addWidget(inputArea_);
@@ -64,28 +90,59 @@ class ConsoleWidget : public QWidget {
             setLayout(layout);
 
             // Connect input signals
-            connect(inputArea_, &QTextEdit::textChanged, this, &ConsoleWidget::onInputChanged);
+            connect(inputArea_, &QLineEdit::returnPressed, this, &ConsoleWidget::onReturnPressed);
+            connect(inputArea_, &CommandLineEdit::upPressed, this, &ConsoleWidget::onUpPressed);
+            connect(inputArea_, &CommandLineEdit::downPressed, this, &ConsoleWidget::onDownPressed);
         }
 
         virtual ~ConsoleWidget() = default;
 
     private slots:
-        void onInputChanged() {
-            QString text = inputArea_->toPlainText();
-            if (text.contains('\n')) {
-                // Extract command (remove newline)
-                QString command = text.trimmed();
-                inputArea_->clear();
+        void onReturnPressed() {
+            QString command = inputArea_->text().trimmed();
+            inputArea_->clear();
 
-                // Process command
-                if (!command.isEmpty()) {
-                    sendCommand(command);
-                }
+            if (!command.isEmpty()) {
+                sendCommand(command);
+            }
+        }
+
+        void onUpPressed() {
+            if (commandHistory_.isEmpty()) return;
+
+            if (historyIndex_ == -1) {
+                // Save current input before navigating history
+                currentInput_ = inputArea_->text();
+                historyIndex_ = commandHistory_.size() - 1;
+            } else if (historyIndex_ > 0) {
+                historyIndex_--;
+            }
+
+            inputArea_->setText(commandHistory_[historyIndex_]);
+        }
+
+        void onDownPressed() {
+            if (commandHistory_.isEmpty() || historyIndex_ == -1) return;
+
+            if (historyIndex_ < commandHistory_.size() - 1) {
+                historyIndex_++;
+                inputArea_->setText(commandHistory_[historyIndex_]);
+            } else {
+                // Return to current input
+                historyIndex_ = -1;
+                inputArea_->setText(currentInput_);
             }
         }
 
     private:
         void sendCommand(const QString& command) {
+            // Add to history
+            if (commandHistory_.isEmpty() || commandHistory_.last() != command) {
+                commandHistory_.append(command);
+            }
+            historyIndex_ = -1;
+            currentInput_.clear();
+
             // Log the command to output
             outputArea_->append(QString("> %1").arg(command));
 
@@ -123,7 +180,10 @@ class ConsoleWidget : public QWidget {
         }
 
         QTextEdit* outputArea_;
-        QTextEdit* inputArea_;
+        CommandLineEdit* inputArea_;
+        QStringList commandHistory_;
+        int historyIndex_ = -1;
+        QString currentInput_;
 };
 
 }  // namespace spqr
