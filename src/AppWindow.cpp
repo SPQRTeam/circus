@@ -105,8 +105,6 @@ void AppWindow::loadScene(const QString& yaml_file) {
         TeamManager::instance().clear();
         RobotManager::instance().stopCommunicationServer();
 
-        YAML::Node settingsRoot = loadYamlFile(circusSettingsPath);
-
         if (sim) {
             sim->stop();
             sim.reset();
