@@ -23,9 +23,51 @@ namespace spqr {
 SceneParser::SceneParser(const string& yamlPath) {
     sceneRoot = YAML::LoadFile(yamlPath);
 
-    if (!sceneRoot["field"])
-        throw runtime_error("Scene missing 'field' entry.");
-    scene.field = sceneRoot["field"].as<string>();
+    // Load simulation config
+    if (!sceneRoot["simulation_config"])
+        throw runtime_error("Scene missing 'simulation_config' entry.");
+
+    string simConfigName = sceneRoot["simulation_config"].as<string>();
+    filesystem::path simConfigPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "simulation_configs" / (simConfigName + ".yaml");
+
+    if (!filesystem::exists(simConfigPath))
+        throw runtime_error("Simulation config file does not exist: " + simConfigPath.string());
+
+    YAML::Node simConfigRoot = YAML::LoadFile(simConfigPath.string());
+
+    // Load field configuration
+    if (!simConfigRoot["field"])
+        throw runtime_error("Simulation config missing 'field' entry.");
+
+    const YAML::Node& fieldNode = simConfigRoot["field"];
+    scene.simulationConfig.field.name = fieldNode["name"].as<string>("adult_size");
+    scene.simulationConfig.field.width = fieldNode["width"].as<float>(14.0f);
+    scene.simulationConfig.field.height = fieldNode["height"].as<float>(9.0f);
+    scene.simulationConfig.field.center_radius = fieldNode["center_radius"].as<float>(1.5f);
+    scene.simulationConfig.field.goal_area_width = fieldNode["goal_area_width"].as<float>(1.0f);
+    scene.simulationConfig.field.goal_area_height = fieldNode["goal_area_height"].as<float>(4.0f);
+    scene.simulationConfig.field.penalty_area_width = fieldNode["penalty_area_width"].as<float>(3.0f);
+    scene.simulationConfig.field.penalty_area_height = fieldNode["penalty_area_height"].as<float>(6.5f);
+    scene.simulationConfig.field.goal_width = fieldNode["goal_width"].as<float>(2.6f);
+    scene.simulationConfig.field.goal_height = fieldNode["goal_height"].as<float>(1.8f);
+    scene.simulationConfig.field.goal_depth = fieldNode["goal_depth"].as<float>(0.6f);
+    scene.simulationConfig.field.line_width = fieldNode["line_width"].as<float>(0.08f);
+    scene.simulationConfig.field.penalty_mark_distance = fieldNode["penalty_mark_distance"].as<float>(2.1f);
+    scene.simulationConfig.field.ball_radius = fieldNode["ball_radius"].as<float>(0.11f);
+
+    // Load game configuration
+    if (simConfigRoot["game"]) {
+        const YAML::Node& gameNode = simConfigRoot["game"];
+        scene.simulationConfig.game.max_simulation_time = gameNode["max_simulation_time"].as<int>(-1);
+        scene.simulationConfig.game.game_duration = gameNode["game_duration"].as<int>(600);
+        scene.simulationConfig.game.automatic_restart = gameNode["automatic_restart"].as<bool>(true);
+        scene.simulationConfig.game.initial_phase_duration = gameNode["initial_phase_duration"].as<int>(30);
+        scene.simulationConfig.game.ready_phase_duration = gameNode["ready_phase_duration"].as<int>(45);
+        scene.simulationConfig.game.set_phase_duration = gameNode["set_phase_duration"].as<int>(10);
+        scene.simulationConfig.game.kickoff_subphase_duration = gameNode["kickoff_subphase_duration"].as<int>(10);
+        scene.simulationConfig.game.other_subphase_duration = gameNode["other_subphase_duration"].as<int>(30);
+        scene.simulationConfig.game.first_kickoff_team = gameNode["first_kickoff_team"].as<string>("red");
+    }
 
     if (sceneRoot["ball"] && sceneRoot["ball"]["position"]) {
         for (int i = 0; i < 3; ++i)
@@ -139,7 +181,7 @@ string SceneParser::buildMuJoCoXml() {
     compiler.append_attribute("meshdir") = "resources/meshes/";
 
     xml_node include_node = mujoco.append_child("include");
-    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.field + ".xml")).c_str();
+    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.simulationConfig.field.name + ".xml")).c_str();
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");

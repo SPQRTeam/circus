@@ -1,6 +1,4 @@
-field: field
-ball:
-  position: [0.0, 0.0, 0.12]
+simulation_config: default
 teams:
   red:
     - type: Booster-K1

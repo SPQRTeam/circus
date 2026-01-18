@@ -11,6 +11,11 @@
 
 namespace spqr {
 
+// Forward declarations
+struct FieldConfig;
+struct GameConfig;
+struct SimulationConfig;
+
 enum GamePhase { INITIAL, READY, SET, PLAYING, FINISH };
 inline std::string gamePhaseToString(GamePhase phase) {
     switch (phase) {
@@ -144,6 +149,7 @@ class GameController {
         }
 
         void bindMujoco(MujocoContext* mujContext);
+        void configure(const SimulationConfig& config);
         void reset();
 
         GamePhase getCurrentPhase() const {
@@ -155,8 +161,8 @@ class GameController {
         double getSimTime() const {
             return simTime_;
         }
-        double getGameTime() const {
-            return gameTime_;
+        double getGameElapsedTime() const {
+            return gameElapsedTime_;
         }
         double getCurrentPhaseElapsedTime() const {
             return currentPhaseElapsedTime_;
@@ -168,6 +174,9 @@ class GameController {
             return currentSubPhaseTeam_;
         }
 
+        int getGameDuration() const {
+            return gameDuration_;
+        }
         int getInitialPhaseDuration() const {
             return initialPhaseDuration_;
         }
@@ -177,9 +186,6 @@ class GameController {
         int getSetPhaseDuration() const {
             return setPhaseDuration_;
         }
-        int getPlayingPhaseDuration() const {
-            return playingPhaseDuration_;
-        }
         int getSubPhaseDuration() const {
             return subPhaseDuration_;
         }
@@ -188,7 +194,7 @@ class GameController {
         }
 
         void setPlayingPhaseDuration(int duration) {
-            playingPhaseDuration_ = duration;
+            gameDuration_ = duration;
         }
 
         std::tuple<int, int> getScore() const {
@@ -232,19 +238,21 @@ class GameController {
         std::vector<TeamInGame> teamsInGame_;
 
         double simTime_ = 0.0;             // Simulation time in seconds
-        double gameTime_ = 0.0;            // Game time in seconds
+        
+        int gameDuration_ = 600;                          // seconds  (10 minutes)
+        double gameElapsedTime_ = 0.0;            // Game time in seconds
         double lastUpdateGameTime_ = 0.0;  // Sim time of last game time update
+        
         double lastUpdateScore_ = 0.0;     // Sim time of last score update
 
         GamePhase currentPhase_ = INITIAL;                // Current game phase
         int initialPhaseDuration_ = 30;                   // seconds
         int readyPhaseDuration_ = 45;                     // seconds
         int setPhaseDuration_ = 15;                       // seconds
-        int playingPhaseDuration_ = 600;                  // seconds  (10 minutes)
         double currentPhaseElapsedTime_ = 0.0;            // seconds
         double lastUpdatecurrentPhaseElapsedTime_ = 0.0;  // Sim time of last phase elapsed time update
 
-        GameSubPhase currentSubPhase_ = BALLFREE;     // Current game sub-phase
+        GameSubPhase currentSubPhase_ = KICKOFF;     // Current game sub-phase
         int kickOffSubPhaseDuration_ = 10;            // seconds -> after this time, sub-phase returns to BALLFREE
         int subPhaseDuration_ = 30;                   // seconds -> duration for other sub-phases differing from KICKOFF
         double currentSubPhaseElapsedTime_ = 0.0;     // seconds

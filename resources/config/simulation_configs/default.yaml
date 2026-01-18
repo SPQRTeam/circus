@@ -1,0 +1,29 @@
+field:
+  name: adult_size
+  width: 14.0                    # x dimension
+  height: 9.0                    # y dimension
+  center_radius: 1.5             # center circle radius
+  goal_area_width: 1.0           # goal area width
+  goal_area_height: 4.0          # goal area height
+  penalty_area_width: 3.0        # penalty area width
+  penalty_area_height: 6.5       # penalty area height
+  goal_width: 2.6                # goal width
+  goal_height: 1.8               # goal height
+  goal_depth: 0.6                # goal depth
+  line_width: 0.08               # line thickness
+  penalty_mark_distance: 2.1     # distance of penalty mark from goal line
+  ball_radius: 0.11              # ball radius
+
+game:
+  max_simulation_time: -1        # maximum simulation time in seconds (if -1 -> no limit)
+  game_duration: 600             # total game duration in seconds
+  automatic_restart: true        # whether to automatically restart the game after it ends (up to max_simulation_time)
+     
+  initial_phase_duration: 30     # duration of the initial phase in seconds
+  ready_phase_duration: 45       # duration of the ready phase in seconds
+  set_phase_duration: 10         # duration of the set phase in seconds
+  
+  kickoff_subphase_duration: 10  # duration of the kickoff sub-phase in seconds
+  other_subphase_duration: 30    # duration of other sub-phases in seconds
+
+  first_kickoff_team: "red"      # name of the team that will take the first kickoff <red|blue>

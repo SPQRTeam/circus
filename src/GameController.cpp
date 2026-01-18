@@ -6,6 +6,8 @@
 #include <string>
 #include <tuple>
 
+#include "SceneParser.h"
+
 namespace spqr {
 
 std::tuple<double, double> GameController::getBallPosition() const {
@@ -41,12 +43,39 @@ void GameController::bindMujoco(MujocoContext* mujContext) {
     }
 }
 
+void GameController::configure(const SimulationConfig& config) {
+    // Apply field configuration
+    fieldDimensions["width"] = config.field.width;
+    fieldDimensions["height"] = config.field.height;
+    fieldDimensions["center_radius"] = config.field.center_radius;
+    fieldDimensions["goal_area_width"] = config.field.goal_area_width;
+    fieldDimensions["goal_area_height"] = config.field.goal_area_height;
+    fieldDimensions["penalty_area_width"] = config.field.penalty_area_width;
+    fieldDimensions["penalty_area_height"] = config.field.penalty_area_height;
+    fieldDimensions["goal_width"] = config.field.goal_width;
+    fieldDimensions["goal_height"] = config.field.goal_height;
+    fieldDimensions["goal_depth"] = config.field.goal_depth;
+    fieldDimensions["line_width"] = config.field.line_width;
+    fieldDimensions["penalty_mark_distance"] = config.field.penalty_mark_distance;
+    fieldDimensions["ball_radius"] = config.field.ball_radius;
+
+    // Apply game configuration
+    gameDuration_ = config.game.game_duration;
+    initialPhaseDuration_ = config.game.initial_phase_duration;
+    readyPhaseDuration_ = config.game.ready_phase_duration;
+    setPhaseDuration_ = config.game.set_phase_duration;
+    kickOffSubPhaseDuration_ = config.game.kickoff_subphase_duration;
+    subPhaseDuration_ = config.game.other_subphase_duration;
+    kickOffTeam_ = config.game.first_kickoff_team;
+}
+
 void GameController::reset() {
     mujContext_ = nullptr;
     teamsInGame_.clear();
     currentPhase_ = INITIAL;
+    currentSubPhase_ = KICKOFF;
     simTime_ = 0.0;
-    gameTime_ = 0.0;
+    gameElapsedTime_ = 0.0;
     lastUpdateGameTime_ = 0.0;
     lastUpdateScore_ = 0.0;
 }
@@ -460,7 +489,7 @@ std::string GameController::handlePenalizeRobot(std::string team, int robotId, P
             if (!rig) {
                 return "Robot " + std::to_string(robotId) + " not found in team '" + team + "'";
             }
-            rig->setPenalized(penalty, gameTime_);
+            rig->setPenalized(penalty, gameElapsedTime_);
 
             return "Robot " + team + "-" + std::to_string(robotId) + " penalization set to " + penaltyToString(penalty);
         }
@@ -526,7 +555,7 @@ void GameController::updateSimTime() {
 }
 
 void GameController::updateGameTime(double time) {
-    gameTime_ = time;
+    gameElapsedTime_ = time;
 }
 
 void GameController::updateScore(int redTeamScore, int blueTeamScore) {
@@ -607,7 +636,7 @@ void GameController::update() {
     if (currentPhase_ != INITIAL && currentPhase_ != FINISH) {
         // Update game time
         if (simTime_ - lastUpdateGameTime_ >= 1.0) {
-            gameTime_ += 1.0;
+            gameElapsedTime_ += 1.0;
             lastUpdateGameTime_ = simTime_;
         }
     }
@@ -645,7 +674,7 @@ void GameController::update() {
             currentPhaseElapsedTime_ = 0;
         }
     } else if (currentPhase_ == PLAYING) {
-        if (playingPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= playingPhaseDuration_) {
+        if (gameDuration_ > 0 && currentPhaseElapsedTime_ >= gameDuration_) {
             currentPhase_ = FINISH;
             currentPhaseElapsedTime_ = 0;
         }

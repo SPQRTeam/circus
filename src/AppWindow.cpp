@@ -126,7 +126,8 @@ void AppWindow::loadScene(const QString& yaml_file) {
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
-        // Update GameController with MujocoContext
+        // Configure and bind GameController
+        GameController::instance().configure(parser.getSceneInfo().simulationConfig);
         GameController::instance().bindMujoco(mujContext.get());
 
         // Recreate GameControllerPanelHeaderContainer
