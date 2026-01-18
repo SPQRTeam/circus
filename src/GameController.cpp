@@ -251,7 +251,6 @@ std::string GameController::handleGameSubPhase(std::string subPhase, std::string
 
     else if (currentSubPhase_ == KICKIN) {
         double targetY = (ballY >= 0.0) ? (fieldDimensions["height"] / 2.0) : -(fieldDimensions["height"] / 2.0);
-        std::cout << "Target Y for kickin: " << targetY << std::endl;
         handleMoveBall(ballX, targetY);
     }
 
@@ -371,11 +370,9 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
 }
 
 std::string GameController::handleMoveBall(double x, double y) {
-    std::cout << "Requested move ball to (" << x << ", " << y << ")" << std::endl;
     if (!checkFieldBounds(x, y)) {
         return "Invalid ball position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
-    std::cout << "Moving ball to (" << x << ", " << y << ")" << std::endl;
     int bodyId = mj_name2id(mujContext_->model, mjOBJ_BODY, "ball");
     if (bodyId < 0) {
         return "Error: Could not find ball body in the simulation.";
@@ -577,7 +574,6 @@ void GameController::updateBallContact() {
             for (const auto& robot : t.getTeam()->robots) {
                 // Check if this body belongs to this robot (e.g., contains robot name)
                 if (bodyNameStr.find(robot->name) != std::string::npos) {
-                    std::cout << "Ball contact detected with team: " << t.getTeam()->name << std::endl;
                     lastBallContactTeam_ = t.getTeam()->name;
                     currentSubPhase_ = BALLFREE;
                     currentSubPhaseElapsedTime_ = 0.0;
@@ -676,7 +672,6 @@ void GameController::update() {
 
         // Only update sub-phase team when an actual event occurs !
         if (subPhase != "none") {
-            std::cout << "Ball Event Detected - Sub-Phase: " << subPhase << ", Team: " << team << std::endl;
             currentSubPhaseTeam_ = team;
         }
 
@@ -702,12 +697,6 @@ void GameController::update() {
         }
 
         handleGameSubPhase(subPhase, team);
-
-        std::cout << "Game Phase: " << gamePhaseToString(currentPhase_) << std::endl;
-        std::cout << " -> Sub-Phase: " << gameSubPhaseToString(currentSubPhase_) << " - Team: " << currentSubPhaseTeam_ << std::endl;
-        std::cout << " -> Ball Position: (" << std::get<0>(getBallPosition()) << ", " << std::get<1>(getBallPosition()) << ")" << std::endl;
-        std::cout << " -> Last Ball Contact Team: " << lastBallContactTeam_ << std::endl;
-        std::cout << " ---------------------------- " << std::endl;
     }
 }
 
