@@ -167,7 +167,7 @@ string SceneParser::buildMuJoCoXml() {
     xml_node sensor = mujoco.append_child("sensor");
 
     xml_node light = worldbody.append_child("light");
-    light.append_attribute("ambient") = "0.4 0.4 0.4";
+    light.append_attribute("ambient") = "0.6 0.6 0.6";
     light.append_attribute("diffuse") = "0.5 0.5 0.5";
     light.append_attribute("specular") = "0.5 0.5 0.5";
     light.append_attribute("pos") = "0 0 100";

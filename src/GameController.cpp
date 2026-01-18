@@ -632,7 +632,6 @@ void GameController::update(){
         }
     }
 
-
     if(currentPhase_ == INITIAL){
         // Transition to READY phase after initialPhaseDuration_
         if (initialPhaseDuration_ > 0 && currentPhaseElapsedTime_ >= initialPhaseDuration_){
