@@ -126,6 +126,10 @@ class TeamInGame {
             return robotsInGame_;
         }
 
+        const std::vector<RobotInGame>& getRobotsInGame() const {
+            return robotsInGame_;
+        }
+
         void setScore(int score) {
             score_ = score;
         }
@@ -227,6 +231,7 @@ class GameController {
         void updateScore(int redTeamScore, int blueTeamScore);
         void updateBallContact();
         void update();
+        void logGameState() const;
 
     private:
         GameController() = default;
@@ -264,6 +269,12 @@ class GameController {
         std::string kickOffTeam_ = "red";           // Team to kickoff <"red", "blue"> (example: CornerKick FOR red)
 
         bool request_mjforward = false;  // Flag to request mj_forward() call in update()
+
+        // Game state logging
+        bool gameStateLogging_ = true;
+        std::string gameStateLoggingPath_ = "game_state.log";
+        float gameStateLoggingInterval_ = 1.0f;
+        double lastLogTime_ = 0.0;
 
         std::map<std::string, float> fieldDimensions = {
             {"width", 14.0f},                 // x dimension

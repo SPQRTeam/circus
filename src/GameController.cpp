@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <tuple>
@@ -67,6 +69,11 @@ void GameController::configure(const SimulationConfig& config) {
     kickOffSubPhaseDuration_ = config.game.kickoff_subphase_duration;
     subPhaseDuration_ = config.game.other_subphase_duration;
     kickOffTeam_ = config.game.first_kickoff_team;
+
+    // Apply logging configuration
+    gameStateLogging_ = config.game.game_state_logging;
+    gameStateLoggingPath_ = config.game.game_state_logging_path;
+    gameStateLoggingInterval_ = config.game.game_state_logging_interval;
 }
 
 void GameController::reset() {
@@ -727,6 +734,52 @@ void GameController::update() {
 
         handleGameSubPhase(subPhase, team);
     }
+
+    // Log game state at configured interval
+    if (gameStateLogging_ && (simTime_ - lastLogTime_ >= gameStateLoggingInterval_)) {
+        logGameState();
+        lastLogTime_ = simTime_;
+    }
+}
+
+void GameController::logGameState() const {
+    if (!gameStateLogging_) {
+        return;
+    }
+
+    std::ofstream logFile(gameStateLoggingPath_, std::ios::trunc);
+    if (!logFile.is_open()) {
+        std::cerr << "Failed to open game state log file: " << gameStateLoggingPath_ << std::endl;
+        return;
+    }
+
+    // Get current scores
+    auto [redScore, blueScore] = getScore();
+
+    // Get ball position
+    auto [ballX, ballY] = getBallPosition();
+
+    logFile << std::fixed << std::setprecision(0);
+    logFile << "simTime: " << simTime_ << std::endl;
+    logFile << "gameElapsedTime: " << gameElapsedTime_ << std::endl;
+    logFile << "currentPhase: " << gamePhaseToString(currentPhase_) << std::endl;
+    logFile << "currentSubPhase: " << gameSubPhaseToString(currentSubPhase_) << std::endl;
+    logFile << "currentSubPhaseTeam: " << currentSubPhaseTeam_ << std::endl;
+    logFile << "redScore: " << redScore << std::endl;
+    logFile << "blueScore: " << blueScore << std::endl;
+
+    // Log robot penalties for each team
+    for (const TeamInGame& team : teamsInGame_) {
+        logFile << std::endl;
+        logFile << "Team: " << team.getTeam()->name << std::endl;
+        for (const RobotInGame& robot : team.getRobotsInGame()) {
+            logFile << " - Robot " << team.getTeam()->name << "-" << static_cast<int>(robot.getRobot()->number) << std::endl;
+            logFile << "   - Penalty: " << penaltyToString(robot.getPenalty()) << std::endl;
+        }
+    }
+
+    logFile << std::endl;
+    logFile.close();
 }
 
 }  // namespace spqr
