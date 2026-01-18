@@ -65,18 +65,21 @@ class GameControllerPanelHeader : public QWidget {
             gamePhaseLabel_->setStyleSheet(getLabelValueStyle());
             layout->addWidget(gamePhaseLabel_);
 
-            // Add spacing
-            layout->addSpacing(10);
-            
+            // Spacer before Phase Time (can be hidden)
+            phaseTimeSpacer_ = new QWidget(this);
+            phaseTimeSpacer_->setFixedWidth(5);
+            phaseTimeSpacer_->setStyleSheet("QWidget { background-color: transparent; border: none; }");
+            layout->addWidget(phaseTimeSpacer_);
+
             // Phase Time label
-            QLabel* phaseTimeTitle = new QLabel("Phase Time:", this);
-            phaseTimeTitle->setStyleSheet(getLabelTitleStyle());
-            layout->addWidget(phaseTimeTitle);
+            phaseTimeTitleLabel_ = new QLabel("Phase Time:", this);
+            phaseTimeTitleLabel_->setStyleSheet(getLabelTitleStyle());
+            layout->addWidget(phaseTimeTitleLabel_);
 
             gamePhaseTimeLabel_ = new QLabel("00:00", this);
             gamePhaseTimeLabel_->setStyleSheet(getLabelValueStyle());
             layout->addWidget(gamePhaseTimeLabel_);
-            
+
             layout->addSpacing(10);
 
             // SubPhase label (hidden by default)
@@ -174,10 +177,12 @@ class GameControllerPanelHeader : public QWidget {
                                        .arg(simTimeMinutes, 2, 10, QChar('0'))
                                        .arg(simTimeSeconds, 2, 10, QChar('0')));
 
-            // Update game time
+            // Update game time (countdown from playing duration to 0)
             double gameTime = gc.getGameTime();
-            int gameTimeMinutes = static_cast<int>(gameTime) / 60;
-            int gameTimeSeconds = static_cast<int>(gameTime) % 60;
+            double gameRemainingTime = gc.getPlayingPhaseDuration() - gameTime;
+            if (gameRemainingTime < 0) gameRemainingTime = 0.0;
+            int gameTimeMinutes = static_cast<int>(gameRemainingTime) / 60;
+            int gameTimeSeconds = static_cast<int>(gameRemainingTime) % 60;
             gameTimeLabel_->setText(QString("%1:%2")
                                         .arg(gameTimeMinutes, 2, 10, QChar('0'))
                                         .arg(gameTimeSeconds, 2, 10, QChar('0')));
@@ -187,36 +192,42 @@ class GameControllerPanelHeader : public QWidget {
             double phaseElapsedTime = gc.getCurrentPhaseElapsedTime();
             double phaseRemainingTime = 0.0;
 
-            switch (phase) {
-                case INITIAL:
-                    phaseRemainingTime = gc.getInitialPhaseDuration() - phaseElapsedTime;
-                    break;
-                case READY:
-                    phaseRemainingTime = gc.getReadyPhaseDuration() - phaseElapsedTime;
-                    break;
-                case SET:
-                    phaseRemainingTime = gc.getSetPhaseDuration() - phaseElapsedTime;
-                    break;
-                case PLAYING:
-                    phaseRemainingTime = gc.getPlayingPhaseDuration() - phaseElapsedTime;
-                    break;
-                case FINISH:
-                    phaseRemainingTime = 0.0;
-                    break;
+            // Hide phase time during PLAYING phase
+            bool showPhaseTime = (phase != PLAYING);
+            phaseTimeSpacer_->setVisible(showPhaseTime);
+            phaseTimeTitleLabel_->setVisible(showPhaseTime);
+            gamePhaseTimeLabel_->setVisible(showPhaseTime);
+
+            if (showPhaseTime) {
+                switch (phase) {
+                    case INITIAL:
+                        phaseRemainingTime = gc.getInitialPhaseDuration() - phaseElapsedTime;
+                        break;
+                    case READY:
+                        phaseRemainingTime = gc.getReadyPhaseDuration() - phaseElapsedTime;
+                        break;
+                    case SET:
+                        phaseRemainingTime = gc.getSetPhaseDuration() - phaseElapsedTime;
+                        break;
+                    case PLAYING:
+                    case FINISH:
+                        phaseRemainingTime = 0.0;
+                        break;
+                }
+
+                // Ensure remaining time is not negative
+                if (phaseRemainingTime < 0) phaseRemainingTime = 0.0;
+
+                int phaseMinutes = static_cast<int>(phaseRemainingTime) / 60;
+                int phaseSeconds = static_cast<int>(phaseRemainingTime) % 60;
+                gamePhaseTimeLabel_->setText(QString("%1:%2")
+                                                .arg(phaseMinutes, 2, 10, QChar('0'))
+                                                .arg(phaseSeconds, 2, 10, QChar('0')));
             }
 
-            // Ensure remaining time is not negative
-            if (phaseRemainingTime < 0) phaseRemainingTime = 0.0;
-
-            int phaseMinutes = static_cast<int>(phaseRemainingTime) / 60;
-            int phaseSeconds = static_cast<int>(phaseRemainingTime) % 60;
-            gamePhaseTimeLabel_->setText(QString("%1:%2")
-                                            .arg(phaseMinutes, 2, 10, QChar('0'))
-                                            .arg(phaseSeconds, 2, 10, QChar('0')));
-
-            // Update sub-phase display (only visible when not NONESUBPHASE)
+            // Update sub-phase display (only visible when not BALLFREE)
             GameSubPhase subPhase = gc.getCurrentSubPhase();
-            bool showSubPhase = (subPhase != NONESUBPHASE);
+            bool showSubPhase = (subPhase != BALLFREE);
 
             subPhaseTitleLabel_->setVisible(showSubPhase);
             subPhaseLabel_->setVisible(showSubPhase);
@@ -236,9 +247,10 @@ class GameControllerPanelHeader : public QWidget {
                 }
                 subPhaseLabel_->setStyleSheet(getLabelValueStyle(color));
 
-                // Calculate sub-phase remaining time
+                // Calculate sub-phase remaining time (KICKOFF has different duration)
                 double subPhaseElapsedTime = gc.getCurrentSubPhaseElapsedTime();
-                double subPhaseRemainingTime = gc.getSubPhaseDuration() - subPhaseElapsedTime;
+                double subPhaseDuration = (subPhase == KICKOFF) ? gc.getKickOffSubPhaseDuration() : gc.getSubPhaseDuration();
+                double subPhaseRemainingTime = subPhaseDuration - subPhaseElapsedTime;
                 if (subPhaseRemainingTime < 0) subPhaseRemainingTime = 0.0;
 
                 int subPhaseMinutes = static_cast<int>(subPhaseRemainingTime) / 60;
@@ -381,6 +393,8 @@ class GameControllerPanelHeader : public QWidget {
         QLabel* simTimeLabel_;
         QLabel* gameTimeLabel_;
         QLabel* gamePhaseLabel_;
+        QWidget* phaseTimeSpacer_;
+        QLabel* phaseTimeTitleLabel_;
         QLabel* gamePhaseTimeLabel_;
         QLabel* subPhaseTitleLabel_;
         QLabel* subPhaseLabel_;

@@ -581,7 +581,7 @@ void GameController::updateBallContact() {
                 if (bodyNameStr.find(robot->name) != std::string::npos) {
                     std::cout << "Ball contact detected with team: " << t.getTeam()->name << std::endl;
                     lastBallContactTeam_ = t.getTeam()->name;
-                    currentSubPhase_ = NONESUBPHASE;
+                    currentSubPhase_ = BALLFREE;
                     currentSubPhaseElapsedTime_ = 0.0;
                     lastUpdateSubPhaseElapsedTime_ = simTime_;
                     currentSubPhaseTeam_ = "none";
@@ -601,7 +601,9 @@ void GameController::update(){
     }
 
     // Update ball contact
-    updateBallContact();
+    if(currentPhase_ == PLAYING){
+        updateBallContact();
+    }
 
     // Update sim time
     if (mujContext_ && mujContext_->data) {
@@ -617,13 +619,13 @@ void GameController::update(){
     }
 
     // Update current phase elapsed time
-    if (simTime_ - lastUpdatecurrentPhaseElapsedTime_ >= 1.0) {
+    if (currentPhase_ != PLAYING && simTime_ - lastUpdatecurrentPhaseElapsedTime_ >= 1.0) {
         currentPhaseElapsedTime_ += 1.0;
         lastUpdatecurrentPhaseElapsedTime_ = simTime_;
     }
 
     // Update subphase elapsed time
-    if (currentSubPhase_ != NONESUBPHASE) {
+    if (currentPhase_ == PLAYING && currentSubPhase_ != BALLFREE) {
         if (simTime_ - lastUpdateSubPhaseElapsedTime_ >= 1.0) {
             currentSubPhaseElapsedTime_ += 1.0;
             lastUpdateSubPhaseElapsedTime_ = simTime_;
@@ -658,11 +660,19 @@ void GameController::update(){
             currentPhaseElapsedTime_ = 0;
         }
 
-        if(currentSubPhase_ != NONESUBPHASE){
-            // After a set time in sub-phase, return to NONE sub-phase
-            if(subPhaseDuration_ > 0 && currentSubPhaseElapsedTime_ >= subPhaseDuration_){
-                currentSubPhase_ = NONESUBPHASE;
-                currentSubPhaseElapsedTime_ = 0.0;
+        if(currentSubPhase_ != BALLFREE){
+            if(currentSubPhase_ == KICKOFF){
+                if(kickOffSubPhaseDuration_ > 0 && currentSubPhaseElapsedTime_ >= kickOffSubPhaseDuration_){
+                    currentSubPhase_ = BALLFREE;
+                    currentSubPhaseElapsedTime_ = 0.0;
+                }
+            }
+            else{
+                // After a set time in sub-phase, return to NONE sub-phase
+                if(subPhaseDuration_ > 0 && currentSubPhaseElapsedTime_ >= subPhaseDuration_){
+                    currentSubPhase_ = BALLFREE;
+                    currentSubPhaseElapsedTime_ = 0.0;
+                }
             }
         }
         
@@ -693,8 +703,9 @@ void GameController::update(){
                     updateScore(redScore, blueScore);
                 }
                 lastTeamToScore_ = scoringTeam;
-                currentPhase_ = SET; // Reset game phase to SET after a goal
                 lastUpdateScore_ = simTime_;
+                currentPhase_ = READY; // Reset game phase to READY after a goal
+                currentPhaseElapsedTime_ = 0.0;
             }
         }
 

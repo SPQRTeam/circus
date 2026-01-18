@@ -23,10 +23,10 @@ inline std::string gamePhaseToString(GamePhase phase) {
     }
 }
 
-enum GameSubPhase { NONESUBPHASE, KICKOFF, KICKIN, CORNERKICK, GOALKICK, PENALTYKICK, PUSHINGFREEKICK };
+enum GameSubPhase { BALLFREE, KICKOFF, KICKIN, CORNERKICK, GOALKICK, PENALTYKICK, PUSHINGFREEKICK };
 inline std::string gameSubPhaseToString(GameSubPhase subPhase) {
     switch (subPhase) {
-        case NONESUBPHASE: return "NONESUBPHASE";
+        case BALLFREE: return "BALLFREE";
         case KICKOFF: return "KICKOFF";
         case KICKIN: return "KICKIN";
         case CORNERKICK: return "CORNERKICK";
@@ -164,6 +164,9 @@ class GameController {
         int getSubPhaseDuration() const {
             return subPhaseDuration_;
         }
+        int getKickOffSubPhaseDuration() const {
+            return kickOffSubPhaseDuration_;
+        }
 
         void setPlayingPhaseDuration(int duration) {
             playingPhaseDuration_ = duration;
@@ -211,6 +214,8 @@ class GameController {
 
         double simTime_ = 0.0;                           // Simulation time in seconds
         double gameTime_ = 0.0;                          // Game time in seconds
+        double lastUpdateGameTime_ = 0.0;                // Sim time of last game time update
+        double lastUpdateScore_ = 0.0;                   // Sim time of last score update
         
         GamePhase currentPhase_ = INITIAL;               // Current game phase
         int initialPhaseDuration_ = 30;                  // seconds
@@ -220,14 +225,12 @@ class GameController {
         double currentPhaseElapsedTime_ = 0.0;           // seconds
         double lastUpdatecurrentPhaseElapsedTime_ = 0.0; // Sim time of last phase elapsed time update
 
-        GameSubPhase currentSubPhase_ = NONESUBPHASE;         // Current game sub-phase
-        int subPhaseDuration_ = 30;                      // seconds
+        GameSubPhase currentSubPhase_ = BALLFREE;        // Current game sub-phase
+        int kickOffSubPhaseDuration_ = 10;               // seconds -> after this time, sub-phase returns to BALLFREE
+        int subPhaseDuration_ = 30;                      // seconds -> duration for other sub-phases differing from KICKOFF
         double currentSubPhaseElapsedTime_ = 0.0;        // seconds
         double lastUpdateSubPhaseElapsedTime_ = 0.0;     // Sim time of last sub-phase elapsed time update
-        std::string currentSubPhaseTeam_ = "none";          // Team associated with current sub-phase
-
-        double lastUpdateGameTime_ = 0.0;                // Sim time of last game time update
-        double lastUpdateScore_ = 0.0;                   // Sim time of last score update
+        std::string currentSubPhaseTeam_ = "none";       // Team associated with current sub-phase
 
         std::string lastTeamToScore_ = "none";           // Last team to score <"red", "blue", "none">
         std::string lastBallContactTeam_ = "none";       // Last team to contact the ball <"red", "blue", "none">
