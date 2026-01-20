@@ -1,9 +1,9 @@
 <mujoco model="field">
     <asset>
-        <texture name="soccer_field_tex" file="../textures/fieldRCAP.png" type="2d" />
+        <texture name="soccer_field_tex" file="../../textures/fieldRCAP.png" type="2d" />
         <material name="soccer_field_mat" texture="soccer_field_tex" texrepeat="1 1" rgba="1 1 1 1" />
 
-        <texture name="goal_net_tex" file="../textures/net.png" type="2d" />
+        <texture name="goal_net_tex" file="../../textures/net.png" type="2d" />
         <material name="goal_net_mat" texture="goal_net_tex" rgba="1 1 1 0.15"/>
     </asset>
 

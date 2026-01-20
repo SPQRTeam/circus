@@ -1,6 +1,6 @@
 <mujoco model="field">
     <asset>
-        <texture name="soccer_field_tex" file="../textures/soccer_field.png" type="2d" />
+        <texture name="soccer_field_tex" file="../../textures/soccer_field.png" type="2d" />
         <material name="soccer_field_mat" texture="soccer_field_tex" texrepeat="1 1" rgba="1 1 1 1" />
     </asset>
 

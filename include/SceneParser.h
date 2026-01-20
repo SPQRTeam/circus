@@ -23,6 +23,7 @@ struct BallSpec {
 
 struct FieldConfig {
         std::string name;
+        std::string type;
         float width = 14.0f;
         float height = 9.0f;
         float center_radius = 1.5f;

@@ -40,7 +40,8 @@ SceneParser::SceneParser(const string& yamlPath) {
         throw runtime_error("Simulation config missing 'field' entry.");
 
     const YAML::Node& fieldNode = simConfigRoot["field"];
-    scene.simulationConfig.field.name = fieldNode["name"].as<string>("adult_size");
+    scene.simulationConfig.field.name = fieldNode["name"].as<string>("fieldAdultSize");
+    scene.simulationConfig.field.type = fieldNode["type"].as<string>("full");
     scene.simulationConfig.field.width = fieldNode["width"].as<float>(14.0f);
     scene.simulationConfig.field.height = fieldNode["height"].as<float>(9.0f);
     scene.simulationConfig.field.center_radius = fieldNode["center_radius"].as<float>(1.5f);
@@ -78,43 +79,8 @@ SceneParser::SceneParser(const string& yamlPath) {
         scene.simulationConfig.game.penalty_duration = gameNode["penalty_duration"].as<int>(45);
     }
 
-    if (sceneRoot["ball"] && sceneRoot["ball"]["position"]) {
-        for (int i = 0; i < 3; ++i)
-            ballSpec.position[i] = sceneRoot["ball"]["position"][i].as<double>();
-    } else {
-        ballSpec.position = Eigen::Vector3d(0.0, 0.0, 0.12);
-    }
-
-    // Load GUI configuration parameters
-    if (sceneRoot["gui_config"]) {
-        const YAML::Node& guiConfigNode = sceneRoot["gui_config"];
-        if (!guiConfigNode.IsSequence() || guiConfigNode.size() == 0) {
-            throw runtime_error("The GUI configuration must be a sequence and contain at least one element.");
-        }
-        const YAML::Node& toolsPanelNode = guiConfigNode[0]["tools_panel"];
-        if (toolsPanelNode && toolsPanelNode.IsSequence() && toolsPanelNode.size() >= 2) {
-            scene.guiConfig.rows = toolsPanelNode[0].as<int>();
-            scene.guiConfig.columns = toolsPanelNode[1].as<int>();
-        }
-        const YAML::Node& cellDataNode = guiConfigNode[1]["cell_data"];
-        if (cellDataNode && cellDataNode.IsSequence()) {
-            if (cellDataNode.size() > scene.guiConfig.rows * scene.guiConfig.columns) {
-                throw runtime_error("The number of cell data entries must be less than or equal to the total "
-                                    "number of GUI cells.");
-            }
-            for (const YAML::Node& cellNode : cellDataNode) {
-                CellData cellData;
-                if (cellNode["cell"] && cellNode["cell"].IsSequence() && cellNode["cell"].size() >= 2) {
-                    cellData.row = cellNode["cell"][0].as<int>();
-                    cellData.column = cellNode["cell"][1].as<int>();
-                }
-                if (cellNode["stream"])
-                    cellData.stream = cellNode["stream"].as<string>();
-                scene.guiConfig.cellData.push_back(cellData);
-            }
-        }
-    }
-
+    ballSpec.position = Eigen::Vector3d(0.0, 0.0, 0.12);
+    
     const YAML::Node& teamsNode = sceneRoot["teams"];
     if (!teamsNode || teamsNode.size() > 2) {
         throw runtime_error("Scene must contain one or two teams.");
@@ -192,7 +158,7 @@ string SceneParser::buildMuJoCoXml() {
 
     xml_node include_node = mujoco.append_child("include");
     include_node.append_attribute("file")
-        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / (scene.simulationConfig.field.name + ".xml")).c_str();
+        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / scene.simulationConfig.field.type / (scene.simulationConfig.field.name + ".xml")).c_str();
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");

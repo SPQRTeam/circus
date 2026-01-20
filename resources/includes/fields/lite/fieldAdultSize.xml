@@ -1,0 +1,77 @@
+<mujoco model="field">
+
+<asset>
+    <texture name="grid_tex" type="2d" builtin="checker" rgb1="0.2 0.2 0.2" rgb2="0.25 0.25 0.25" width="512" height="512"/>
+    <material name="grid_mat" texture="grid_tex" texrepeat="50 50"/>
+
+    <!-- Field -->
+    <texture name="grass_tex" type="2d" builtin="flat" rgb1="0.2 0.5 0.2" width="512" height="512"/>
+    <material name="grass" texture="grass_tex" specular="0.1" shininess="0.05" reflectance="0.0"/>
+
+    <!-- Lines Mesh -->
+    <mesh name="lines_mesh" file="../../../meshes/lines/14x9.obj"/>
+    <material name="lines_mat" rgba="0.6 0.6 0.5 0.75" specular="0.2" shininess="0.1" reflectance="0.0"/>
+
+    <!-- Goal Meshes -->
+    <mesh name="left_post" file="../../../meshes/goal/LeftPost.obj"/>
+    <mesh name="right_post" file="../../../meshes/goal/RightPost.obj"/>
+    <mesh name="crossbar" file="../../../meshes/goal/Crossbar.obj"/>
+
+    <mesh name="left_back_post" file="../../../meshes/goal/LeftBackPost.obj"/>
+    <mesh name="right_back_post" file="../../../meshes/goal/RightBackPost.obj"/>
+    <mesh name="back_crossbar" file="../../../meshes/goal/BackCrossbar.obj"/>ù
+
+    <mesh name="right_holder" file="../../../meshes/goal/RightHolder.obj"/>
+    <mesh name="left_holder" file="../../../meshes/goal/LeftHolder.obj"/>
+
+    <mesh name="left_net" file="../../../meshes/goal/LeftNet.obj"/>
+    <mesh name="right_net" file="../../../meshes/goal/RightNet.obj"/>
+    <mesh name="back_net" file="../../../meshes/goal/BackNet.obj"/>
+
+</asset>
+
+<visual>
+    <!-- <quality shadowsize="4096"/> -->
+    <map shadowclip="1.0" znear="0.0001"/>
+</visual>
+
+<worldbody>
+
+    <!-- Grid -->
+    <geom name="grid" type="plane" size="50 50 0.1" material="grid_mat" pos="0 0 0" euler="0 0 0" condim="3" friction="0.01 0.01 0.01"/>
+
+    <!-- Field -->
+    <geom name="ground" type="plane" size="8 5.5 0.1" material="grass" pos="0 0 0.001" condim="3" friction="0.01 0.01 0.01"/>
+
+    <!-- Lines -->
+    <geom name="lines" type="mesh" mesh="lines_mesh" material="lines_mat" pos="0 0 0.002" euler="1.570796327 0 0" contype="0" conaffinity="0"/>
+
+    <!-- Left goal -->
+    <geom name="left_goal_left_post" type="mesh" mesh="left_post"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_right_post" type="mesh" mesh="right_post"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_crossbar" type="mesh" mesh="crossbar"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_left_back_post" type="mesh" mesh="left_back_post"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_right_back_post" type="mesh" mesh="right_back_post"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_back_crossbar" type="mesh" mesh="back_crossbar"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_right_holder" type="mesh" mesh="right_holder"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_left_holder" type="mesh" mesh="left_holder"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_left_net" type="mesh" mesh="left_net"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_right_net" type="mesh" mesh="right_net"  pos="-7 0 0" euler="1.57 0 0"/>
+    <geom name="left_goal_back_net" type="mesh" mesh="back_net"  pos="-7 0 0" euler="1.57 0 0"/>
+
+    <!-- Right goal -->
+    <geom name="right_goal_left_post" type="mesh" mesh="left_post"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_right_post" type="mesh" mesh="right_post"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_crossbar" type="mesh" mesh="crossbar"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_left_back_post" type="mesh" mesh="left_back_post"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_right_back_post" type="mesh" mesh="right_back_post"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_back_crossbar" type="mesh" mesh="back_crossbar"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_right_holder" type="mesh" mesh="right_holder"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_left_holder" type="mesh" mesh="left_holder"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_left_net" type="mesh" mesh="left_net"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_right_net" type="mesh" mesh="right_net"  pos="7 0 0" euler="1.57 3.14 0"/>
+    <geom name="right_goal_back_net" type="mesh" mesh="back_net"  pos="7 0 0" euler="1.57 3.14 0"/>
+
+</worldbody>
+
+</mujoco>

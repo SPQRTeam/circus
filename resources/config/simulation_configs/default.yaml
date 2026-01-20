@@ -2,7 +2,8 @@ simulation:
   max_simulation_time: -1                         # maximum simulation time in seconds (if -1 -> no limit)
 
 field:
-  name: adult_size
+  name: fieldAdultSize                            # field name corresponding to an XML file in resources/includes/fields/<full|lite>/
+  type: lite                                      # field type <full|lite>
   width: 14.0                                     # x dimension
   height: 9.0                                     # y dimension
   center_radius: 1.5                              # center circle radius
