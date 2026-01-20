@@ -19,17 +19,12 @@ SimulationViewport::SimulationViewport(MujocoContext& mujContext)
     timer->start(16);
     mjv_defaultPerturb(&pert);
 
-    this->targetDistance = 15.0f;
-    this->targetAzimuth = 90.f;
-    this->targetElevation = -45.f;
-    this->targetLookat[0] = 0;
-    this->targetLookat[1] = -1;
-    this->targetLookat[2] = 0;
-
-    // Set initial camera position for animation (far away, higher elevation)
-    cam->distance = this->targetDistance * 5.0f;  // Start 5x farther
-    cam->elevation = -20.0f;                      // Start from lower angle
-    cam->azimuth = this->targetAzimuth - 360.0f;  // Start 360 degrees before target (full rotation)
+    cam->distance = 15.f;
+    cam->azimuth = 90.f;
+    cam->elevation = -45.f;
+    cam->lookat[0] = 0.f;
+    cam->lookat[1] = -1.f;
+    cam->lookat[2] = 0.f;
 }
 
 void SimulationViewport::initializeGL() {
@@ -46,39 +41,6 @@ void SimulationViewport::resizeGL(int w, int h) {
 }
 
 void SimulationViewport::paintGL() {
-    // Update camera animation
-    if (cameraAnimating) {
-        animationTime += 0.016f;  // Assume ~60 FPS (16ms per frame)
-
-        if (animationTime >= animationDuration) {
-            // Animation complete
-            cameraAnimating = false;
-            cam->distance = targetDistance;
-            cam->azimuth = targetAzimuth;
-            cam->elevation = targetElevation;
-            cam->lookat[0] = targetLookat[0];
-            cam->lookat[1] = targetLookat[1];
-            cam->lookat[2] = targetLookat[2];
-        } else {
-            // Smooth easing function (ease-in-out cubic)
-            float t = animationTime / animationDuration;
-            float eased = t < 0.5f ? 4.0f * t * t * t : 1.0f - std::pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
-
-            // Initial values
-            float startDistance = targetDistance * 10.0f;
-            float startElevation = -40.0f;
-            float startAzimuth = targetAzimuth - 360.0f;
-
-            // Interpolate camera parameters
-            cam->distance = startDistance + (targetDistance - startDistance) * eased;
-            cam->elevation = startElevation + (targetElevation - startElevation) * eased;
-            cam->azimuth = startAzimuth + (targetAzimuth - startAzimuth) * eased;
-            cam->lookat[0] = targetLookat[0];
-            cam->lookat[1] = targetLookat[1];
-            cam->lookat[2] = targetLookat[2];
-        }
-    }
-
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

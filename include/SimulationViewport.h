@@ -67,15 +67,6 @@ class SimulationViewport : public QOpenGLWindow {
 
         int width = initialWindowWidth, height = initialWindowHeight;
         int logicalWidth = initialWindowWidth, logicalHeight = initialWindowHeight;
-
-        // Camera animation variables
-        bool cameraAnimating = true;
-        float animationTime = 0.0f;
-        float animationDuration = 3.0f;  // 3 seconds for the animation
-        float targetDistance;
-        float targetAzimuth;
-        float targetElevation;
-        float targetLookat[3];
 };
 
 }  // namespace spqr
