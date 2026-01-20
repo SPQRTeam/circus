@@ -15,7 +15,6 @@
 #include <unistd.h>
 
 #include <cstring>
-#include <functional>
 
 namespace spqr {
 
