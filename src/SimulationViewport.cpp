@@ -5,8 +5,6 @@
 #include <qnamespace.h>
 #include <qpoint.h>
 
-#include <cmath>
-
 #include "RobotManager.h"
 #include "sensors/Sensor.h"
 
@@ -128,7 +126,8 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum axis[3] = {0, 0, 1};
 
             mjtNum amp = mju_sqrt(reldx * reldx + reldy * reldy);
-            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) : -mju_sign(reldy);
+            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) : 
+                                                                                                -mju_sign(reldy);
 
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
@@ -142,6 +141,33 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
     }
 
     lastMousePosition = event->position();
+}
+
+void SimulationViewport::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_G) {
+        if (selectedRobot >= 0) {
+            pert.active = mjPERT_TRANSLATE;
+            mouseAction = mjMOUSE_MOVE_H;
+        }
+    }
+    if (event->key() == Qt::Key_R) {
+        if (selectedRobot >= 0) {
+            pert.active = mjPERT_ROTATE;
+            mouseAction = mjMOUSE_ROTATE_V;
+        }
+    }
+    if (event->key() == Qt::Key_H) {
+        if (mouseAction == mjMOUSE_MOVE_V)
+            mouseAction = mjMOUSE_MOVE_H;
+        if (mouseAction == mjMOUSE_ROTATE_V)
+            mouseAction = mjMOUSE_ROTATE_H;
+    }
+    if (event->key() == Qt::Key_V) {
+        if (mouseAction == mjMOUSE_MOVE_H)
+            mouseAction = mjMOUSE_MOVE_V;
+        if (mouseAction == mjMOUSE_ROTATE_H)
+            mouseAction = mjMOUSE_ROTATE_V;
+    }
 }
 
 int SimulationViewport::findBodyRoot(int bodyId) const {
