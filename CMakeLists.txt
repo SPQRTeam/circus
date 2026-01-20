@@ -180,6 +180,11 @@ set(_EXTRA_LIBS
   nlohmann_json::nlohmann_json
 )
 
+# Add util library for PTY support on Linux
+if(UNIX AND NOT APPLE)
+  list(APPEND _EXTRA_LIBS util)
+endif()
+
 # --- Build core library (ensure AUTOMOC is on for the target)
 add_library(${LIBRARY} STATIC ${SOURCES} ${QML_RESOURCES})
 target_sources(${LIBRARY} PRIVATE ${HEADERS} ${ALL_UIS} ${ALL_QRCS}) # Just used for IDE discovering headers

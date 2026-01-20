@@ -1,20 +1,19 @@
 #pragma once
 
-#include <qobject.h>
-
+#include <QApplication>
+#include <QClipboard>
 #include <QContextMenuEvent>
 #include <QFont>
 #include <QKeyEvent>
 #include <QMenu>
-#include <QProcess>
+#include <QScrollBar>
 #include <QTextEdit>
-#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <deque>
 #include <memory>
 
 #include "Container.h"
+#include "Pty.h"
 #include "Tool.h"
 
 namespace spqr {
@@ -23,7 +22,7 @@ class TerminalDisplay : public QTextEdit {
         Q_OBJECT
 
     public:
-        TerminalDisplay(QWidget* parent = nullptr) : QTextEdit(parent), inputStartPos_(0) {
+        TerminalDisplay(QWidget* parent = nullptr) : QTextEdit(parent) {
             setStyleSheet("QTextEdit { "
                           "  background-color: #0c0c0c; "
                           "  color: #cccccc; "
@@ -37,68 +36,145 @@ class TerminalDisplay : public QTextEdit {
             font.setStyleHint(QFont::Monospace);
             setFont(font);
 
-            // Make it editable for typing commands
             setReadOnly(false);
             setUndoRedoEnabled(false);
+            setLineWrapMode(QTextEdit::NoWrap);
         }
 
-        void appendOutput(const QString& text) {
-            moveCursor(QTextCursor::End);
-            insertPlainText(text);
-            moveCursor(QTextCursor::End);
-            inputStartPos_ = textCursor().position();
-            ensureCursorVisible();
-        }
+        void appendOutput(const QString& text) { processAndAppend(text); }
 
-        QString getCurrentCommand() {
-            QTextCursor cursor = textCursor();
-            cursor.setPosition(inputStartPos_);
-            cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-            return cursor.selectedText();
-        }
-
-        void clearCurrentCommand() {
-            QTextCursor cursor = textCursor();
-            cursor.setPosition(inputStartPos_);
-            cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
-            cursor.removeSelectedText();
+        void clearScreen() {
+            clear();
+            moveCursor(QTextCursor::Start);
         }
 
     signals:
-        void commandEntered(const QString& command);
-        void upPressed();
-        void downPressed();
+        void keyInput(const QByteArray& data);
 
     protected:
         void keyPressEvent(QKeyEvent* event) override {
-            // Prevent editing before input start position
-            if (event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Left) {
-                if (textCursor().position() <= inputStartPos_) {
-                    event->accept();
-                    return;
-                }
+            QByteArray data;
+
+            // Handle special keys
+            switch (event->key()) {
+                case Qt::Key_Return:
+                case Qt::Key_Enter:
+                    data = "\r";
+                    break;
+                case Qt::Key_Backspace:
+                    data = "\x7f";  // DEL character
+                    break;
+                case Qt::Key_Tab:
+                    data = "\t";
+                    break;
+                case Qt::Key_Escape:
+                    data = "\x1b";
+                    break;
+                case Qt::Key_Up:
+                    data = "\x1b[A";
+                    break;
+                case Qt::Key_Down:
+                    data = "\x1b[B";
+                    break;
+                case Qt::Key_Right:
+                    data = "\x1b[C";
+                    break;
+                case Qt::Key_Left:
+                    data = "\x1b[D";
+                    break;
+                case Qt::Key_Home:
+                    data = "\x1b[H";
+                    break;
+                case Qt::Key_End:
+                    data = "\x1b[F";
+                    break;
+                case Qt::Key_PageUp:
+                    data = "\x1b[5~";
+                    break;
+                case Qt::Key_PageDown:
+                    data = "\x1b[6~";
+                    break;
+                case Qt::Key_Insert:
+                    data = "\x1b[2~";
+                    break;
+                case Qt::Key_Delete:
+                    data = "\x1b[3~";
+                    break;
+                case Qt::Key_F1:
+                    data = "\x1bOP";
+                    break;
+                case Qt::Key_F2:
+                    data = "\x1bOQ";
+                    break;
+                case Qt::Key_F3:
+                    data = "\x1bOR";
+                    break;
+                case Qt::Key_F4:
+                    data = "\x1bOS";
+                    break;
+                case Qt::Key_F5:
+                    data = "\x1b[15~";
+                    break;
+                case Qt::Key_F6:
+                    data = "\x1b[17~";
+                    break;
+                case Qt::Key_F7:
+                    data = "\x1b[18~";
+                    break;
+                case Qt::Key_F8:
+                    data = "\x1b[19~";
+                    break;
+                case Qt::Key_F9:
+                    data = "\x1b[20~";
+                    break;
+                case Qt::Key_F10:
+                    data = "\x1b[21~";
+                    break;
+                case Qt::Key_F11:
+                    data = "\x1b[23~";
+                    break;
+                case Qt::Key_F12:
+                    data = "\x1b[24~";
+                    break;
+                default:
+                    // Handle Ctrl+key combinations
+                    if (event->modifiers() & Qt::ControlModifier) {
+                        int key = event->key();
+                        if (key >= Qt::Key_A && key <= Qt::Key_Z) {
+                            char ctrl = static_cast<char>(key - Qt::Key_A + 1);
+                            data = QByteArray(1, ctrl);
+                        } else if (key == Qt::Key_BracketLeft) {
+                            data = "\x1b";  // Ctrl+[ is ESC
+                        } else if (key == Qt::Key_Backslash) {
+                            data = "\x1c";  // Ctrl+\ is FS
+                        } else if (key == Qt::Key_BracketRight) {
+                            data = "\x1d";  // Ctrl+] is GS
+                        } else if (key == Qt::Key_AsciiCircum || key == Qt::Key_6) {
+                            data = "\x1e";  // Ctrl+^ is RS
+                        } else if (key == Qt::Key_Underscore || key == Qt::Key_Minus) {
+                            data = "\x1f";  // Ctrl+_ is US
+                        }
+                    } else {
+                        // Regular text input
+                        QString text = event->text();
+                        if (!text.isEmpty()) {
+                            data = text.toUtf8();
+                        }
+                    }
+                    break;
             }
 
-            if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-                QString command = getCurrentCommand();
-                appendOutput("\n");
-                emit commandEntered(command);
-                event->accept();
-            } else if (event->key() == Qt::Key_Up) {
-                emit upPressed();
-                event->accept();
-            } else if (event->key() == Qt::Key_Down) {
-                emit downPressed();
-                event->accept();
-            } else {
-                QTextEdit::keyPressEvent(event);
+            if (!data.isEmpty()) {
+                emit keyInput(data);
             }
+
+            // Don't call base class - we handle all input ourselves
+            event->accept();
         }
 
         void contextMenuEvent(QContextMenuEvent* event) override {
             QMenu* menu = new QMenu(this);
 
-            // Style the menu to match the terminal theme
             menu->setStyleSheet("QMenu {"
                                 "  background-color: #1e1e1e;"
                                 "  color: #cccccc;"
@@ -116,21 +192,188 @@ class TerminalDisplay : public QTextEdit {
                                 "  color: #666666;"
                                 "}");
 
-            // Add Copy action
             QAction* copyAction = menu->addAction("Copy");
             copyAction->setEnabled(!textCursor().selectedText().isEmpty());
             connect(copyAction, &QAction::triggered, this, &QTextEdit::copy);
 
-            // Add Paste action
             QAction* pasteAction = menu->addAction("Paste");
-            connect(pasteAction, &QAction::triggered, this, &QTextEdit::paste);
+            connect(pasteAction, &QAction::triggered, this, [this]() {
+                // Paste by sending clipboard text as key input
+                QClipboard* clipboard = QApplication::clipboard();
+                QString text = clipboard->text();
+                if (!text.isEmpty()) {
+                    emit keyInput(text.toUtf8());
+                }
+            });
+
+            menu->addSeparator();
+
+            QAction* clearAction = menu->addAction("Clear");
+            connect(clearAction, &QAction::triggered, this, &TerminalDisplay::clearScreen);
 
             menu->exec(event->globalPos());
             delete menu;
         }
 
+        void resizeEvent(QResizeEvent* event) override {
+            QTextEdit::resizeEvent(event);
+            emit sizeChanged(calculateRows(), calculateCols());
+        }
+
+    signals:
+        void sizeChanged(int rows, int cols);
+
     private:
-        int inputStartPos_;
+        int calculateRows() const {
+            QFontMetrics fm(font());
+            return qMax(1, viewport()->height() / fm.lineSpacing());
+        }
+
+        int calculateCols() const {
+            QFontMetrics fm(font());
+            return qMax(1, viewport()->width() / fm.averageCharWidth());
+        }
+
+        void processAndAppend(const QString& input) {
+            QTextCursor cursor = textCursor();
+            cursor.movePosition(QTextCursor::End);
+
+            int i = 0;
+            while (i < input.size()) {
+                QChar ch = input[i];
+
+                if (ch == '\x1b' && i + 1 < input.size()) {
+                    // Escape sequence
+                    if (input[i + 1] == '[') {
+                        // CSI sequence
+                        i += 2;
+                        QString params;
+                        while (i < input.size() && ((input[i] >= '0' && input[i] <= '9') || input[i] == ';' ||
+                                                    input[i] == '?' || input[i] == '!')) {
+                            params += input[i];
+                            i++;
+                        }
+                        if (i < input.size()) {
+                            QChar cmd = input[i];
+                            handleCsiSequence(cursor, cmd, params);
+                            i++;
+                        }
+                    } else if (input[i + 1] == ']') {
+                        // OSC sequence - skip until BEL or ST
+                        i += 2;
+                        while (i < input.size() && input[i] != '\x07') {
+                            if (input[i] == '\x1b' && i + 1 < input.size() && input[i + 1] == '\\') {
+                                i += 2;
+                                break;
+                            }
+                            i++;
+                        }
+                        if (i < input.size() && input[i] == '\x07') i++;
+                    } else if (input[i + 1] == '(' || input[i + 1] == ')') {
+                        i += 3;  // Character set selection
+                    } else {
+                        i += 2;  // Other escape
+                    }
+                } else if (ch == '\x08') {
+                    // Backspace - move cursor back
+                    cursor.movePosition(QTextCursor::Left);
+                    i++;
+                } else if (ch == '\x7f') {
+                    // DEL - delete character at cursor
+                    cursor.deleteChar();
+                    i++;
+                } else if (ch == '\r') {
+                    if (i + 1 < input.size() && input[i + 1] == '\n') {
+                        // CRLF -> newline
+                        cursor.movePosition(QTextCursor::End);
+                        cursor.insertText("\n");
+                        i += 2;
+                    } else {
+                        // CR alone - move to beginning of current line
+                        cursor.movePosition(QTextCursor::StartOfBlock);
+                        i++;
+                    }
+                } else if (ch == '\n') {
+                    cursor.movePosition(QTextCursor::End);
+                    cursor.insertText("\n");
+                    i++;
+                } else if (ch == '\x07') {
+                    // Bell - skip
+                    i++;
+                } else if (ch.isPrint() || ch == '\t') {
+                    // Regular character - insert or overwrite
+                    if (!cursor.atEnd()) {
+                        cursor.deleteChar();
+                    }
+                    cursor.insertText(QString(ch));
+                    i++;
+                } else {
+                    // Skip other control characters
+                    i++;
+                }
+            }
+
+            setTextCursor(cursor);
+            ensureCursorVisible();
+        }
+
+        void handleCsiSequence(QTextCursor& cursor, QChar cmd, const QString& params) {
+            int n = params.isEmpty() ? 1 : params.toInt();
+            if (n == 0) n = 1;
+
+            switch (cmd.unicode()) {
+                case 'A':  // Cursor up
+                    cursor.movePosition(QTextCursor::Up, QTextCursor::MoveAnchor, n);
+                    break;
+                case 'B':  // Cursor down
+                    cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, n);
+                    break;
+                case 'C':  // Cursor forward
+                    cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, n);
+                    break;
+                case 'D':  // Cursor back
+                    cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, n);
+                    break;
+                case 'H':
+                case 'f':  // Cursor position
+                    // For simplicity, just go to start for now
+                    cursor.movePosition(QTextCursor::Start);
+                    break;
+                case 'J':  // Erase display
+                    if (params == "2" || params == "3") {
+                        clearScreen();
+                        cursor = textCursor();
+                    }
+                    break;
+                case 'K':  // Erase in line
+                    if (params.isEmpty() || params == "0") {
+                        // Erase from cursor to end of line
+                        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+                        cursor.removeSelectedText();
+                    } else if (params == "1") {
+                        // Erase from start of line to cursor
+                        cursor.movePosition(QTextCursor::StartOfBlock, QTextCursor::KeepAnchor);
+                        cursor.removeSelectedText();
+                    } else if (params == "2") {
+                        // Erase entire line
+                        cursor.movePosition(QTextCursor::StartOfBlock);
+                        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+                        cursor.removeSelectedText();
+                    }
+                    break;
+                case 'P':  // Delete characters
+                    for (int j = 0; j < n; j++) {
+                        cursor.deleteChar();
+                    }
+                    break;
+                case 'm':  // SGR (colors) - ignore
+                case 'h':  // Set mode - ignore
+                case 'l':  // Reset mode - ignore
+                case 'r':  // Set scrolling region - ignore
+                default:
+                    break;
+            }
+        }
 };
 
 class Terminal : public Tool {
@@ -138,7 +381,7 @@ class Terminal : public Tool {
 
     public:
         Terminal(std::shared_ptr<Container> container, QWidget* parent = nullptr)
-            : Tool(ToolType::TERMINAL, parent), container_(container), historyIndex_(-1) {
+            : Tool(ToolType::TERMINAL, parent), container_(container), pty_(nullptr) {
             // Clear the default "Select a source" label from base Tool class
             QLayout* oldLayout = layout();
             if (oldLayout) {
@@ -157,95 +400,52 @@ class Terminal : public Tool {
             layout->setContentsMargins(0, 0, 0, 0);
             layout->setSpacing(0);
 
-            // Terminal display (unified input/output)
+            // Terminal display
             display_ = new TerminalDisplay(this);
             layout->addWidget(display_, 1);
 
             setLayout(layout);
 
             // Connect display signals
-            connect(display_, &TerminalDisplay::commandEntered, this, &Terminal::onCommandEntered);
-            connect(display_, &TerminalDisplay::upPressed, this, &Terminal::onUpPressed);
-            connect(display_, &TerminalDisplay::downPressed, this, &Terminal::onDownPressed);
+            connect(display_, &TerminalDisplay::keyInput, this, &Terminal::onKeyInput);
+            connect(display_, &TerminalDisplay::sizeChanged, this, &Terminal::onSizeChanged);
 
-            // Initialize shell
+            // Initialize PTY shell
             initializeShell();
         }
 
         ~Terminal() override {
-            if (process_ && process_->state() != QProcess::NotRunning) {
-                process_->terminate();
-                process_->waitForFinished(1000);
+            if (pty_) {
+                pty_->stop();
             }
         }
 
         void update() override {
-            // Output is handled by readyReadStandardOutput signal
+            // Output is handled by dataReceived signal
         }
 
     private slots:
-        void onCommandEntered(const QString& command) {
-            // Add to history
-            if (!command.isEmpty()) {
-                history_.push_back(command);
-                historyIndex_ = history_.size();
-            }
-
-            // Send command to process
-            if (process_ && process_->state() == QProcess::Running) {
-                // Send the actual command
-                process_->write((command + "\n").toUtf8());
-                // After the command, get pwd and print a marker
-                process_->write("echo \"__PROMPT__$(whoami)@$(hostname):$(pwd)$ \"\n");
-                process_->waitForBytesWritten();
-            } else {
-                display_->appendOutput("Error: Shell not running\n");
+        void onKeyInput(const QByteArray& data) {
+            if (pty_ && pty_->isRunning()) {
+                pty_->write(data);
             }
         }
 
-        void onUpPressed() {
-            // Navigate history up
-            if (historyIndex_ > 0) {
-                historyIndex_--;
-                display_->clearCurrentCommand();
-                display_->appendOutput(history_[historyIndex_]);
+        void onSizeChanged(int rows, int cols) {
+            if (pty_ && pty_->isRunning()) {
+                pty_->resize(rows, cols);
             }
         }
 
-        void onDownPressed() {
-            // Navigate history down
-            if (historyIndex_ < static_cast<int>(history_.size()) - 1) {
-                historyIndex_++;
-                display_->clearCurrentCommand();
-                display_->appendOutput(history_[historyIndex_]);
-            } else if (historyIndex_ == static_cast<int>(history_.size()) - 1) {
-                historyIndex_++;
-                display_->clearCurrentCommand();
-            }
+        void onDataReceived(const QByteArray& data) {
+            QString text = QString::fromUtf8(data);
+            display_->appendOutput(text);
         }
 
-        void onProcessError(QProcess::ProcessError error) {
-            QString errorMsg;
-            switch (error) {
-                case QProcess::FailedToStart:
-                    errorMsg = "Failed to start shell process\n";
-                    break;
-                case QProcess::Crashed:
-                    errorMsg = "Shell process crashed\n";
-                    break;
-                default:
-                    errorMsg = "Shell process error\n";
-                    break;
-            }
-            display_->appendOutput(errorMsg);
-        }
+        void onPtyError(const QString& message) { display_->appendOutput("Error: " + message + "\n"); }
 
-        void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus) {
-            if (exitStatus == QProcess::CrashExit) {
-                display_->appendOutput("\nShell crashed\n");
-            } else {
-                display_->appendOutput("\nShell exited with code " + QString::number(exitCode) + "\n");
-            }
+        void onPtyFinished(int exitCode) {
+            display_->appendOutput("\n[Shell exited with code " + QString::number(exitCode) + "]\n");
         }
 
     private:
@@ -257,94 +457,22 @@ class Terminal : public Tool {
 
             QString containerId = QString::fromStdString(container_->getId());
 
-            // Use docker exec to start an interactive bash shell
-            process_ = new QProcess(this);
+            pty_ = new Pty(this);
 
-            // Set process channel mode to merge stdout and stderr
-            process_->setProcessChannelMode(QProcess::MergedChannels);
+            connect(pty_, &Pty::dataReceived, this, &Terminal::onDataReceived);
+            connect(pty_, &Pty::error, this, &Terminal::onPtyError);
+            connect(pty_, &Pty::finished, this, &Terminal::onPtyFinished);
 
-            // Connect signals
-            connect(process_, &QProcess::errorOccurred, this, &Terminal::onProcessError);
-            connect(process_, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Terminal::onProcessFinished);
-            connect(process_, &QProcess::readyReadStandardOutput, this, &Terminal::onReadyRead);
+            display_->appendOutput("Connecting to container " + containerId.left(12) + "...\n\n");
 
-            // Start docker exec with interactive bash and proper environment
-            QStringList args;
-            args << "exec"
-                 << "-i"
-                 << "-e"
-                 << "TERM=xterm-256color" << containerId << "/bin/bash";
-
-            display_->appendOutput("Starting shell in container " + containerId.left(12) + " ...\n");
-
-            process_->start("docker", args);
-
-            if (!process_->waitForStarted(3000)) {
-                display_->appendOutput("Failed to start shell\n");
-            } else {
-                display_->appendOutput("Shell started.\n\n");
-
-                // Set TERM and display initial prompt
-                process_->write("export TERM=xterm-256color\n");
-                process_->write("echo \"__PROMPT__$(whoami)@$(hostname):$(pwd)$ \"\n");
-                process_->waitForBytesWritten();
-            }
-        }
-
-        void onReadyRead() {
-            if (process_ && process_->state() == QProcess::Running) {
-                QString output = QString::fromUtf8(process_->readAllStandardOutput());
-                if (!output.isEmpty()) {
-                    // Check for clear screen escape sequence
-                    if (output.contains("\033[H\033[2J") || output.contains("\033[3J")) {
-                        display_->clear();
-                        // Remove the escape sequences
-                        output.remove("\033[H");
-                        output.remove("\033[2J");
-                        output.remove("\033[3J");
-                        output.remove("[H");
-                        output.remove("[2J");
-                        output.remove("[3J");
-                    }
-
-                    // Check if output contains our prompt marker
-                    if (output.contains("__PROMPT__")) {
-                        // Split by the marker
-                        QStringList parts = output.split("__PROMPT__");
-
-                        // Display everything before the marker (command output)
-                        if (!parts[0].isEmpty()) {
-                            display_->appendOutput(parts[0]);
-                        }
-
-                        // The prompt is after the marker, extract it
-                        if (parts.size() > 1) {
-                            QString promptLine = parts[1];
-                            // Find the end of the prompt line (ends with "$ ")
-                            int promptEnd = promptLine.indexOf("$ ");
-                            if (promptEnd >= 0) {
-                                QString prompt = promptLine.left(promptEnd + 2);  // Include "$ "
-                                display_->appendOutput(prompt);
-
-                                // Display any remaining output after the prompt
-                                QString remaining = promptLine.mid(promptEnd + 2);
-                                if (!remaining.trimmed().isEmpty()) {
-                                    display_->appendOutput(remaining);
-                                }
-                            }
-                        }
-                    } else if (!output.trimmed().isEmpty()) {
-                        display_->appendOutput(output);
-                    }
-                }
+            if (!pty_->start(containerId)) {
+                display_->appendOutput("Failed to start PTY shell\n");
             }
         }
 
         std::shared_ptr<Container> container_;
         TerminalDisplay* display_;
-        QProcess* process_;
-        std::deque<QString> history_;
-        int historyIndex_;
+        Pty* pty_;
 };
 
 }  // namespace spqr
