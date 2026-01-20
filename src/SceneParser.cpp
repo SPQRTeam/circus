@@ -80,7 +80,7 @@ SceneParser::SceneParser(const string& yamlPath) {
     }
 
     ballSpec.position = Eigen::Vector3d(0.0, 0.0, 0.12);
-    
+
     const YAML::Node& teamsNode = sceneRoot["teams"];
     if (!teamsNode || teamsNode.size() > 2) {
         throw runtime_error("Scene must contain one or two teams.");
@@ -157,8 +157,9 @@ string SceneParser::buildMuJoCoXml() {
     compiler.append_attribute("meshdir") = "resources/meshes/";
 
     xml_node include_node = mujoco.append_child("include");
-    include_node.append_attribute("file")
-        = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / scene.simulationConfig.field.type / (scene.simulationConfig.field.name + ".xml")).c_str();
+    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / scene.simulationConfig.field.type
+                                             / (scene.simulationConfig.field.name + ".xml"))
+                                                .c_str();
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");

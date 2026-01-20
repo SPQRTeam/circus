@@ -65,7 +65,7 @@ class BoosterT1 : public Robot {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
-            
+
             joints->set_position({{JointValue::HEAD_YAW, 0},
                                   {JointValue::HEAD_PITCH, 0},
                                   {JointValue::SHOULDER_LEFT_PITCH, 0},

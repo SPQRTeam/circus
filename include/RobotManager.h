@@ -227,9 +227,9 @@ class RobotManager {
                                         }
                                     }
                                 }
-                                if (answOk){
+                                if (answOk) {
                                     msgpack::pack(sbuf, answ);
-                                    if(sbuf.size() > 0) {
+                                    if (sbuf.size() > 0) {
                                         std::cout << "Connected Robot: " << robotName << "\n";
                                         std::cout << "Sending initial message to " << robotName << std::endl;
                                         ssize_t bytes_sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
@@ -279,9 +279,9 @@ class RobotManager {
                                 }
                             }
 
-                            if (answOk){
+                            if (answOk) {
                                 msgpack::pack(sbuf, answ);
-                                if(sbuf.size() > 0){
+                                if (sbuf.size() > 0) {
                                     ssize_t bytes_sent = send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
                                     if (bytes_sent <= 0) {
                                         perror("Error in sending message");

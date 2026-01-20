@@ -1,10 +1,5 @@
 #pragma once
 
-#include <QObject>
-#include <QSocketNotifier>
-#include <QString>
-#include <QTimer>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <pty.h>
@@ -14,6 +9,10 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include <QObject>
+#include <QSocketNotifier>
+#include <QString>
+#include <QTimer>
 #include <cstring>
 
 namespace spqr {
@@ -24,7 +23,9 @@ class Pty : public QObject {
     public:
         explicit Pty(QObject* parent = nullptr) : QObject(parent), masterFd_(-1), childPid_(-1), notifier_(nullptr) {}
 
-        ~Pty() override { stop(); }
+        ~Pty() override {
+            stop();
+        }
 
         bool start(const QString& containerId) {
             struct winsize ws;
@@ -114,7 +115,9 @@ class Pty : public QObject {
             }
         }
 
-        bool isRunning() const { return childPid_ > 0 && masterFd_ >= 0; }
+        bool isRunning() const {
+            return childPid_ > 0 && masterFd_ >= 0;
+        }
 
     signals:
         void dataReceived(const QByteArray& data);
@@ -123,7 +126,8 @@ class Pty : public QObject {
 
     private slots:
         void onReadyRead() {
-            if (masterFd_ < 0) return;
+            if (masterFd_ < 0)
+                return;
 
             char buffer[4096];
             ssize_t bytesRead = ::read(masterFd_, buffer, sizeof(buffer));

@@ -45,7 +45,9 @@ class TerminalDisplay : public QTextEdit {
             resetFormat();
         }
 
-        void appendOutput(const QString& text) { processAndAppend(text); }
+        void appendOutput(const QString& text) {
+            processAndAppend(text);
+        }
 
         void clearScreen() {
             clear();
@@ -252,8 +254,7 @@ class TerminalDisplay : public QTextEdit {
                         // CSI sequence
                         i += 2;
                         QString params;
-                        while (i < input.size() && ((input[i] >= '0' && input[i] <= '9') || input[i] == ';' ||
-                                                    input[i] == '?' || input[i] == '!')) {
+                        while (i < input.size() && ((input[i] >= '0' && input[i] <= '9') || input[i] == ';' || input[i] == '?' || input[i] == '!')) {
                             params += input[i];
                             i++;
                         }
@@ -272,7 +273,8 @@ class TerminalDisplay : public QTextEdit {
                             }
                             i++;
                         }
-                        if (i < input.size() && input[i] == '\x07') i++;
+                        if (i < input.size() && input[i] == '\x07')
+                            i++;
                     } else if (input[i + 1] == '(' || input[i + 1] == ')') {
                         i += 3;  // Character set selection
                     } else {
@@ -323,7 +325,8 @@ class TerminalDisplay : public QTextEdit {
 
         void handleCsiSequence(QTextCursor& cursor, QChar cmd, const QString& params) {
             int n = params.isEmpty() ? 1 : params.toInt();
-            if (n == 0) n = 1;
+            if (n == 0)
+                n = 1;
 
             switch (cmd.unicode()) {
                 case 'A':  // Cursor up
@@ -442,12 +445,11 @@ class TerminalDisplay : public QTextEdit {
                         currentFormat_.setFontUnderline(true);
                         break;
                     case 7:  // Inverse
-                        {
-                            QBrush fg = currentFormat_.foreground();
-                            currentFormat_.setForeground(currentFormat_.background());
-                            currentFormat_.setBackground(fg);
-                        }
-                        break;
+                    {
+                        QBrush fg = currentFormat_.foreground();
+                        currentFormat_.setForeground(currentFormat_.background());
+                        currentFormat_.setBackground(fg);
+                    } break;
                     case 22:  // Normal intensity
                         bold_ = false;
                         currentFormat_.setFontWeight(QFont::Normal);
@@ -470,11 +472,10 @@ class TerminalDisplay : public QTextEdit {
                     case 35:
                     case 36:
                     case 37:  // Foreground colors 30-37
-                        {
-                            int colorIdx = code - 30 + (bold_ ? 8 : 0);
-                            currentFormat_.setForeground(colors_[colorIdx]);
-                        }
-                        break;
+                    {
+                        int colorIdx = code - 30 + (bold_ ? 8 : 0);
+                        currentFormat_.setForeground(colors_[colorIdx]);
+                    } break;
                     case 38:  // Extended foreground color
                         if (i + 1 < codes.size()) {
                             int mode = codes[i + 1].toInt();
@@ -614,7 +615,9 @@ class Terminal : public Tool {
             initializeShell();
         }
 
-        ~Terminal() override { cleanup(); }
+        ~Terminal() override {
+            cleanup();
+        }
 
         void cleanup() {
             if (pty_) {
@@ -646,7 +649,9 @@ class Terminal : public Tool {
             display_->appendOutput(text);
         }
 
-        void onPtyError(const QString& message) { display_->appendOutput("Error: " + message + "\n"); }
+        void onPtyError(const QString& message) {
+            display_->appendOutput("Error: " + message + "\n");
+        }
 
         void onPtyFinished(int exitCode) {
             display_->appendOutput("\n[Shell exited with code " + QString::number(exitCode) + "]\n");

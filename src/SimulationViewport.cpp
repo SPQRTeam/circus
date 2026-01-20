@@ -139,8 +139,7 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
             mjtNum axis[3] = {0, 0, 1};
 
             mjtNum amp = mju_sqrt(reldx * reldx + reldy * reldy);
-            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) :
-                                                                                                -mju_sign(reldy);
+            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) : -mju_sign(reldy);
 
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
