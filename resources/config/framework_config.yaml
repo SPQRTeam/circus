@@ -4,3 +4,4 @@ image: spqr:booster
 volumes:
   - "<simbridge>/tools/booster_motion:/app/booster_motion"
   - "<simbridge>/build:/app/bridge"
+  - "/tmp/fifos:/tmp/fifos"

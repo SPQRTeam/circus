@@ -3,11 +3,16 @@
 #include <mujoco/mujoco.h>
 #include <netinet/in.h>
 #include <poll.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
+#include <fcntl.h>
+#include <cerrno>
+#include <cstdio>
+#include <filesystem>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -23,6 +28,8 @@
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
 #include "robots/Robot.h"
+
+using namespace std::filesystem;
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -184,55 +191,60 @@ class RobotManager {
     // TCP Communication, it sends before the size of the message and then the message itself
     ssize_t send_all(int fd, char *buf, size_t len)
     {
-        // First, send the size of the message
-        uint32_t msg_size = htonl(len);
-        ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
-        if (bytes_sent != sizeof(msg_size)) {
-            return -1;
-        }
+        // // First, send the size of the message
+        // uint32_t msg_size = htonl(len);
+        // ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
+        // if (bytes_sent != sizeof(msg_size)) {
+        //     return -1;
+        // }
 
-        ssize_t total = 0; // how many bytes we've sent
-        size_t bytesleft = len; // how many we have left to send
-        ssize_t n = 0;
-        while(total < len) {
-            n = send(fd, buf+total, bytesleft, 0);
-            if (n == -1) { 
-                /* print/log error details */
-                return -1;
+        // ssize_t total = 0; // how many bytes we've sent
+        // size_t bytesleft = len; // how many we have left to send
+        // ssize_t n = 0;
+        // while(total < len) {
+        //     n = send(fd, buf+total, bytesleft, 0);
+        //     if (n == -1) { 
+        //         /* print/log error details */
+        //         return -1;
+        //     }
+        //     total += n;
+        //     bytesleft -= n;
+        // }
+        // return total;
+        return send(fd, buf, len, 0);
+    }
+
+    int create_fifo(const char* path, int mode) {
+        int res = -1;
+        int tries = 0;
+        while (res < 0 && tries < 2) {
+            res = mkfifo(path, mode);
+            tries += 1;
+            if (res < 0)  {
+                if (errno == EEXIST) {
+                    // std::cout << "Server FIFO exists, deleting" << std::endl;
+                    remove(path);
+                }
+                else {
+                    return res;
+                }
             }
-            total += n;
-            bytesleft -= n;
         }
-        return total; 
+        return res;
     }
 
     void _serverInternal(int port) {
-        int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (server_fd < 0)
-            throw std::runtime_error("Failed to create socket");
-
-        int opt = 1;
-        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        int send_buf_size = 10 * 1024 * 1024;
-        if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF,
-                    &send_buf_size, sizeof(send_buf_size)) < 0) {
-            perror("setsockopt(SO_SNDBUF)");
+        // TODO tocca usare un file su RAM
+        // https://www.jamescoyle.net/knowledge/951-the-difference-between-a-tmpfs-and-ramfs-ram-disk
+        std::string fifos_root = "/tmp/fifos";
+        std::string server_path = fifos_root + "/server";
+        create_directory(fifos_root);
+        int res = create_fifo(server_path.c_str(), 0777);
+        if (res < 0)  {
+            perror("");
+            throw std::runtime_error("Failed to create FIFO");
         }
-        int recv_buf_size = 10 * 1024 * 1024;
-        if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF,
-                    &recv_buf_size, sizeof(recv_buf_size)) < 0) {
-            perror("setsockopt(SO_RCVBUF)");
-        }
-        
-        sockaddr_in address{};
-        address.sin_family = AF_INET;
-        address.sin_addr.s_addr = INADDR_ANY;
-        address.sin_port = htons(port);
-
-        if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0)
-            throw std::runtime_error("Socket bind failed");
-        if (listen(server_fd, robots_.size()) < 0)
-            throw std::runtime_error("Listen failed");
+        int server_fd = open(server_path.c_str(), O_RDONLY);
 
         std::vector<pollfd> fds;
         fds.push_back({server_fd, POLLIN, 0});
@@ -251,31 +263,45 @@ class RobotManager {
                 if (fds[i].revents & POLLIN) {
                     if (fds[i].fd == server_fd) {
                         // The only event for the server is someone knocking
-                        int client_fd = accept(server_fd, nullptr, nullptr);
+                        // Receive initial message with robot name
+                        char buffer[MAX_MSG_SIZE];
+                        int n = read(server_fd, buffer, sizeof(buffer) - 1);
+
+                        if (n <= 0) {
+                            std::cerr << "Error reading the initial message.\n";
+                            // close(client_fd);
+                            continue;
+                        }
+
+                        // unpack of the MsgPack message
+                        msgpack::object_handle oh = msgpack::unpack(buffer, n);
+                        msgpack::object obj = oh.get();
+
+                        // First message is the robot name as a string
+                        if (obj.type != msgpack::type::STR) {
+                            std::cerr << "First message must be a string. Ignore it...\n";
+                            continue;
+                        }
+
+                        std::string robotName = obj.as<std::string>();
+                        std::cout << robotName << std::endl;
+
+                        std::string client_path = fifos_root + robotName;
+                        int res = create_fifo(client_path.c_str(), 0777);
+                        if (res < 0)  {
+                            perror("Failed to create FIFO");
+                            throw std::runtime_error("Failed to create FIFO");
+                        }
+                        int client_fd = open(client_path.c_str(), O_WRONLY);
+                        if (client_fd < 0)  {
+                            perror("Failed to create FIFO");
+                            throw std::runtime_error("Failed to create FIFO");
+                        }
+
+                        // TODO creare altra fifo
                         if (client_fd >= 0) {
                             fds.push_back({client_fd, POLLIN, 0});
 
-                            // Receive initial message with robot name
-                            char buffer[MAX_MSG_SIZE];
-                            int n = read(client_fd, buffer, sizeof(buffer) - 1);
-
-                            if (n <= 0) {
-                                std::cerr << "Error reading the initial message.\n";
-                                // close(client_fd);
-                                continue;
-                            }
-
-                            // unpack of the MsgPack message
-                            msgpack::object_handle oh = msgpack::unpack(buffer, n);
-                            msgpack::object obj = oh.get();
-
-                            // First message is the robot name as a string
-                            if (obj.type != msgpack::type::STR) {
-                                std::cerr << "First message must be a string. Ignore it...\n";
-                                continue;
-                            }
-
-                            std::string robotName = obj.as<std::string>();
                             msgpack::sbuffer sbuf;
                             std::map<std::string, msgpack::object> answ;
                             bool answOk = false;
@@ -296,7 +322,7 @@ class RobotManager {
                                 if(sbuf.size() > 0) {
                                     std::cout << "Connected Robot: " << robotName << "\n";
                                     std::cout << "Sending initial message to " << robotName << std::endl;
-                                    ssize_t bytes_sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
+                                    ssize_t bytes_sent = write(client_fd, sbuf.data(), sbuf.size());
                                     if (bytes_sent <= 0) {
                                         perror("Sending initial message");
                                     }
@@ -345,7 +371,7 @@ class RobotManager {
                         if (answOk){
                             msgpack::pack(sbuf, answ);
                             if(sbuf.size() > 0){
-                                ssize_t bytes_sent = send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
+                                ssize_t bytes_sent = send_all(fds[i].fd, sbuf.data(), sbuf.size());
                                 if (bytes_sent <= 0) {
                                     perror("Sending message");
                                 }
