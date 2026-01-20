@@ -65,6 +65,31 @@ class BoosterT1 : public Robot {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
+            
+            joints->set_position({{JointValue::HEAD_YAW, 0},
+                                  {JointValue::HEAD_PITCH, 0},
+                                  {JointValue::SHOULDER_LEFT_PITCH, 0},
+                                  {JointValue::SHOULDER_LEFT_ROLL, 0},
+                                  {JointValue::ELBOW_LEFT_PITCH, 0},
+                                  {JointValue::ELBOW_LEFT_YAW, 0},
+                                  {JointValue::SHOULDER_RIGHT_PITCH, 0},
+                                  {JointValue::SHOULDER_RIGHT_ROLL, 0},
+                                  {JointValue::ELBOW_RIGHT_PITCH, 0},
+                                  {JointValue::ELBOW_RIGHT_YAW, 0},
+                                  {JointValue::WAIST, 0},
+                                  {JointValue::HIP_LEFT_PITCH, 0},
+                                  {JointValue::HIP_LEFT_ROLL, 0},
+                                  {JointValue::HIP_LEFT_YAW, 0},
+                                  {JointValue::KNEE_LEFT_PITCH, 0},
+                                  {JointValue::ANKLE_LEFT_PITCH, 0},
+                                  {JointValue::ANKLE_LEFT_ROLL, 0},
+                                  {JointValue::HIP_RIGHT_PITCH, 0},
+                                  {JointValue::HIP_RIGHT_ROLL, 0},
+                                  {JointValue::HIP_RIGHT_YAW, 0},
+                                  {JointValue::KNEE_RIGHT_PITCH, 0},
+                                  {JointValue::ANKLE_RIGHT_PITCH, 0},
+                                  {JointValue::ANKLE_RIGHT_ROLL, 0}});
+
             cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
             cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
         }
