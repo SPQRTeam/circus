@@ -77,9 +77,10 @@ class Camera : public Sensor {
             std::vector<uint8_t> tempImage(viewWidth * viewHeight * 3);
             mjr_readPixels(tempImage.data(), nullptr, viewport, &mujContext->ctx);
 
-            // Convert to QImage and resize to desired camera resolution
+            // Convert to QImage, flip vertically (OpenGL stores bottom-to-top), and resize to camera resolution
             QImage qimg(tempImage.data(), viewWidth, viewHeight, viewWidth * 3, QImage::Format_RGB888);
-            QImage resized = qimg.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            QImage flipped = qimg.flipped(Qt::Vertical);
+            QImage resized = flipped.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
             // Copy resized data back to image buffer
             memcpy(image.data(), resized.constBits(), w * h * 3);
@@ -93,8 +94,7 @@ class Camera : public Sensor {
 
         void saveImage(const std::string& filename) const {
             QImage qimg(image.data(), w, h, w * 3, QImage::Format_RGB888);
-            QImage flipped = qimg.flipped(Qt::Vertical);
-            flipped.save(QString::fromStdString(filename));
+            qimg.save(QString::fromStdString(filename));
         }
 
         const mjvCamera& getCamera() const {
