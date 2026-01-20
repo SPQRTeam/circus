@@ -244,13 +244,27 @@ void AppWindow::signalHandler(int signal) {
     // Get signal name
     const char* signalName = "UNKNOWN";
     switch (signal) {
-        case SIGSEGV: signalName = "SIGSEGV (Segmentation fault)"; break;
-        case SIGABRT: signalName = "SIGABRT (Abort)"; break;
-        case SIGTERM: signalName = "SIGTERM (Terminated)"; break;
-        case SIGINT:  signalName = "SIGINT (Interrupt)"; break;
-        case SIGFPE:  signalName = "SIGFPE (Floating point exception)"; break;
-        case SIGILL:  signalName = "SIGILL (Illegal instruction)"; break;
-        case SIGBUS:  signalName = "SIGBUS (Bus error)"; break;
+        case SIGSEGV:
+            signalName = "SIGSEGV (Segmentation fault)";
+            break;
+        case SIGABRT:
+            signalName = "SIGABRT (Abort)";
+            break;
+        case SIGTERM:
+            signalName = "SIGTERM (Terminated)";
+            break;
+        case SIGINT:
+            signalName = "SIGINT (Interrupt)";
+            break;
+        case SIGFPE:
+            signalName = "SIGFPE (Floating point exception)";
+            break;
+        case SIGILL:
+            signalName = "SIGILL (Illegal instruction)";
+            break;
+        case SIGBUS:
+            signalName = "SIGBUS (Bus error)";
+            break;
     }
 
     std::cerr << "\n========================================" << std::endl;
