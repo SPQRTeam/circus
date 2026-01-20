@@ -35,4 +35,4 @@ game:
 
   first_kickoff_team: "red"                       # name of the team that will take the first kickoff <red|blue>
 
-  penalty_duration: 45                             # duration of a standard penalty in seconds
+  penalty_duration: 45                            # duration of a standard penalty in seconds
