@@ -8,7 +8,14 @@
 #include <QMessageBox>
 #include <QMetaObject>
 #include <csignal>
+#include <cstdlib>
+#include <iostream>
 #include <string>
+
+#ifdef __GNUC__
+#include <cxxabi.h>
+#include <execinfo.h>
+#endif
 
 #include "Constants.h"
 #include "GameController.h"
@@ -234,8 +241,75 @@ void AppWindow::pauseSimulation() {
 }
 
 void AppWindow::signalHandler(int signal) {
+    // Get signal name
+    const char* signalName = "UNKNOWN";
+    switch (signal) {
+        case SIGSEGV: signalName = "SIGSEGV (Segmentation fault)"; break;
+        case SIGABRT: signalName = "SIGABRT (Abort)"; break;
+        case SIGTERM: signalName = "SIGTERM (Terminated)"; break;
+        case SIGINT:  signalName = "SIGINT (Interrupt)"; break;
+        case SIGFPE:  signalName = "SIGFPE (Floating point exception)"; break;
+        case SIGILL:  signalName = "SIGILL (Illegal instruction)"; break;
+        case SIGBUS:  signalName = "SIGBUS (Bus error)"; break;
+    }
+
+    std::cerr << "\n========================================" << std::endl;
+    std::cerr << "[CRASH] Signal received: " << signalName << std::endl;
+    std::cerr << "========================================" << std::endl;
+
+#ifdef __GNUC__
+    // Print backtrace
+    std::cerr << "\nBacktrace:" << std::endl;
+    void* callstack[128];
+    int frames = backtrace(callstack, 128);
+    char** symbols = backtrace_symbols(callstack, frames);
+
+    if (symbols) {
+        for (int i = 0; i < frames; ++i) {
+            // Try to demangle C++ symbols
+            char* mangled = nullptr;
+            char* offset_begin = nullptr;
+            char* offset_end = nullptr;
+
+            // Find parentheses and +address offset surrounding mangled name
+            for (char* p = symbols[i]; *p; ++p) {
+                if (*p == '(') {
+                    mangled = p + 1;
+                } else if (*p == '+') {
+                    offset_begin = p;
+                } else if (*p == ')' && offset_begin) {
+                    offset_end = p;
+                    break;
+                }
+            }
+
+            if (mangled && offset_begin && offset_end && mangled < offset_begin) {
+                *offset_begin = '\0';
+                int status;
+                char* demangled = abi::__cxa_demangle(mangled, nullptr, nullptr, &status);
+                if (status == 0 && demangled) {
+                    std::cerr << "  [" << i << "] " << demangled << " +" << (offset_begin + 1) << std::endl;
+                    std::free(demangled);
+                } else {
+                    std::cerr << "  [" << i << "] " << symbols[i] << std::endl;
+                }
+            } else {
+                std::cerr << "  [" << i << "] " << symbols[i] << std::endl;
+            }
+        }
+        std::free(symbols);
+    }
+    std::cerr << std::endl;
+#endif
+
+    std::cerr << "Cleaning up resources..." << std::endl;
+    std::cerr.flush();
+
     TeamManager::instance().clear();
     RobotManager::instance().stopCommunicationServer();
+
+    std::cerr << "Cleanup complete. Re-raising signal." << std::endl;
+    std::cerr.flush();
 
     std::signal(signal, SIG_DFL);
     std::raise(signal);

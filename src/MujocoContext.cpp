@@ -2,11 +2,28 @@
 
 #include <filesystem>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 
 namespace spqr {
+
+// MuJoCo error callback - prints errors to stderr
+static void mujocoErrorHandler(const char* msg) {
+    std::cerr << "\n[MUJOCO ERROR] " << msg << std::endl;
+    std::cerr.flush();
+}
+
+// MuJoCo warning callback - prints warnings to stderr
+static void mujocoWarningHandler(const char* msg) {
+    std::cerr << "[MUJOCO WARNING] " << msg << std::endl;
+    std::cerr.flush();
+}
+
 MujocoContext::MujocoContext(const std::string& xmlString) {
+    // Set MuJoCo error/warning callbacks
+    mju_user_error = mujocoErrorHandler;
+    mju_user_warning = mujocoWarningHandler;
     char error[1024] = {0};
     std::filesystem::current_path(PROJECT_ROOT);
 
