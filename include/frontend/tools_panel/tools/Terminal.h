@@ -39,6 +39,10 @@ class TerminalDisplay : public QTextEdit {
             setReadOnly(false);
             setUndoRedoEnabled(false);
             setLineWrapMode(QTextEdit::NoWrap);
+
+            // Initialize default colors
+            initColors();
+            resetFormat();
         }
 
         void appendOutput(const QString& text) { processAndAppend(text); }
@@ -286,7 +290,7 @@ class TerminalDisplay : public QTextEdit {
                     if (i + 1 < input.size() && input[i + 1] == '\n') {
                         // CRLF -> newline
                         cursor.movePosition(QTextCursor::End);
-                        cursor.insertText("\n");
+                        cursor.insertText("\n", currentFormat_);
                         i += 2;
                     } else {
                         // CR alone - move to beginning of current line
@@ -295,17 +299,17 @@ class TerminalDisplay : public QTextEdit {
                     }
                 } else if (ch == '\n') {
                     cursor.movePosition(QTextCursor::End);
-                    cursor.insertText("\n");
+                    cursor.insertText("\n", currentFormat_);
                     i++;
                 } else if (ch == '\x07') {
                     // Bell - skip
                     i++;
                 } else if (ch.isPrint() || ch == '\t') {
-                    // Regular character - insert or overwrite
+                    // Regular character - insert or overwrite with current formatting
                     if (!cursor.atEnd()) {
                         cursor.deleteChar();
                     }
-                    cursor.insertText(QString(ch));
+                    cursor.insertText(QString(ch), currentFormat_);
                     i++;
                 } else {
                     // Skip other control characters
@@ -366,7 +370,9 @@ class TerminalDisplay : public QTextEdit {
                         cursor.deleteChar();
                     }
                     break;
-                case 'm':  // SGR (colors) - ignore
+                case 'm':  // SGR (Select Graphic Rendition) - colors and formatting
+                    handleSgr(params);
+                    break;
                 case 'h':  // Set mode - ignore
                 case 'l':  // Reset mode - ignore
                 case 'r':  // Set scrolling region - ignore
@@ -374,6 +380,200 @@ class TerminalDisplay : public QTextEdit {
                     break;
             }
         }
+
+        void initColors() {
+            // Standard 16 colors (0-7 normal, 8-15 bright)
+            colors_ = {
+                QColor(0x00, 0x00, 0x00),  // 0: Black
+                QColor(0xcd, 0x00, 0x00),  // 1: Red
+                QColor(0x00, 0xcd, 0x00),  // 2: Green
+                QColor(0xcd, 0xcd, 0x00),  // 3: Yellow
+                QColor(0x00, 0x00, 0xee),  // 4: Blue
+                QColor(0xcd, 0x00, 0xcd),  // 5: Magenta
+                QColor(0x00, 0xcd, 0xcd),  // 6: Cyan
+                QColor(0xe5, 0xe5, 0xe5),  // 7: White
+                QColor(0x7f, 0x7f, 0x7f),  // 8: Bright Black (Gray)
+                QColor(0xff, 0x00, 0x00),  // 9: Bright Red
+                QColor(0x00, 0xff, 0x00),  // 10: Bright Green
+                QColor(0xff, 0xff, 0x00),  // 11: Bright Yellow
+                QColor(0x5c, 0x5c, 0xff),  // 12: Bright Blue
+                QColor(0xff, 0x00, 0xff),  // 13: Bright Magenta
+                QColor(0x00, 0xff, 0xff),  // 14: Bright Cyan
+                QColor(0xff, 0xff, 0xff),  // 15: Bright White
+            };
+
+            defaultFg_ = QColor(0xcc, 0xcc, 0xcc);
+            defaultBg_ = QColor(0x0c, 0x0c, 0x0c);
+        }
+
+        void resetFormat() {
+            currentFormat_ = QTextCharFormat();
+            currentFormat_.setForeground(defaultFg_);
+            currentFormat_.setBackground(defaultBg_);
+            bold_ = false;
+        }
+
+        void handleSgr(const QString& params) {
+            if (params.isEmpty()) {
+                resetFormat();
+                return;
+            }
+
+            QStringList codes = params.split(';');
+            int i = 0;
+            while (i < codes.size()) {
+                int code = codes[i].toInt();
+
+                switch (code) {
+                    case 0:  // Reset
+                        resetFormat();
+                        break;
+                    case 1:  // Bold
+                        bold_ = true;
+                        currentFormat_.setFontWeight(QFont::Bold);
+                        break;
+                    case 2:  // Dim
+                        currentFormat_.setFontWeight(QFont::Light);
+                        break;
+                    case 3:  // Italic
+                        currentFormat_.setFontItalic(true);
+                        break;
+                    case 4:  // Underline
+                        currentFormat_.setFontUnderline(true);
+                        break;
+                    case 7:  // Inverse
+                        {
+                            QBrush fg = currentFormat_.foreground();
+                            currentFormat_.setForeground(currentFormat_.background());
+                            currentFormat_.setBackground(fg);
+                        }
+                        break;
+                    case 22:  // Normal intensity
+                        bold_ = false;
+                        currentFormat_.setFontWeight(QFont::Normal);
+                        break;
+                    case 23:  // Not italic
+                        currentFormat_.setFontItalic(false);
+                        break;
+                    case 24:  // Not underlined
+                        currentFormat_.setFontUnderline(false);
+                        break;
+                    case 27:  // Not inverse - reset to defaults
+                        currentFormat_.setForeground(defaultFg_);
+                        currentFormat_.setBackground(defaultBg_);
+                        break;
+                    case 30:
+                    case 31:
+                    case 32:
+                    case 33:
+                    case 34:
+                    case 35:
+                    case 36:
+                    case 37:  // Foreground colors 30-37
+                        {
+                            int colorIdx = code - 30 + (bold_ ? 8 : 0);
+                            currentFormat_.setForeground(colors_[colorIdx]);
+                        }
+                        break;
+                    case 38:  // Extended foreground color
+                        if (i + 1 < codes.size()) {
+                            int mode = codes[i + 1].toInt();
+                            if (mode == 5 && i + 2 < codes.size()) {
+                                // 256-color mode
+                                int colorIdx = codes[i + 2].toInt();
+                                currentFormat_.setForeground(get256Color(colorIdx));
+                                i += 2;
+                            } else if (mode == 2 && i + 4 < codes.size()) {
+                                // RGB mode
+                                int r = codes[i + 2].toInt();
+                                int g = codes[i + 3].toInt();
+                                int b = codes[i + 4].toInt();
+                                currentFormat_.setForeground(QColor(r, g, b));
+                                i += 4;
+                            }
+                        }
+                        break;
+                    case 39:  // Default foreground
+                        currentFormat_.setForeground(defaultFg_);
+                        break;
+                    case 40:
+                    case 41:
+                    case 42:
+                    case 43:
+                    case 44:
+                    case 45:
+                    case 46:
+                    case 47:  // Background colors 40-47
+                        currentFormat_.setBackground(colors_[code - 40]);
+                        break;
+                    case 48:  // Extended background color
+                        if (i + 1 < codes.size()) {
+                            int mode = codes[i + 1].toInt();
+                            if (mode == 5 && i + 2 < codes.size()) {
+                                int colorIdx = codes[i + 2].toInt();
+                                currentFormat_.setBackground(get256Color(colorIdx));
+                                i += 2;
+                            } else if (mode == 2 && i + 4 < codes.size()) {
+                                int r = codes[i + 2].toInt();
+                                int g = codes[i + 3].toInt();
+                                int b = codes[i + 4].toInt();
+                                currentFormat_.setBackground(QColor(r, g, b));
+                                i += 4;
+                            }
+                        }
+                        break;
+                    case 49:  // Default background
+                        currentFormat_.setBackground(defaultBg_);
+                        break;
+                    case 90:
+                    case 91:
+                    case 92:
+                    case 93:
+                    case 94:
+                    case 95:
+                    case 96:
+                    case 97:  // Bright foreground colors 90-97
+                        currentFormat_.setForeground(colors_[code - 90 + 8]);
+                        break;
+                    case 100:
+                    case 101:
+                    case 102:
+                    case 103:
+                    case 104:
+                    case 105:
+                    case 106:
+                    case 107:  // Bright background colors 100-107
+                        currentFormat_.setBackground(colors_[code - 100 + 8]);
+                        break;
+                    default:
+                        break;
+                }
+                i++;
+            }
+        }
+
+        QColor get256Color(int idx) {
+            if (idx < 16) {
+                return colors_[idx];
+            } else if (idx < 232) {
+                // 216 color cube (6x6x6)
+                idx -= 16;
+                int r = (idx / 36) * 51;
+                int g = ((idx / 6) % 6) * 51;
+                int b = (idx % 6) * 51;
+                return QColor(r, g, b);
+            } else {
+                // Grayscale (24 shades)
+                int gray = (idx - 232) * 10 + 8;
+                return QColor(gray, gray, gray);
+            }
+        }
+
+        QTextCharFormat currentFormat_;
+        QVector<QColor> colors_;
+        QColor defaultFg_;
+        QColor defaultBg_;
+        bool bold_ = false;
 };
 
 class Terminal : public Tool {
@@ -414,9 +614,13 @@ class Terminal : public Tool {
             initializeShell();
         }
 
-        ~Terminal() override {
+        ~Terminal() override { cleanup(); }
+
+        void cleanup() {
             if (pty_) {
                 pty_->stop();
+                delete pty_;
+                pty_ = nullptr;
             }
         }
 
@@ -457,7 +661,7 @@ class Terminal : public Tool {
 
             QString containerId = QString::fromStdString(container_->getId());
 
-            pty_ = new Pty(this);
+            pty_ = new Pty(nullptr);  // We manage lifetime manually in cleanup()
 
             connect(pty_, &Pty::dataReceived, this, &Terminal::onDataReceived);
             connect(pty_, &Pty::error, this, &Terminal::onPtyError);

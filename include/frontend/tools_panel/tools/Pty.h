@@ -70,16 +70,31 @@ class Pty : public QObject {
                 notifier_ = nullptr;
             }
 
+            if (childPid_ > 0) {
+                // Send SIGHUP first (hangup - what terminals send on close)
+                kill(childPid_, SIGHUP);
+
+                // Give it a moment to terminate gracefully
+                int status;
+                int waitResult = waitpid(childPid_, &status, WNOHANG);
+
+                if (waitResult == 0) {
+                    // Process still running, wait a bit then force kill
+                    usleep(100000);  // 100ms
+                    waitResult = waitpid(childPid_, &status, WNOHANG);
+
+                    if (waitResult == 0) {
+                        // Still running, send SIGKILL
+                        kill(childPid_, SIGKILL);
+                        waitpid(childPid_, &status, 0);  // Wait for it to die
+                    }
+                }
+                childPid_ = -1;
+            }
+
             if (masterFd_ >= 0) {
                 close(masterFd_);
                 masterFd_ = -1;
-            }
-
-            if (childPid_ > 0) {
-                kill(childPid_, SIGTERM);
-                int status;
-                waitpid(childPid_, &status, WNOHANG);
-                childPid_ = -1;
             }
         }
 

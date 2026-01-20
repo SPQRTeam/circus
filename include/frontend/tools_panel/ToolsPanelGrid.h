@@ -133,6 +133,10 @@ class GridCell : public QWidget {
         void setTool(Tool* tool) {
             if (tool_ && cellLayout_) {
                 cellLayout_->removeWidget(tool_);
+                // Explicitly cleanup Terminal to stop PTY before deletion
+                if (auto* terminal = dynamic_cast<Terminal*>(tool_)) {
+                    terminal->cleanup();
+                }
                 tool_->deleteLater();
             }
             tool_ = tool;
