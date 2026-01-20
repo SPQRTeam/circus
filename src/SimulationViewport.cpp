@@ -92,6 +92,19 @@ void SimulationViewport::mousePressEvent(QMouseEvent* event) {
             } else {
                 pert.active = mjPERT_TRANSLATE;
                 mouseAction = mjMOUSE_MOVE_H;  // use horizontal-plane move when moving
+
+                // Store the Z height of the object for planar dragging
+                dragPlaneZ = data->xpos[selectedRobot * 3 + 2];
+
+                // Compute the offset from click point to object center
+                mjtNum clickPos[3];
+                if (screenToWorldPlane(relx, rely, dragPlaneZ, clickPos)) {
+                    dragOffset[0] = data->xpos[selectedRobot * 3 + 0] - clickPos[0];
+                    dragOffset[1] = data->xpos[selectedRobot * 3 + 1] - clickPos[1];
+                } else {
+                    dragOffset[0] = 0.0;
+                    dragOffset[1] = 0.0;
+                }
             }
         } else {  // i.e. selected_body < 0
             if (event->modifiers() & Qt::ShiftModifier) {
@@ -119,23 +132,37 @@ void SimulationViewport::mouseMoveEvent(QMouseEvent* event) {
 
     if (pert.select > 0 && pert.active) {
         mjtNum reldx = (mjtNum)(delta.x() / (float)logicalHeight);
-        mjtNum reldy = (mjtNum)(delta.y() / (float)logicalHeight);  // note sign
+        mjtNum reldy = (mjtNum)(delta.y() / (float)logicalHeight);
 
         if (mouseAction == mjMOUSE_ROTATE_V) {
             mjtNum qz[4];
             mjtNum axis[3] = {0, 0, 1};
 
             mjtNum amp = mju_sqrt(reldx * reldx + reldy * reldy);
-            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) : 
+            mjtNum sgn = mju_max(mju_abs(reldx), mju_abs(reldy)) == mju_abs(reldx) ? mju_sign(reldx) :
                                                                                                 -mju_sign(reldy);
 
             mjtNum totalRotation = amp * sgn;
             mju_axisAngle2Quat(qz, axis, totalRotation);
             mju_mulQuat(pert.refquat, qz, pert.refquat);
-        } else if (mouseAction == mjMOUSE_MOVE_H || mouseAction == mjMOUSE_MOVE_V || mouseAction == mjMOUSE_ROTATE_H) {
+            mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
+        } else if (mouseAction == mjMOUSE_MOVE_H) {
+            // Compute world position under cursor on the drag plane
+            float relx = event->position().x() / logicalWidth;
+            float rely = 1.0 - event->position().y() / logicalHeight;
+            mjtNum worldPos[3];
+            if (screenToWorldPlane(relx, rely, dragPlaneZ, worldPos)) {
+                // Set the object position directly (with offset to maintain grab point)
+                pert.refpos[0] = worldPos[0] + dragOffset[0];
+                pert.refpos[1] = worldPos[1] + dragOffset[1];
+                // Keep Z at the drag plane height
+                pert.refpos[2] = dragPlaneZ;
+                mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
+            }
+        } else if (mouseAction == mjMOUSE_MOVE_V || mouseAction == mjMOUSE_ROTATE_H) {
             mjv_movePerturb(model, data, mouseAction, reldx, reldy, scene, &pert);
+            mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
         }
-        mjv_applyPerturbPose(model, data, &pert, /*flg_paused=*/1);
     } else {
         mjv_moveCamera(model, mouseAction, 0.003 * delta.x(), 0.003 * delta.y(), scene, cam);
     }
@@ -187,6 +214,54 @@ int SimulationViewport::selectBody(float relx, float rely) const {
     int bodyid = mjv_select(model, data, opt, aspect, (mjtNum)relx, (mjtNum)rely, scene, selpnt, &geomid, &flexid, &skinid);
 
     return bodyid;
+}
+
+bool SimulationViewport::screenToWorldPlane(float relx, float rely, mjtNum planeZ, mjtNum worldPos[3]) const {
+    if (!model || !scene || !cam || height == 0)
+        return false;
+
+    // Get camera position and orientation from the scene (convert float to mjtNum)
+    mjtNum camPos[3], camForward[3], camUp[3], camRight[3];
+    for (int i = 0; i < 3; i++) {
+        camPos[i] = scene->camera[0].pos[i];
+        camForward[i] = scene->camera[0].forward[i];
+        camUp[i] = scene->camera[0].up[i];
+    }
+    mju_cross(camRight, camForward, camUp);
+
+    // Compute the field of view
+    mjtNum fovy = model->vis.global.fovy * (M_PI / 180.0);
+    mjtNum aspect = (mjtNum)width / (mjtNum)height;
+    mjtNum tanFovY = mju_tan(fovy / 2.0);
+    mjtNum tanFovX = tanFovY * aspect;
+
+    // Convert relative screen coords to normalized device coords (-1 to 1)
+    mjtNum ndcX = 2.0 * relx - 1.0;
+    mjtNum ndcY = 2.0 * rely - 1.0;
+
+    // Compute ray direction in world space
+    mjtNum rayDir[3];
+    for (int i = 0; i < 3; i++) {
+        rayDir[i] = camForward[i] + ndcX * tanFovX * camRight[i] + ndcY * tanFovY * camUp[i];
+    }
+    mju_normalize3(rayDir);
+
+    // Intersect ray with horizontal plane at z = planeZ
+    // Ray: P = camPos + t * rayDir
+    // Plane: z = planeZ
+    // Solve: camPos[2] + t * rayDir[2] = planeZ
+    if (mju_abs(rayDir[2]) < 1e-9)
+        return false;  // Ray is parallel to the plane
+
+    mjtNum t = (planeZ - camPos[2]) / rayDir[2];
+    if (t < 0)
+        return false;  // Intersection is behind the camera
+
+    worldPos[0] = camPos[0] + t * rayDir[0];
+    worldPos[1] = camPos[1] + t * rayDir[1];
+    worldPos[2] = planeZ;
+
+    return true;
 }
 
 }  // namespace spqr

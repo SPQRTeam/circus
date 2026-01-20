@@ -64,7 +64,10 @@ class SimulationViewport : public QOpenGLWindow {
          */
         int selectBody(float relx, float rely) const;
         int findBodyRoot(int bodyId) const;
+        bool screenToWorldPlane(float relx, float rely, mjtNum planeZ, mjtNum worldPos[3]) const;
         int selectedRobot = -1;
+        mjtNum dragPlaneZ = 0.0;  // Z height of the plane for dragging
+        mjtNum dragOffset[2] = {0.0, 0.0};  // Offset from object center to click point
 
         int width = initialWindowWidth, height = initialWindowHeight;
         int logicalWidth = initialWindowWidth, logicalHeight = initialWindowHeight;
