@@ -1,7 +1,7 @@
 <mujoco>
     <worldbody>
-
         <body name="Trunk">
+
             <geom name="num_1" class="visual" mesh="Booster-T1_num_1" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
             <geom name="num_2" class="visual" mesh="Booster-T1_num_2" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
             <geom name="num_3" class="visual" mesh="Booster-T1_num_3" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
@@ -11,16 +11,17 @@
             <geom name="num_7" class="visual" mesh="Booster-T1_num_7" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
             <geom name="num_8" class="visual" mesh="Booster-T1_num_8" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
             <geom name="num_9" class="visual" mesh="Booster-T1_num_9" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
-
-            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" material="metal" mesh="Booster-K1_Trunk" />
-            <geom class="visual" material="metal" mesh="Booster-K1_Trunk"/>
-            <geom size="0.06 0.09 0.1" pos="0 0 0.1" type="box" material="metal" />
-            <geom size="0.05 0.05" pos="0 0 -0.06" quat="0.707105 0.707108 0 0" type="cylinder" material="metal" />
-
+            
             <site name='imu' size='0.01' pos='0.0 0.0 0.0' />
-            <inertial pos="-0.0043392 -0.00065534 0.065686" quat="0.999896 -0.00411546 0.0137413 -0.00168959" mass="6.3921" diaginertia="0.0962166 0.0895166 0.0201248" />
+            <inertial pos="-0.0043392 -0.00065534 0.065686"
+                quat="0.999896 -0.00411546 0.0137413 -0.00168959" mass="6.3921"
+                diaginertia="0.0962166 0.0895166 0.0201248" />
             <joint name="world_joint" type="free" limited="false" actuatorfrclimited="false" />
-
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"
+                material="metal" mesh="Booster-K1_Trunk" />
+            <geom size="0.06 0.09 0.1" pos="0 0 0.1" type="box" material="metal" />
+            <geom size="0.05 0.05" pos="0 0 -0.06" quat="0.707105 0.707108 0 0" type="cylinder"
+                material="metal" />
             <body name="Head_1" pos="0.0056 0 0.2149">
                 <inertial pos="-0.00069503 -0.00038527 0.031688"
                     quat="0.993827 -0.00957801 0.00894723 -0.110168" mass="0.29729"
@@ -40,9 +41,9 @@
                     <geom type="mesh" material="black" mesh="Booster-K1_Head_2" />
 
                     <site name="head_left_cam_site" pos="0.05 0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-                    <camera name="left_cam" pos="0.05 0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
+                    <camera name="left_cam" pos="0.05 0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
                     <site name="head_right_cam_site" pos="0.05 -0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-                    <camera name="right_cam" pos="0.05 -0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
+                    <camera name="right_cam" pos="0.05 -0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
                 </body>
             </body>
             <body name="Left_Arm_1" pos="0 0.077 0.1845">
