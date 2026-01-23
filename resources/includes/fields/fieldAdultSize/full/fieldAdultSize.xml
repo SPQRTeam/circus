@@ -5,33 +5,33 @@
     <material name="grid_mat" texture="grid_tex" texrepeat="50 50"/>
 
     <!-- Field -->
-    <texture name="half_field" type="2d" file="../../../textures/halfField.png"/>
+    <texture name="half_field" type="2d" file="../../../../textures/halfField.png"/>
     <material name="grass" texture="half_field" texrepeat="1 1" specular="0.2" shininess="0.1" reflectance="0.0"/>
-    <texture name="half_field_with_lines" type="2d" file="../../../textures/halfFieldWithLines.png"/>
+    <texture name="half_field_with_lines" type="2d" file="../../../../textures/halfFieldWithLines.png"/>
     <material name="field" texture="half_field_with_lines" texrepeat="1 1" specular="0.2" shininess="0.1" reflectance="0.0"/>
 
     <!-- Lines Mesh -->
-    <mesh name="lines_mesh" file="../../../meshes/lines/14x9.obj"/>
+    <mesh name="lines_mesh" file="../../../../meshes/lines/14x9.obj"/>
     <material name="lines_mat" rgba="0.6 0.6 0.5 0.75" specular="0.2" shininess="0.1" reflectance="0.0"/>
 
     <!-- Goal Meshes -->
-    <mesh name="left_post" file="../../../meshes/goal/LeftPost.obj"/>
-    <mesh name="right_post" file="../../../meshes/goal/RightPost.obj"/>
-    <mesh name="crossbar" file="../../../meshes/goal/Crossbar.obj"/>
+    <mesh name="left_post" file="../../../../meshes/goal/LeftPost.obj"/>
+    <mesh name="right_post" file="../../../../meshes/goal/RightPost.obj"/>
+    <mesh name="crossbar" file="../../../../meshes/goal/Crossbar.obj"/>
 
-    <mesh name="left_back_post" file="../../../meshes/goal/LeftBackPost.obj"/>
-    <mesh name="right_back_post" file="../../../meshes/goal/RightBackPost.obj"/>
-    <mesh name="back_crossbar" file="../../../meshes/goal/BackCrossbar.obj"/>ù
+    <mesh name="left_back_post" file="../../../../meshes/goal/LeftBackPost.obj"/>
+    <mesh name="right_back_post" file="../../../../meshes/goal/RightBackPost.obj"/>
+    <mesh name="back_crossbar" file="../../../../meshes/goal/BackCrossbar.obj"/>ù
 
-    <mesh name="right_holder" file="../../../meshes/goal/RightHolder.obj"/>
-    <mesh name="left_holder" file="../../../meshes/goal/LeftHolder.obj"/>
+    <mesh name="right_holder" file="../../../../meshes/goal/RightHolder.obj"/>
+    <mesh name="left_holder" file="../../../../meshes/goal/LeftHolder.obj"/>
 
-    <mesh name="left_net" file="../../../meshes/goal/LeftNet.obj"/>
-    <mesh name="right_net" file="../../../meshes/goal/RightNet.obj"/>
-    <mesh name="back_net" file="../../../meshes/goal/BackNet.obj"/>
+    <mesh name="left_net" file="../../../../meshes/goal/LeftNet.obj"/>
+    <mesh name="right_net" file="../../../../meshes/goal/RightNet.obj"/>
+    <mesh name="back_net" file="../../../../meshes/goal/BackNet.obj"/>
 
     <!-- Colosseum Mesh -->
-    <mesh name="colosseum" file="../../../meshes/colosseum/colosseum.obj" scale="0.004 0.004 0.004"/>
+    <mesh name="colosseum" file="../../../../meshes/colosseum/colosseum.obj" scale="0.004 0.004 0.004"/>
     <texture name="colosseum_tex" type="2d" builtin="flat" rgb1="0.666 0.639 0.557" width="512" height="512"/>
     <material name="colosseum_mat"
             texture="colosseum_tex"

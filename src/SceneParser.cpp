@@ -42,19 +42,27 @@ SceneParser::SceneParser(const string& yamlPath) {
     const YAML::Node& fieldNode = simConfigRoot["field"];
     scene.simulationConfig.field.name = fieldNode["name"].as<string>("fieldAdultSize");
     scene.simulationConfig.field.type = fieldNode["type"].as<string>("full");
-    scene.simulationConfig.field.width = fieldNode["width"].as<float>(14.0f);
-    scene.simulationConfig.field.height = fieldNode["height"].as<float>(9.0f);
-    scene.simulationConfig.field.center_radius = fieldNode["center_radius"].as<float>(1.5f);
-    scene.simulationConfig.field.goal_area_width = fieldNode["goal_area_width"].as<float>(1.0f);
-    scene.simulationConfig.field.goal_area_height = fieldNode["goal_area_height"].as<float>(4.0f);
-    scene.simulationConfig.field.penalty_area_width = fieldNode["penalty_area_width"].as<float>(3.0f);
-    scene.simulationConfig.field.penalty_area_height = fieldNode["penalty_area_height"].as<float>(6.5f);
-    scene.simulationConfig.field.goal_width = fieldNode["goal_width"].as<float>(2.6f);
-    scene.simulationConfig.field.goal_height = fieldNode["goal_height"].as<float>(1.8f);
-    scene.simulationConfig.field.goal_depth = fieldNode["goal_depth"].as<float>(0.6f);
-    scene.simulationConfig.field.line_width = fieldNode["line_width"].as<float>(0.08f);
-    scene.simulationConfig.field.penalty_mark_distance = fieldNode["penalty_mark_distance"].as<float>(2.1f);
-    scene.simulationConfig.field.ball_radius = fieldNode["ball_radius"].as<float>(0.11f);
+
+    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / scene.simulationConfig.field.name
+                                 / (scene.simulationConfig.field.name + ".yaml");
+    if (!filesystem::exists(fieldPath))
+        throw runtime_error("Field config file does not exist: " + fieldPath.string());
+
+    YAML::Node fieldConfigRoot = YAML::LoadFile(fieldPath.string());
+
+    scene.simulationConfig.field.width = fieldConfigRoot["width"].as<float>(14.0f);
+    scene.simulationConfig.field.height = fieldConfigRoot["height"].as<float>(9.0f);
+    scene.simulationConfig.field.center_radius = fieldConfigRoot["center_radius"].as<float>(1.5f);
+    scene.simulationConfig.field.goal_area_width = fieldConfigRoot["goal_area_width"].as<float>(1.0f);
+    scene.simulationConfig.field.goal_area_height = fieldConfigRoot["goal_area_height"].as<float>(4.0f);
+    scene.simulationConfig.field.penalty_area_width = fieldConfigRoot["penalty_area_width"].as<float>(3.0f);
+    scene.simulationConfig.field.penalty_area_height = fieldConfigRoot["penalty_area_height"].as<float>(6.5f);
+    scene.simulationConfig.field.goal_width = fieldConfigRoot["goal_width"].as<float>(2.6f);
+    scene.simulationConfig.field.goal_height = fieldConfigRoot["goal_height"].as<float>(1.8f);
+    scene.simulationConfig.field.goal_depth = fieldConfigRoot["goal_depth"].as<float>(0.6f);
+    scene.simulationConfig.field.line_width = fieldConfigRoot["line_width"].as<float>(0.08f);
+    scene.simulationConfig.field.penalty_mark_distance = fieldConfigRoot["penalty_mark_distance"].as<float>(2.1f);
+    scene.simulationConfig.field.ball_radius = fieldConfigRoot["ball_radius"].as<float>(0.11f);
 
     // Load simulation settings
     if (simConfigRoot["simulation"]) {
@@ -157,8 +165,8 @@ string SceneParser::buildMuJoCoXml() {
     compiler.append_attribute("meshdir") = "resources/meshes/";
 
     xml_node include_node = mujoco.append_child("include");
-    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / scene.simulationConfig.field.type
-                                             / (scene.simulationConfig.field.name + ".xml"))
+    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / scene.simulationConfig.field.name
+                                             / scene.simulationConfig.field.type / (scene.simulationConfig.field.name + ".xml"))
                                                 .c_str();
 
     xml_node visual = mujoco.append_child("visual");

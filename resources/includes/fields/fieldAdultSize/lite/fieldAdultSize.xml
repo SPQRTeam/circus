@@ -9,24 +9,24 @@
     <material name="grass" texture="grass_tex" specular="0.1" shininess="0.05" reflectance="0.0"/>
 
     <!-- Lines Mesh -->
-    <mesh name="lines_mesh" file="../../../meshes/lines/14x9.obj"/>
+    <mesh name="lines_mesh" file="../../../../meshes/lines/14x9.obj"/>
     <material name="lines_mat" rgba="0.6 0.6 0.5 0.75" specular="0.2" shininess="0.1" reflectance="0.0"/>
 
     <!-- Goal Meshes -->
-    <mesh name="left_post" file="../../../meshes/goal/LeftPost.obj"/>
-    <mesh name="right_post" file="../../../meshes/goal/RightPost.obj"/>
-    <mesh name="crossbar" file="../../../meshes/goal/Crossbar.obj"/>
+    <mesh name="left_post" file="../../../../meshes/goal/LeftPost.obj"/>
+    <mesh name="right_post" file="../../../../meshes/goal/RightPost.obj"/>
+    <mesh name="crossbar" file="../../../../meshes/goal/Crossbar.obj"/>
 
-    <mesh name="left_back_post" file="../../../meshes/goal/LeftBackPost.obj"/>
-    <mesh name="right_back_post" file="../../../meshes/goal/RightBackPost.obj"/>
-    <mesh name="back_crossbar" file="../../../meshes/goal/BackCrossbar.obj"/>ù
+    <mesh name="left_back_post" file="../../../../meshes/goal/LeftBackPost.obj"/>
+    <mesh name="right_back_post" file="../../../../meshes/goal/RightBackPost.obj"/>
+    <mesh name="back_crossbar" file="../../../../meshes/goal/BackCrossbar.obj"/>ù
 
-    <mesh name="right_holder" file="../../../meshes/goal/RightHolder.obj"/>
-    <mesh name="left_holder" file="../../../meshes/goal/LeftHolder.obj"/>
+    <mesh name="right_holder" file="../../../../meshes/goal/RightHolder.obj"/>
+    <mesh name="left_holder" file="../../../../meshes/goal/LeftHolder.obj"/>
 
-    <mesh name="left_net" file="../../../meshes/goal/LeftNet.obj"/>
-    <mesh name="right_net" file="../../../meshes/goal/RightNet.obj"/>
-    <mesh name="back_net" file="../../../meshes/goal/BackNet.obj"/>
+    <mesh name="left_net" file="../../../../meshes/goal/LeftNet.obj"/>
+    <mesh name="right_net" file="../../../../meshes/goal/RightNet.obj"/>
+    <mesh name="back_net" file="../../../../meshes/goal/BackNet.obj"/>
 
 </asset>
 
