@@ -68,26 +68,59 @@ void FieldGenerator::addFieldAssets(pugi::xml_node& assetNode, const FieldConfig
     gridMat.append_attribute("texture") = "grid_tex";
     gridMat.append_attribute("texrepeat") = "50 50";
 
-    // Grass texture and material
-    pugi::xml_node grassTex = assetNode.append_child("texture");
-    grassTex.append_attribute("name") = "grass_tex";
-    grassTex.append_attribute("type") = "2d";
-    grassTex.append_attribute("builtin") = "flat";
-    grassTex.append_attribute("rgb1") = "0.2 0.5 0.2";
-    grassTex.append_attribute("width") = "512";
-    grassTex.append_attribute("height") = "512";
+    // Base grass color texture (using shadow_frizzle for natural variation)
+    pugi::xml_node grassBaseTex = assetNode.append_child("texture");
+    grassBaseTex.append_attribute("name") = "grass_base_tex";
+    grassBaseTex.append_attribute("type") = "2d";
+    grassBaseTex.append_attribute("builtin") = "flat";
+    grassBaseTex.append_attribute("rgb1") = "0.2 0.5 0.2";
+    grassBaseTex.append_attribute("width") = "512";
+    grassBaseTex.append_attribute("height") = "512";
 
-    pugi::xml_node grassMat = assetNode.append_child("material");
-    grassMat.append_attribute("name") = "grass";
-    grassMat.append_attribute("texture") = "grass_tex";
-    grassMat.append_attribute("specular") = "0.1";
-    grassMat.append_attribute("shininess") = "0.05";
-    grassMat.append_attribute("reflectance") = "0.0";
+    // Natural texture overlay (shadow_frizzle for organic look)
+    // pugi::xml_node frizzleTex = assetNode.append_child("texture");
+    // frizzleTex.append_attribute("name") = "frizzle_tex";
+    // frizzleTex.append_attribute("type") = "2d";
+    // std::string frizzlePath = std::string(PROJECT_ROOT) + "/resources/textures/shadow_frizzle.png";
+    // frizzleTex.append_attribute("file") = frizzlePath.c_str();
+
+    // Composite texture combining both roughness textures
+    pugi::xml_node roughnessTex = assetNode.append_child("texture");
+    roughnessTex.append_attribute("name") = "roughness_tex";
+    roughnessTex.append_attribute("type") = "2d";
+    std::string roughnessPath = std::string(PROJECT_ROOT) + "/resources/textures/grass_roughness.png";
+    roughnessTex.append_attribute("file") = roughnessPath.c_str();
+
+    pugi::xml_node gradientTex = assetNode.append_child("texture");
+    gradientTex.append_attribute("name") = "gradient_tex";
+    gradientTex.append_attribute("type") = "2d";
+    std::string gradientPath = std::string(PROJECT_ROOT) + "/resources/textures/grass_gradient.png";
+    gradientTex.append_attribute("file") = gradientPath.c_str();
+
+    // Base grass material with roughness texture
+    pugi::xml_node roughnessMat = assetNode.append_child("material");
+    roughnessMat.append_attribute("name") = "roughness_mat";
+    roughnessMat.append_attribute("texture") = "roughness_tex";
+    roughnessMat.append_attribute("texrepeat") = "10 10";
+    roughnessMat.append_attribute("specular") = "0.2";
+    roughnessMat.append_attribute("shininess") = "0.1";
+    roughnessMat.append_attribute("reflectance") = "0.0";
+    roughnessMat.append_attribute("rgba") = "0.3 0.7 0.3 1.0";  // Green tint
+
+    // Overlay material with white texture for additional detail
+    pugi::xml_node gradientMat = assetNode.append_child("material");
+    gradientMat.append_attribute("name") = "gradient_mat";
+    gradientMat.append_attribute("texture") = "gradient_tex";
+    gradientMat.append_attribute("texrepeat") = "15 15";
+    gradientMat.append_attribute("specular") = "0.1";
+    gradientMat.append_attribute("shininess") = "0.05";
+    gradientMat.append_attribute("reflectance") = "0.0";
+    gradientMat.append_attribute("rgba") = "0.3 0.6 0.3 0.4";  // Semi-transparent overlay
 
     // Lines material (no mesh, lines will be generated as geoms)
     pugi::xml_node linesMat = assetNode.append_child("material");
     linesMat.append_attribute("name") = "lines_mat";
-    linesMat.append_attribute("rgba") = "0.9 0.9 0.9 1.0";
+    linesMat.append_attribute("rgba") = "0.8 0.8 0.8 1";
     linesMat.append_attribute("specular") = "0.2";
     linesMat.append_attribute("shininess") = "0.1";
     linesMat.append_attribute("reflectance") = "0.0";
@@ -123,19 +156,37 @@ void FieldGenerator::addFieldGeometries(pugi::xml_node& worldbodyNode, const Fie
 }
 
 void FieldGenerator::addGroundPlane(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig) {
+    // Create 4 quadrants to properly tile the gradient texture
+    // Each quadrant gets the gradient applied so shadows align with corners
+
+    float quarterWidth = ((fieldConfig.width+2) / 4.0f);
+    float quarterHeight = ((fieldConfig.height+2) / 4.0f);
+    float halfWidth = (fieldConfig.width+2) / 2.0f;
+    float halfHeight = (fieldConfig.height+2) / 2.0f;
+
+    // Base grass plane with roughness texture
     pugi::xml_node ground = worldbodyNode.append_child("geom");
-    ground.append_attribute("name") = "ground";
+    ground.append_attribute("name") = "ground_plane";
     ground.append_attribute("type") = "plane";
-
-    // Size: half-width, half-height, thickness
-    std::ostringstream sizeStream;
-    sizeStream << ((fieldConfig.width / 2.0f) + 1) << " " << ((fieldConfig.height / 2.0f) + 1) << " 0.1";
-    ground.append_attribute("size") = sizeStream.str().c_str();
-
-    ground.append_attribute("material") = "grass";
+    std::ostringstream size;
+    size << (halfWidth) << " " << (halfHeight) << " 0.1";
+    ground.append_attribute("size") = size.str().c_str();
     ground.append_attribute("pos") = "0 0 0.001";
+    ground.append_attribute("euler") = "0 0 0";
+    ground.append_attribute("material") = "roughness_mat";
     ground.append_attribute("condim") = "3";
     ground.append_attribute("friction") = "0.01 0.01 0.01";
+
+    // Overlay plane with white texture for additional detail
+    pugi::xml_node groundOverlay = worldbodyNode.append_child("geom");
+    groundOverlay.append_attribute("name") = "ground_overlay";
+    groundOverlay.append_attribute("type") = "plane";
+    groundOverlay.append_attribute("size") = size.str().c_str();
+    groundOverlay.append_attribute("pos") = "0 0 0.002";  // Slightly above base plane
+    groundOverlay.append_attribute("euler") = "0 0 0";
+    groundOverlay.append_attribute("material") = "gradient_mat";
+    groundOverlay.append_attribute("contype") = "0";  // No collision
+    groundOverlay.append_attribute("conaffinity") = "0";
 }
 
 std::vector<LineSegment> FieldGenerator::calculateFieldLines(const FieldConfig& fieldConfig) {
@@ -143,7 +194,7 @@ std::vector<LineSegment> FieldGenerator::calculateFieldLines(const FieldConfig& 
 
     float halfWidth = fieldConfig.width / 2.0f;
     float halfHeight = fieldConfig.height / 2.0f;
-    float z = 0.0001f;  // Slightly above ground
+    float z = 0.004f;  // Slightly above ground
     float overlap = fieldConfig.line_width / 2.0f;
 
     // Boundary lines (extended by 4cm on each side)
@@ -212,7 +263,7 @@ void FieldGenerator::addFieldLines(pugi::xml_node& worldbodyNode, const FieldCon
     // Add penalty marks as crosses (two perpendicular line segments)
     // Each penalty mark is a cross: 24cm x 8cm (two segments intersecting at center)
     float halfWidth = fieldConfig.width / 2.0f;
-    float penaltyMarkZ = 0.002f;
+    float penaltyMarkZ = 0.004f;
     float crossLength = fieldConfig.line_width * 3.0f;  // 24 cm total length
     float crossWidth = fieldConfig.line_width;          // same as line width
     float halfCrossLength = crossLength / 2.0f;         // 12 cm from center
@@ -287,7 +338,7 @@ void FieldGenerator::addCenterCircle(pugi::xml_node& worldbodyNode, const FieldC
     // Approximate circle with multiple box segments
     int numSegments = 100;  // More segments = smoother circle
     float radius = fieldConfig.center_radius;
-    float z = 0.002f;
+    float z = 0.004f;
     float anglePerSegment = (2.0f * M_PI) / numSegments;
 
     // Add small overlap to prevent gaps between segments
