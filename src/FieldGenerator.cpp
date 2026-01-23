@@ -157,48 +157,40 @@ std::vector<LineSegment> FieldGenerator::calculateFieldLines(const FieldConfig& 
     // Goal area - Left
     float goalAreaHalfHeight = fieldConfig.goal_area_height / 2.0f;
     // Top horizontal line - extend horizontally
-    lines.push_back({-halfWidth, goalAreaHalfHeight, z,
-                     -halfWidth + fieldConfig.goal_area_width + overlap, goalAreaHalfHeight, z});
+    lines.push_back({-halfWidth, goalAreaHalfHeight, z, -halfWidth + fieldConfig.goal_area_width + overlap, goalAreaHalfHeight, z});
     // Bottom horizontal line - extend horizontally
-    lines.push_back({-halfWidth, -goalAreaHalfHeight, z,
-                     -halfWidth + fieldConfig.goal_area_width + overlap, -goalAreaHalfHeight, z});
+    lines.push_back({-halfWidth, -goalAreaHalfHeight, z, -halfWidth + fieldConfig.goal_area_width + overlap, -goalAreaHalfHeight, z});
     // Vertical line - extend vertically
-    lines.push_back({-halfWidth + fieldConfig.goal_area_width, -goalAreaHalfHeight - overlap, z,
-                     -halfWidth + fieldConfig.goal_area_width, goalAreaHalfHeight + overlap, z});
+    lines.push_back({-halfWidth + fieldConfig.goal_area_width, -goalAreaHalfHeight - overlap, z, -halfWidth + fieldConfig.goal_area_width,
+                     goalAreaHalfHeight + overlap, z});
 
     // Goal area - Right
     // Top horizontal line - extend horizontally
-    lines.push_back({halfWidth, goalAreaHalfHeight, z,
-                     halfWidth - fieldConfig.goal_area_width - overlap, goalAreaHalfHeight, z});
+    lines.push_back({halfWidth, goalAreaHalfHeight, z, halfWidth - fieldConfig.goal_area_width - overlap, goalAreaHalfHeight, z});
     // Bottom horizontal line - extend horizontally
-    lines.push_back({halfWidth, -goalAreaHalfHeight, z,
-                     halfWidth - fieldConfig.goal_area_width - overlap, -goalAreaHalfHeight, z});
+    lines.push_back({halfWidth, -goalAreaHalfHeight, z, halfWidth - fieldConfig.goal_area_width - overlap, -goalAreaHalfHeight, z});
     // Vertical line - extend vertically
-    lines.push_back({halfWidth - fieldConfig.goal_area_width, -goalAreaHalfHeight - overlap, z,
-                     halfWidth - fieldConfig.goal_area_width, goalAreaHalfHeight + overlap, z});
+    lines.push_back({halfWidth - fieldConfig.goal_area_width, -goalAreaHalfHeight - overlap, z, halfWidth - fieldConfig.goal_area_width,
+                     goalAreaHalfHeight + overlap, z});
 
     // Penalty area - Left
     float penaltyAreaHalfHeight = fieldConfig.penalty_area_height / 2.0f;
     // Top horizontal line - extend horizontally
-    lines.push_back({-halfWidth, penaltyAreaHalfHeight, z,
-                     -halfWidth + fieldConfig.penalty_area_width + overlap, penaltyAreaHalfHeight, z});
+    lines.push_back({-halfWidth, penaltyAreaHalfHeight, z, -halfWidth + fieldConfig.penalty_area_width + overlap, penaltyAreaHalfHeight, z});
     // Bottom horizontal line - extend horizontally
-    lines.push_back({-halfWidth, -penaltyAreaHalfHeight, z,
-                     -halfWidth + fieldConfig.penalty_area_width + overlap, -penaltyAreaHalfHeight, z});
+    lines.push_back({-halfWidth, -penaltyAreaHalfHeight, z, -halfWidth + fieldConfig.penalty_area_width + overlap, -penaltyAreaHalfHeight, z});
     // Vertical line - extend vertically
-    lines.push_back({-halfWidth + fieldConfig.penalty_area_width, -penaltyAreaHalfHeight - overlap, z,
-                     -halfWidth + fieldConfig.penalty_area_width, penaltyAreaHalfHeight + overlap, z});
+    lines.push_back({-halfWidth + fieldConfig.penalty_area_width, -penaltyAreaHalfHeight - overlap, z, -halfWidth + fieldConfig.penalty_area_width,
+                     penaltyAreaHalfHeight + overlap, z});
 
     // Penalty area - Right
     // Top horizontal line - extend horizontally
-    lines.push_back({halfWidth, penaltyAreaHalfHeight, z,
-                     halfWidth - fieldConfig.penalty_area_width - overlap, penaltyAreaHalfHeight, z});
+    lines.push_back({halfWidth, penaltyAreaHalfHeight, z, halfWidth - fieldConfig.penalty_area_width - overlap, penaltyAreaHalfHeight, z});
     // Bottom horizontal line - extend horizontally
-    lines.push_back({halfWidth, -penaltyAreaHalfHeight, z,
-                     halfWidth - fieldConfig.penalty_area_width - overlap, -penaltyAreaHalfHeight, z});
+    lines.push_back({halfWidth, -penaltyAreaHalfHeight, z, halfWidth - fieldConfig.penalty_area_width - overlap, -penaltyAreaHalfHeight, z});
     // Vertical line - extend vertically
-    lines.push_back({halfWidth - fieldConfig.penalty_area_width, -penaltyAreaHalfHeight - overlap, z,
-                     halfWidth - fieldConfig.penalty_area_width, penaltyAreaHalfHeight + overlap, z});
+    lines.push_back({halfWidth - fieldConfig.penalty_area_width, -penaltyAreaHalfHeight - overlap, z, halfWidth - fieldConfig.penalty_area_width,
+                     penaltyAreaHalfHeight + overlap, z});
 
     return lines;
 }
@@ -217,44 +209,32 @@ void FieldGenerator::addFieldLines(pugi::xml_node& worldbodyNode, const FieldCon
     float halfWidth = fieldConfig.width / 2.0f;
     float penaltyMarkZ = 0.002f;
     float crossLength = fieldConfig.line_width * 3.0f;  // 24 cm total length
-    float crossWidth = fieldConfig.line_width;  // same as line width
-    float halfCrossLength = crossLength / 2.0f;  // 12 cm from center
-    float halfCrossWidth = crossWidth / 2.0f;    // 4 cm from center
+    float crossWidth = fieldConfig.line_width;          // same as line width
+    float halfCrossLength = crossLength / 2.0f;         // 12 cm from center
+    float halfCrossWidth = crossWidth / 2.0f;           // 4 cm from center
 
     // Left penalty mark - horizontal segment
-    LineSegment leftHorizontal = {
-        -halfWidth + fieldConfig.penalty_mark_distance - halfCrossLength, 0, penaltyMarkZ,
-        -halfWidth + fieldConfig.penalty_mark_distance + halfCrossLength, 0, penaltyMarkZ
-    };
+    LineSegment leftHorizontal = {-halfWidth + fieldConfig.penalty_mark_distance - halfCrossLength, 0, penaltyMarkZ,
+                                  -halfWidth + fieldConfig.penalty_mark_distance + halfCrossLength, 0, penaltyMarkZ};
     addLineSegment(worldbodyNode, "penalty_mark_left_horizontal", leftHorizontal, crossWidth);
 
     // Left penalty mark - vertical segment
-    LineSegment leftVertical = {
-        -halfWidth + fieldConfig.penalty_mark_distance, -halfCrossLength, penaltyMarkZ,
-        -halfWidth + fieldConfig.penalty_mark_distance, halfCrossLength, penaltyMarkZ
-    };
+    LineSegment leftVertical = {-halfWidth + fieldConfig.penalty_mark_distance, -halfCrossLength, penaltyMarkZ,
+                                -halfWidth + fieldConfig.penalty_mark_distance, halfCrossLength,  penaltyMarkZ};
     addLineSegment(worldbodyNode, "penalty_mark_left_vertical", leftVertical, crossWidth);
 
     // Right penalty mark - horizontal segment
-    LineSegment rightHorizontal = {
-        halfWidth - fieldConfig.penalty_mark_distance - halfCrossLength, 0, penaltyMarkZ,
-        halfWidth - fieldConfig.penalty_mark_distance + halfCrossLength, 0, penaltyMarkZ
-    };
+    LineSegment rightHorizontal = {halfWidth - fieldConfig.penalty_mark_distance - halfCrossLength, 0, penaltyMarkZ,
+                                   halfWidth - fieldConfig.penalty_mark_distance + halfCrossLength, 0, penaltyMarkZ};
     addLineSegment(worldbodyNode, "penalty_mark_right_horizontal", rightHorizontal, crossWidth);
 
     // Right penalty mark - vertical segment
-    LineSegment rightVertical = {
-        halfWidth - fieldConfig.penalty_mark_distance, -halfCrossLength, penaltyMarkZ,
-        halfWidth - fieldConfig.penalty_mark_distance, halfCrossLength, penaltyMarkZ
-    };
+    LineSegment rightVertical = {halfWidth - fieldConfig.penalty_mark_distance, -halfCrossLength, penaltyMarkZ,
+                                 halfWidth - fieldConfig.penalty_mark_distance, halfCrossLength,  penaltyMarkZ};
     addLineSegment(worldbodyNode, "penalty_mark_right_vertical", rightVertical, crossWidth);
 
-
     // Center mark - horizontal segment
-    LineSegment centerHorizontal = {
-        -halfCrossLength, 0, penaltyMarkZ,
-        halfCrossLength, 0, penaltyMarkZ
-    };
+    LineSegment centerHorizontal = {-halfCrossLength, 0, penaltyMarkZ, halfCrossLength, 0, penaltyMarkZ};
     addLineSegment(worldbodyNode, "center_mark_horizontal", centerHorizontal, crossWidth);
 }
 
@@ -326,8 +306,8 @@ void FieldGenerator::addCenterCircle(pugi::xml_node& worldbodyNode, const FieldC
     }
 }
 
-void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig,
-                              const std::string& goalPrefix, float xPosition, float yawRotation) {
+void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig, const std::string& goalPrefix, float xPosition,
+                             float yawRotation) {
     // Goal dimensions from FieldConfig
     float goalWidth = fieldConfig.goal_width;
     float goalHeight = fieldConfig.goal_height;
@@ -350,109 +330,113 @@ void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& f
     std::ostringstream crossbarSize;
     crossbarSize << postRadius << " " << ((goalWidth / 2.0f) + postRadius);
     std::ostringstream backCrossbarSize;
-    backCrossbarSize << (postRadius / 2.0f) << " "<< (goalWidth / 2.0f);
+    backCrossbarSize << (postRadius / 2.0f) << " " << (goalWidth / 2.0f);
 
     std::ostringstream depthSize;
     depthSize << (postRadius / 2.0f) << " " << (goalDepth / 2.0f);
 
     std::string color = "0.8 0.8 0.8 1.0";  // Light gray color for goal posts
 
-    // Add front left post (cylinder)
+    // Add front left post (capsule)
     pugi::xml_node leftPost = worldbodyNode.append_child("geom");
     leftPost.append_attribute("name") = (goalPrefix + "_left_post").c_str();
-    leftPost.append_attribute("type") = "cylinder";
-    leftPost.append_attribute("size") = postSize.str().c_str();
-    std::ostringstream leftPostPos;
-    leftPostPos << goalX << " " << halfGoalWidth << " " << ((goalHeight / 2.0f) - (postRadius / 2.f)); // X = goal line, Y = half width, Z = half height
-    leftPost.append_attribute("pos") = leftPostPos.str().c_str();
+    leftPost.append_attribute("type") = "capsule";
+    std::ostringstream leftPostSize;
+    leftPostSize << postRadius;
+    leftPost.append_attribute("size") = leftPostSize.str().c_str();
+    std::ostringstream leftPostFromTo;
+    leftPostFromTo << goalX << " " << halfGoalWidth << " 0 " << goalX << " " << halfGoalWidth << " " << goalHeight;
+    leftPost.append_attribute("fromto") = leftPostFromTo.str().c_str();
     leftPost.append_attribute("rgba") = color.c_str();
 
-    // Add front right post (cylinder)
+    // Add front right post (capsule)
     pugi::xml_node rightPost = worldbodyNode.append_child("geom");
     rightPost.append_attribute("name") = (goalPrefix + "_right_post").c_str();
-    rightPost.append_attribute("type") = "cylinder";
-    rightPost.append_attribute("size") = postSize.str().c_str();
-    std::ostringstream rightPostPos;
-    rightPostPos << goalX << " " << -halfGoalWidth << " " << ((goalHeight / 2.0f) - (postRadius / 2.f));
-    rightPost.append_attribute("pos") = rightPostPos.str().c_str();
+    rightPost.append_attribute("type") = "capsule";
+    rightPost.append_attribute("size") = leftPostSize.str().c_str();
+    std::ostringstream rightPostFromTo;
+    rightPostFromTo << goalX << " " << -halfGoalWidth << " 0 " << goalX << " " << -halfGoalWidth << " " << goalHeight;
+    rightPost.append_attribute("fromto") = rightPostFromTo.str().c_str();
     rightPost.append_attribute("rgba") = color.c_str();
 
-    // Add front crossbar (cylinder connecting top of front posts)
+    // Add front crossbar (capsule connecting top of front posts)
     pugi::xml_node crossbar = worldbodyNode.append_child("geom");
     crossbar.append_attribute("name") = (goalPrefix + "_crossbar").c_str();
-    crossbar.append_attribute("type") = "cylinder";
-    crossbar.append_attribute("size") = crossbarSize.str().c_str();
-    std::ostringstream crossbarPos;
-    crossbarPos << goalX << " 0 " << goalHeight;
-    crossbar.append_attribute("pos") = crossbarPos.str().c_str();
-    crossbar.append_attribute("euler") = "1.5708 0 0";  // Rotate 90 degrees around Y
+    crossbar.append_attribute("type") = "capsule";
+    crossbar.append_attribute("size") = leftPostSize.str().c_str();
+    std::ostringstream crossbarFromTo;
+    crossbarFromTo << goalX << " " << -halfGoalWidth << " " << goalHeight << " " << goalX << " " << halfGoalWidth << " " << goalHeight;
+    crossbar.append_attribute("fromto") = crossbarFromTo.str().c_str();
     crossbar.append_attribute("rgba") = color.c_str();
 
-    // Add back left post (cylinder)
+    // Add back left post (capsule)
     pugi::xml_node leftBackPost = worldbodyNode.append_child("geom");
     leftBackPost.append_attribute("name") = (goalPrefix + "_left_back_post").c_str();
-    leftBackPost.append_attribute("type") = "cylinder";
-    leftBackPost.append_attribute("size") = backPostSize.str().c_str();
-    std::ostringstream leftBackPostPos;
-    leftBackPostPos << (goalX + directionSign * goalDepth) << " " << halfGoalWidth << " " << (goalHeight / 2.0f);
-    leftBackPost.append_attribute("pos") = leftBackPostPos.str().c_str();
+    leftBackPost.append_attribute("type") = "capsule";
+    std::ostringstream backPostSizeStr;
+    backPostSizeStr << (postRadius / 2.0f);
+    leftBackPost.append_attribute("size") = backPostSizeStr.str().c_str();
+    std::ostringstream leftBackPostFromTo;
+    leftBackPostFromTo << (goalX + directionSign * goalDepth) << " " << halfGoalWidth << " 0 " << (goalX + directionSign * goalDepth) << " "
+                       << halfGoalWidth << " " << goalHeight;
+    leftBackPost.append_attribute("fromto") = leftBackPostFromTo.str().c_str();
     leftBackPost.append_attribute("rgba") = color.c_str();
 
-    // Add back right post (cylinder)
+    // Add back right post (capsule)
     pugi::xml_node rightBackPost = worldbodyNode.append_child("geom");
     rightBackPost.append_attribute("name") = (goalPrefix + "_right_back_post").c_str();
-    rightBackPost.append_attribute("type") = "cylinder";
-    rightBackPost.append_attribute("size") = backPostSize.str().c_str();
-    std::ostringstream rightBackPostPos;
-    rightBackPostPos << (goalX + directionSign * goalDepth) << " " << -halfGoalWidth << " " << (goalHeight / 2.0f);
-    rightBackPost.append_attribute("pos") = rightBackPostPos.str().c_str();
+    rightBackPost.append_attribute("type") = "capsule";
+    rightBackPost.append_attribute("size") = backPostSizeStr.str().c_str();
+    std::ostringstream rightBackPostFromTo;
+    rightBackPostFromTo << (goalX + directionSign * goalDepth) << " " << -halfGoalWidth << " 0 " << (goalX + directionSign * goalDepth) << " "
+                        << -halfGoalWidth << " " << goalHeight;
+    rightBackPost.append_attribute("fromto") = rightBackPostFromTo.str().c_str();
     rightBackPost.append_attribute("rgba") = color.c_str();
 
-    // Add back crossbar (cylinder connecting top of back posts)
+    // Add back crossbar (capsule connecting top of back posts)
     pugi::xml_node backCrossbar = worldbodyNode.append_child("geom");
     backCrossbar.append_attribute("name") = (goalPrefix + "_back_crossbar").c_str();
-    backCrossbar.append_attribute("type") = "cylinder";
-    backCrossbar.append_attribute("size") = backCrossbarSize.str().c_str();
-    std::ostringstream backCrossbarPos;
-    backCrossbarPos << (goalX + directionSign * goalDepth) << " 0 " << goalHeight;
-    backCrossbar.append_attribute("pos") = backCrossbarPos.str().c_str();
-    backCrossbar.append_attribute("euler") = "1.5708 0 0";
+    backCrossbar.append_attribute("type") = "capsule";
+    backCrossbar.append_attribute("size") = backPostSizeStr.str().c_str();
+    std::ostringstream backCrossbarFromTo;
+    backCrossbarFromTo << (goalX + directionSign * goalDepth) << " " << -halfGoalWidth << " " << goalHeight << " "
+                       << (goalX + directionSign * goalDepth) << " " << halfGoalWidth << " " << goalHeight;
+    backCrossbar.append_attribute("fromto") = backCrossbarFromTo.str().c_str();
     backCrossbar.append_attribute("rgba") = color.c_str();
 
-    // Add left side bar (connecting left posts)
+    // Add left side bar (capsule connecting left posts at top)
     pugi::xml_node leftSideBar = worldbodyNode.append_child("geom");
     leftSideBar.append_attribute("name") = (goalPrefix + "_left_side_bar").c_str();
-    leftSideBar.append_attribute("type") = "cylinder";
-    leftSideBar.append_attribute("size") = depthSize.str().c_str();
-    std::ostringstream leftSideBarPos;
-    leftSideBarPos << (goalX + directionSign * goalDepth / 2.0f) << " " << halfGoalWidth << " " << goalHeight;
-    leftSideBar.append_attribute("pos") = leftSideBarPos.str().c_str();
-    std::ostringstream sideBarEuler;
-    sideBarEuler << "0 " << (directionSign > 0 ? 1.5708 : -1.5708) << " 0";
-    leftSideBar.append_attribute("euler") = sideBarEuler.str().c_str();
+    leftSideBar.append_attribute("type") = "capsule";
+    leftSideBar.append_attribute("size") = backPostSizeStr.str().c_str();
+    std::ostringstream leftSideBarFromTo;
+    leftSideBarFromTo << goalX << " " << halfGoalWidth << " " << goalHeight << " " << (goalX + directionSign * goalDepth) << " " << halfGoalWidth
+                      << " " << goalHeight;
+    leftSideBar.append_attribute("fromto") = leftSideBarFromTo.str().c_str();
     leftSideBar.append_attribute("rgba") = color.c_str();
 
-    // Add right side bar (connecting right posts)
+    // Add right side bar (capsule connecting right posts at top)
     pugi::xml_node rightSideBar = worldbodyNode.append_child("geom");
     rightSideBar.append_attribute("name") = (goalPrefix + "_right_side_bar").c_str();
-    rightSideBar.append_attribute("type") = "cylinder";
-    rightSideBar.append_attribute("size") = depthSize.str().c_str();
-    std::ostringstream rightSideBarPos;
-    rightSideBarPos << (goalX + directionSign * goalDepth / 2.0f) << " " << -halfGoalWidth << " " << goalHeight;
-    rightSideBar.append_attribute("pos") = rightSideBarPos.str().c_str();
-    rightSideBar.append_attribute("euler") = sideBarEuler.str().c_str();
+    rightSideBar.append_attribute("type") = "capsule";
+    rightSideBar.append_attribute("size") = backPostSizeStr.str().c_str();
+    std::ostringstream rightSideBarFromTo;
+    rightSideBarFromTo << goalX << " " << -halfGoalWidth << " " << goalHeight << " " << (goalX + directionSign * goalDepth) << " " << -halfGoalWidth
+                       << " " << goalHeight;
+    rightSideBar.append_attribute("fromto") = rightSideBarFromTo.str().c_str();
     rightSideBar.append_attribute("rgba") = color.c_str();
 
     // Add net - grid of small cylinders
-    float netRadius = 0.002f;  // 1cm radius for net strands
-    float netSpacing = 0.10f; // 10cm spacing between strands
+    float netRadius = 0.002f;                   // 1cm radius for net strands
+    float netSpacing = 0.10f;                   // 10cm spacing between strands
     std::string netColor = "0.7 0.7 0.7 0.75";  // Semi-transparent white
 
     // Vertical net strands (parallel to Y-axis)
     int numVerticalStrands = static_cast<int>(goalHeight / netSpacing) + 1;
     for (int i = 0; i <= numVerticalStrands; ++i) {
         float z = i * netSpacing;
-        if (z > goalHeight) z = goalHeight;
+        if (z > goalHeight)
+            z = goalHeight;
 
         // Horizontal strand along width
         pugi::xml_node vertStrand = worldbodyNode.append_child("geom");
@@ -476,7 +460,8 @@ void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& f
     int numHorizontalStrands = static_cast<int>(goalWidth / netSpacing) + 1;
     for (int i = 0; i <= numHorizontalStrands; ++i) {
         float y = -halfGoalWidth + i * netSpacing;
-        if (y > halfGoalWidth) y = halfGoalWidth;
+        if (y > halfGoalWidth)
+            y = halfGoalWidth;
 
         // Vertical strand along height
         pugi::xml_node horizStrand = worldbodyNode.append_child("geom");
@@ -499,7 +484,8 @@ void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& f
     // Left side net - vertical strands
     for (int i = 0; i <= numVerticalStrands; ++i) {
         float z = i * netSpacing;
-        if (z > goalHeight) z = goalHeight;
+        if (z > goalHeight)
+            z = goalHeight;
 
         pugi::xml_node leftSideStrand = worldbodyNode.append_child("geom");
         std::ostringstream leftSideStrandName;
@@ -523,7 +509,8 @@ void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& f
     // Right side net - vertical strands
     for (int i = 0; i <= numVerticalStrands; ++i) {
         float z = i * netSpacing;
-        if (z > goalHeight) z = goalHeight;
+        if (z > goalHeight)
+            z = goalHeight;
 
         pugi::xml_node rightSideStrand = worldbodyNode.append_child("geom");
         std::ostringstream rightSideStrandName;
@@ -548,7 +535,8 @@ void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& f
     int numDepthStrands = static_cast<int>(goalDepth / netSpacing) + 1;
     for (int i = 0; i <= numDepthStrands; ++i) {
         float x = goalX + directionSign * i * netSpacing;
-        if (std::abs(x - goalX) > goalDepth) x = goalX + directionSign * goalDepth;
+        if (std::abs(x - goalX) > goalDepth)
+            x = goalX + directionSign * goalDepth;
 
         pugi::xml_node leftDepthStrand = worldbodyNode.append_child("geom");
         std::ostringstream leftDepthStrandName;
@@ -569,7 +557,8 @@ void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& f
     // Right side net - horizontal strands (along depth)
     for (int i = 0; i <= numDepthStrands; ++i) {
         float x = goalX + directionSign * i * netSpacing;
-        if (std::abs(x - goalX) > goalDepth) x = goalX + directionSign * goalDepth;
+        if (std::abs(x - goalX) > goalDepth)
+            x = goalX + directionSign * goalDepth;
 
         pugi::xml_node rightDepthStrand = worldbodyNode.append_child("geom");
         std::ostringstream rightDepthStrandName;
