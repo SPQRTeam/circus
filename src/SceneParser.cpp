@@ -44,8 +44,7 @@ SceneParser::SceneParser(const string& yamlPath) {
     scene.simulationConfig.field.name = fieldNode["name"].as<string>("fieldAdultSize");
     scene.simulationConfig.field.type = fieldNode["type"].as<string>("full");
 
-    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / scene.simulationConfig.field.name
-                                 / (scene.simulationConfig.field.name + ".yaml");
+    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / (scene.simulationConfig.field.name + ".yaml");
     if (!filesystem::exists(fieldPath))
         throw runtime_error("Field config file does not exist: " + fieldPath.string());
 

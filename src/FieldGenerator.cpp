@@ -184,7 +184,7 @@ std::vector<LineSegment> FieldGenerator::calculateFieldLines(const FieldConfig& 
     float halfWidth = fieldConfig.width / 2.0f;
     float halfHeight = fieldConfig.height / 2.0f;
     float z = 0.0001f;  // Slightly above ground
-    float overlap = 0.04f;  // 4 cm extension on each side for proper corner overlap
+    float overlap = fieldConfig.line_width / 2.0f;
 
     // Boundary lines (extended by 4cm on each side)
     // Top boundary - extend horizontally
@@ -261,8 +261,8 @@ void FieldGenerator::addFieldLines(pugi::xml_node& worldbodyNode, const FieldCon
     // Each penalty mark is a cross: 24cm x 8cm (two segments intersecting at center)
     float halfWidth = fieldConfig.width / 2.0f;
     float penaltyMarkZ = 0.002f;
-    float crossLength = 0.24f;  // 24 cm total length
-    float crossWidth = 0.08f;   // 8 cm width
+    float crossLength = fieldConfig.line_width * 3.0f;  // 24 cm total length
+    float crossWidth = fieldConfig.line_width;  // same as line width
     float halfCrossLength = crossLength / 2.0f;  // 12 cm from center
     float halfCrossWidth = crossWidth / 2.0f;    // 4 cm from center
 
