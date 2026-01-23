@@ -83,6 +83,15 @@ class FieldGenerator {
          */
         static void addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig, const std::string& goalPrefix, float xPosition,
                             float yawRotation);
+
+        /**
+         * Add ball to the scene
+         * @param assetNode Parent asset node for ball materials
+         * @param worldbodyNode Parent worldbody node
+         * @param ballRadius Ball radius from field config
+         * @param initialPosition Initial ball position (x, y, z)
+         */
+        static void addBall(pugi::xml_node& assetNode, pugi::xml_node& worldbodyNode, float ballRadius, const std::array<float, 3>& initialPosition);
 };
 
 }  // namespace spqr

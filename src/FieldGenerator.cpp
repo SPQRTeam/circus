@@ -1,5 +1,6 @@
 #include "FieldGenerator.h"
 
+#include <array>
 #include <cmath>
 #include <sstream>
 
@@ -45,6 +46,10 @@ void FieldGenerator::appendFieldToMuJoCo(pugi::xml_node& mujocoNode, const Field
         worldbodyNode = mujocoNode.append_child("worldbody");
     }
     addFieldGeometries(worldbodyNode, fieldConfig);
+
+    // Add ball
+    std::array<float, 3> ballPosition = {0.0f, 0.0f, 0.4f};  // Center of field, 40cm high
+    addBall(assetNode, worldbodyNode, fieldConfig.ball_radius, ballPosition);
 }
 
 void FieldGenerator::addFieldAssets(pugi::xml_node& assetNode, const FieldConfig& fieldConfig, const std::string& meshDir) {
@@ -575,6 +580,63 @@ void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& f
         rightDepthStrand.append_attribute("contype") = "0";
         rightDepthStrand.append_attribute("conaffinity") = "0";
     }
+}
+
+void FieldGenerator::addBall(pugi::xml_node& assetNode, pugi::xml_node& worldbodyNode, float ballRadius,
+                             const std::array<float, 3>& initialPosition) {
+    // Add ball texture
+    pugi::xml_node ballTexture = assetNode.append_child("texture");
+    ballTexture.append_attribute("name") = "ball_diffuse";
+    std::string ballTexturePath = std::string(PROJECT_ROOT) + "/resources/textures/ball.png";
+    ballTexture.append_attribute("file") = ballTexturePath.c_str();
+    ballTexture.append_attribute("type") = "2d";
+
+    pugi::xml_node ballMat = assetNode.append_child("material");
+    ballMat.append_attribute("name") = "ball_mat";
+    ballMat.append_attribute("texture") = "ball_diffuse";
+    ballMat.append_attribute("texrepeat") = "1 1";
+    ballMat.append_attribute("specular") = "0.3";
+    ballMat.append_attribute("shininess") = "0.5";
+    ballMat.append_attribute("reflectance") = "0.05";
+    ballMat.append_attribute("rgba") = "0.5 0.5 0.5 1";
+
+    pugi::xml_node ballMesh = assetNode.append_child("mesh");
+    ballMesh.append_attribute("name") = "ball_mesh";
+    std::string ballMeshPath = std::string(PROJECT_ROOT) + "/resources/meshes/ball/ball.obj";
+    ballMesh.append_attribute("file") = ballMeshPath.c_str();
+
+    // Add ball body
+    pugi::xml_node ballBody = worldbodyNode.append_child("body");
+    ballBody.append_attribute("name") = "ball";
+    std::ostringstream ballPosStream;
+    ballPosStream << initialPosition[0] << " " << initialPosition[1] << " " << initialPosition[2];
+    ballBody.append_attribute("pos") = ballPosStream.str().c_str();
+
+    // Add freejoint for unconstrained movement
+    ballBody.append_child("freejoint");
+
+    // Calculate ball properties
+    // Size 5 ball: mass = 425g, radius from config (typically 0.11m for 22cm diameter)
+    float mass = 0.425f;  // kg
+    // Inertia for thin spherical shell: (2/3)*m*r^2
+    float inertia = (2.0f / 3.0f) * mass * ballRadius * ballRadius;
+
+    // Add inertial properties
+    pugi::xml_node inertial = ballBody.append_child("inertial");
+    inertial.append_attribute("mass") = "0.425";
+    std::ostringstream inertiaStream;
+    inertiaStream << inertia << " " << inertia << " " << inertia;
+    inertial.append_attribute("diaginertia") = inertiaStream.str().c_str();
+    inertial.append_attribute("pos") = "0 0 0";
+
+    // Add mesh geom (instead of sphere for proper UV mapping)
+    pugi::xml_node ballGeom = ballBody.append_child("geom");
+    ballGeom.append_attribute("name") = "ball_geom";
+    ballGeom.append_attribute("type") = "mesh";
+    ballGeom.append_attribute("mesh") = "ball_mesh";
+    ballGeom.append_attribute("material") = "ball_mat";
+    ballGeom.append_attribute("condim") = "6";
+    ballGeom.append_attribute("friction") = "0.8 0.005 0.0005";  // sliding, torsional, rolling
 }
 
 }  // namespace spqr

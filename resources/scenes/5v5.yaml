@@ -1,0 +1,45 @@
+simulation_config: default
+teams:
+  red:
+    - type: Booster-T1
+      number: 1
+      position: [-1.0, 0.0, 0.635]
+      orientation: [0.0, 0.0, 0.0]
+    - type: Booster-T1
+      number: 2
+      position: [-1.0, 2.0, 0.635]
+      orientation: [0.0, 0.0, 0.0]
+    - type: Booster-T1
+      number: 3
+      position: [-1.0, 4.0, 0.635]
+      orientation: [0.0, 0.0, 0.0]
+    - type: Booster-T1
+      number: 4
+      position: [-1.0, -2.0, 0.635]
+      orientation: [0.0, 0.0, 0.0]
+    - type: Booster-T1
+      number: 5
+      position: [-1.0, -4.0, 0.635]
+      orientation: [0.0, 0.0, 0.0]
+
+  blue:
+    - type: Booster-T1
+      number: 1
+      position: [1.0, 0.0, 0.635]
+      orientation: [0.0, 0.0, 3.14]
+    - type: Booster-T1
+      number: 2
+      position: [1.0, 2.0, 0.635]
+      orientation: [0.0, 0.0, 3.14]
+    - type: Booster-T1
+      number: 3
+      position: [1.0, 4.0, 0.635]
+      orientation: [0.0, 0.0, 3.14]
+    - type: Booster-T1
+      number: 4
+      position: [1.0, -2.0, 0.635]
+      orientation: [0.0, 0.0, 3.14]
+    - type: Booster-T1
+      number: 5
+      position: [1.0, -4.0, 0.635]
+      orientation: [0.0, 0.0, 3.14]

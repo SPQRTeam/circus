@@ -60,7 +60,7 @@ SceneParser::SceneParser(const string& yamlPath) {
         scene.simulationConfig.game.penalty_duration = gameNode["penalty_duration"].as<int>(45);
     }
 
-    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / (scene.simulationConfig.game.field + ".yaml");
+    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "fields" / (scene.simulationConfig.game.field + ".yaml");
     if (!filesystem::exists(fieldPath))
         throw runtime_error("Field config file does not exist: " + fieldPath.string());
 
@@ -157,16 +157,13 @@ string SceneParser::buildMuJoCoXml() {
     compiler.append_attribute("angle") = "radian";
     compiler.append_attribute("meshdir") = "resources/meshes/";
 
-    // Generate field dynamically using FieldGenerator
+    // Generate field dynamically using FieldGenerator (includes ball)
     std::string meshDir = (filesystem::path(PROJECT_ROOT) / "resources" / "meshes").string();
     FieldGenerator::appendFieldToMuJoCo(mujoco, scene.simulationConfig.field, meshDir);
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");
     // map.append_attribute("shadowsize") = "0";
-
-    xml_node include_node = mujoco.append_child("include");
-    include_node.append_attribute("file") = (filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "ball.xml").c_str();
 
     for (const string& robotType : robotTypes)
         buildRobotCommon(robotType, mujoco);
