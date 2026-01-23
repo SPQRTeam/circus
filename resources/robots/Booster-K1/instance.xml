@@ -11,7 +11,7 @@
             <geom name="num_7" class="visual" mesh="Booster-T1_num_7" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
             <geom name="num_8" class="visual" mesh="Booster-T1_num_8" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
             <geom name="num_9" class="visual" mesh="Booster-T1_num_9" material="white" pos="0.05 0 0.7" euler="1.57 1.57 0" contype="0" conaffinity="0"/>
-            
+
             <site name='imu' size='0.01' pos='0.0 0.0 0.0' />
             <inertial pos="-0.0043392 -0.00065534 0.065686"
                 quat="0.999896 -0.00411546 0.0137413 -0.00168959" mass="6.3921"
