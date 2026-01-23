@@ -89,6 +89,8 @@ class Joints : public Sensor {
                 size_t i = it->second;
                 int jid = joint_ids[i];
                 mujData->qpos[mujModel->jnt_qposadr[jid]] = val;
+                mujData->qvel[mujModel->jnt_dofadr[jid]] = 0.0;
+                mujData->qacc[mujModel->jnt_dofadr[jid]] = 0.0;
             }
             mj_forward(mujModel, mujData);
         }
