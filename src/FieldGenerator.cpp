@@ -159,10 +159,10 @@ void FieldGenerator::addGroundPlane(pugi::xml_node& worldbodyNode, const FieldCo
     // Create 4 quadrants to properly tile the gradient texture
     // Each quadrant gets the gradient applied so shadows align with corners
 
-    float quarterWidth = ((fieldConfig.width+2) / 4.0f);
-    float quarterHeight = ((fieldConfig.height+2) / 4.0f);
-    float halfWidth = (fieldConfig.width+2) / 2.0f;
-    float halfHeight = (fieldConfig.height+2) / 2.0f;
+    float quarterWidth = ((fieldConfig.width + 2) / 4.0f);
+    float quarterHeight = ((fieldConfig.height + 2) / 4.0f);
+    float halfWidth = (fieldConfig.width + 2) / 2.0f;
+    float halfHeight = (fieldConfig.height + 2) / 2.0f;
 
     // Base grass plane with roughness texture
     pugi::xml_node ground = worldbodyNode.append_child("geom");
