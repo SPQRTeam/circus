@@ -2,7 +2,7 @@ simulation:
   max_simulation_time: -1                         # maximum simulation time in seconds (if -1 -> no limit)
 
 field:
-  name: fieldSPL                            # field type < fieldAdultSize | ... >
+  name: fieldSPL                                  # field type < fieldAdultSize | ... >
   type: lite                                      # field quality < full | lite >
 
 game:

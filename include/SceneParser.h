@@ -31,11 +31,11 @@ struct FieldConfig {
         float goal_area_height = 4.0f;
         float penalty_area_width = 3.0f;
         float penalty_area_height = 6.5f;
+        float penalty_mark_distance = 2.1f;
         float goal_width = 2.6f;
         float goal_height = 1.8f;
         float goal_depth = 0.6f;
         float line_width = 0.08f;
-        float penalty_mark_distance = 2.1f;
         float ball_radius = 0.11f;
 };
 

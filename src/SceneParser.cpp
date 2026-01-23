@@ -57,11 +57,11 @@ SceneParser::SceneParser(const string& yamlPath) {
     scene.simulationConfig.field.goal_area_height = fieldConfigRoot["goal_area_height"].as<float>(4.0f);
     scene.simulationConfig.field.penalty_area_width = fieldConfigRoot["penalty_area_width"].as<float>(3.0f);
     scene.simulationConfig.field.penalty_area_height = fieldConfigRoot["penalty_area_height"].as<float>(6.5f);
+    scene.simulationConfig.field.penalty_mark_distance = fieldConfigRoot["penalty_mark_distance"].as<float>(2.1f);
     scene.simulationConfig.field.goal_width = fieldConfigRoot["goal_width"].as<float>(2.6f);
     scene.simulationConfig.field.goal_height = fieldConfigRoot["goal_height"].as<float>(1.8f);
     scene.simulationConfig.field.goal_depth = fieldConfigRoot["goal_depth"].as<float>(0.6f);
     scene.simulationConfig.field.line_width = fieldConfigRoot["line_width"].as<float>(0.08f);
-    scene.simulationConfig.field.penalty_mark_distance = fieldConfigRoot["penalty_mark_distance"].as<float>(2.1f);
     scene.simulationConfig.field.ball_radius = fieldConfigRoot["ball_radius"].as<float>(0.11f);
 
     // Load simulation settings

@@ -18,7 +18,7 @@ public:
     /**
      * Generate MuJoCo XML for a field based on field configuration
      * @param fieldConfig Field dimensions and specifications
-     * @param meshDir Base directory for mesh files (for goal meshes only)
+     * @param meshDir Base directory (unused, kept for API compatibility)
      * @return XML string containing the complete field definition
      */
     static std::string generateFieldXML(const FieldConfig& fieldConfig, const std::string& meshDir);
@@ -27,7 +27,7 @@ public:
      * Generate field XML and append it to an existing mujoco node
      * @param mujocoNode Parent mujoco XML node
      * @param fieldConfig Field dimensions and specifications
-     * @param meshDir Base directory for mesh files (for goal meshes only)
+     * @param meshDir Base directory (unused, kept for API compatibility)
      */
     static void appendFieldToMuJoCo(pugi::xml_node& mujocoNode, const FieldConfig& fieldConfig, const std::string& meshDir);
 
@@ -75,14 +75,15 @@ private:
     static void addCenterCircle(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig);
 
     /**
-     * Add goal meshes at specified position and rotation
+     * Add goal structure at specified position and rotation
      * @param worldbodyNode Parent worldbody node
+     * @param fieldConfig Field configuration with goal dimensions
      * @param goalPrefix Name prefix for goal geoms (e.g., "left_goal", "right_goal")
      * @param xPosition X position of the goal
      * @param yawRotation Yaw rotation in radians (0 or π)
      */
-    static void addGoal(pugi::xml_node& worldbodyNode, const std::string& goalPrefix,
-                        float xPosition, float yawRotation);
+    static void addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig,
+                        const std::string& goalPrefix, float xPosition, float yawRotation);
 };
 
 }  // namespace spqr

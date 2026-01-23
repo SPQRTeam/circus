@@ -87,52 +87,7 @@ void FieldGenerator::addFieldAssets(pugi::xml_node& assetNode, const FieldConfig
     linesMat.append_attribute("shininess") = "0.1";
     linesMat.append_attribute("reflectance") = "0.0";
 
-    // Goal meshes
-    std::string goalMeshPath = meshDir + "/goal/";
-
-    pugi::xml_node leftPost = assetNode.append_child("mesh");
-    leftPost.append_attribute("name") = "left_post";
-    leftPost.append_attribute("file") = (goalMeshPath + "LeftPost.obj").c_str();
-
-    pugi::xml_node rightPost = assetNode.append_child("mesh");
-    rightPost.append_attribute("name") = "right_post";
-    rightPost.append_attribute("file") = (goalMeshPath + "RightPost.obj").c_str();
-
-    pugi::xml_node crossbar = assetNode.append_child("mesh");
-    crossbar.append_attribute("name") = "crossbar";
-    crossbar.append_attribute("file") = (goalMeshPath + "Crossbar.obj").c_str();
-
-    pugi::xml_node leftBackPost = assetNode.append_child("mesh");
-    leftBackPost.append_attribute("name") = "left_back_post";
-    leftBackPost.append_attribute("file") = (goalMeshPath + "LeftBackPost.obj").c_str();
-
-    pugi::xml_node rightBackPost = assetNode.append_child("mesh");
-    rightBackPost.append_attribute("name") = "right_back_post";
-    rightBackPost.append_attribute("file") = (goalMeshPath + "RightBackPost.obj").c_str();
-
-    pugi::xml_node backCrossbar = assetNode.append_child("mesh");
-    backCrossbar.append_attribute("name") = "back_crossbar";
-    backCrossbar.append_attribute("file") = (goalMeshPath + "BackCrossbar.obj").c_str();
-
-    pugi::xml_node rightHolder = assetNode.append_child("mesh");
-    rightHolder.append_attribute("name") = "right_holder";
-    rightHolder.append_attribute("file") = (goalMeshPath + "RightHolder.obj").c_str();
-
-    pugi::xml_node leftHolder = assetNode.append_child("mesh");
-    leftHolder.append_attribute("name") = "left_holder";
-    leftHolder.append_attribute("file") = (goalMeshPath + "LeftHolder.obj").c_str();
-
-    pugi::xml_node leftNet = assetNode.append_child("mesh");
-    leftNet.append_attribute("name") = "left_net";
-    leftNet.append_attribute("file") = (goalMeshPath + "LeftNet.obj").c_str();
-
-    pugi::xml_node rightNet = assetNode.append_child("mesh");
-    rightNet.append_attribute("name") = "right_net";
-    rightNet.append_attribute("file") = (goalMeshPath + "RightNet.obj").c_str();
-
-    pugi::xml_node backNet = assetNode.append_child("mesh");
-    backNet.append_attribute("name") = "back_net";
-    backNet.append_attribute("file") = (goalMeshPath + "BackNet.obj").c_str();
+    // Goals are now generated procedurally, no meshes needed
 }
 
 void FieldGenerator::addFieldGeometries(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig) {
@@ -158,8 +113,8 @@ void FieldGenerator::addFieldGeometries(pugi::xml_node& worldbodyNode, const Fie
 
     // Add goals
     float halfWidth = fieldConfig.width / 2.0f;
-    addGoal(worldbodyNode, "left_goal", -halfWidth, 0.0f);
-    addGoal(worldbodyNode, "right_goal", halfWidth, static_cast<float>(M_PI));
+    addGoal(worldbodyNode, fieldConfig, "left_goal", -halfWidth, 0.0f);
+    addGoal(worldbodyNode, fieldConfig, "right_goal", halfWidth, static_cast<float>(M_PI));
 }
 
 void FieldGenerator::addGroundPlane(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig) {
@@ -371,32 +326,265 @@ void FieldGenerator::addCenterCircle(pugi::xml_node& worldbodyNode, const FieldC
     }
 }
 
-void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const std::string& goalPrefix,
-                              float xPosition, float yawRotation) {
-    std::ostringstream posStream;
-    posStream << xPosition << " 0 0";
-    std::string posStr = posStream.str();
+void FieldGenerator::addGoal(pugi::xml_node& worldbodyNode, const FieldConfig& fieldConfig,
+                              const std::string& goalPrefix, float xPosition, float yawRotation) {
+    // Goal dimensions from FieldConfig
+    float goalWidth = fieldConfig.goal_width;
+    float goalHeight = fieldConfig.goal_height;
+    float goalDepth = fieldConfig.goal_depth;
+    float postRadius = fieldConfig.line_width / 2.0f;
 
-    std::ostringstream eulerStream;
-    eulerStream << (M_PI / 2.0) << " " << yawRotation << " 0";
-    std::string eulerStr = eulerStream.str();
+    float halfGoalWidth = goalWidth / 2.0f;
 
-    // Goal mesh names
-    std::vector<std::string> meshNames = {
-        "left_post", "right_post", "crossbar",
-        "left_back_post", "right_back_post", "back_crossbar",
-        "right_holder", "left_holder",
-        "left_net", "right_net", "back_net"
-    };
+    // Determine direction multiplier based on which goal this is
+    float directionSign = (yawRotation > 0) ? 1.0f : -1.0f;
 
-    for (const auto& meshName : meshNames) {
-        pugi::xml_node geom = worldbodyNode.append_child("geom");
-        std::string geomName = goalPrefix + "_" + meshName;
-        geom.append_attribute("name") = geomName.c_str();
-        geom.append_attribute("type") = "mesh";
-        geom.append_attribute("mesh") = meshName.c_str();
-        geom.append_attribute("pos") = posStr.c_str();
-        geom.append_attribute("euler") = eulerStr.c_str();
+    // Calculate goal position (posts are at the goal line)
+    float goalX = xPosition;
+
+    std::ostringstream postSize;
+    postSize << postRadius << " " << (goalHeight / 2.0f);
+    std::ostringstream backPostSize;
+    backPostSize << (postRadius / 2.0f) << " " << (goalHeight / 2.0f);
+
+    std::ostringstream crossbarSize;
+    crossbarSize << postRadius << " " << ((goalWidth / 2.0f) + postRadius);
+    std::ostringstream backCrossbarSize;
+    backCrossbarSize << (postRadius / 2.0f) << " "<< (goalWidth / 2.0f);
+
+    std::ostringstream depthSize;
+    depthSize << (postRadius / 2.0f) << " " << (goalDepth / 2.0f);
+
+    std::string color = "0.8 0.8 0.8 1.0";  // Light gray color for goal posts
+
+    // Add front left post (cylinder)
+    pugi::xml_node leftPost = worldbodyNode.append_child("geom");
+    leftPost.append_attribute("name") = (goalPrefix + "_left_post").c_str();
+    leftPost.append_attribute("type") = "cylinder";
+    leftPost.append_attribute("size") = postSize.str().c_str();
+    std::ostringstream leftPostPos;
+    leftPostPos << goalX << " " << halfGoalWidth << " " << ((goalHeight / 2.0f) - (postRadius / 2.f)); // X = goal line, Y = half width, Z = half height
+    leftPost.append_attribute("pos") = leftPostPos.str().c_str();
+    leftPost.append_attribute("rgba") = color.c_str();
+
+    // Add front right post (cylinder)
+    pugi::xml_node rightPost = worldbodyNode.append_child("geom");
+    rightPost.append_attribute("name") = (goalPrefix + "_right_post").c_str();
+    rightPost.append_attribute("type") = "cylinder";
+    rightPost.append_attribute("size") = postSize.str().c_str();
+    std::ostringstream rightPostPos;
+    rightPostPos << goalX << " " << -halfGoalWidth << " " << ((goalHeight / 2.0f) - (postRadius / 2.f));
+    rightPost.append_attribute("pos") = rightPostPos.str().c_str();
+    rightPost.append_attribute("rgba") = color.c_str();
+
+    // Add front crossbar (cylinder connecting top of front posts)
+    pugi::xml_node crossbar = worldbodyNode.append_child("geom");
+    crossbar.append_attribute("name") = (goalPrefix + "_crossbar").c_str();
+    crossbar.append_attribute("type") = "cylinder";
+    crossbar.append_attribute("size") = crossbarSize.str().c_str();
+    std::ostringstream crossbarPos;
+    crossbarPos << goalX << " 0 " << goalHeight;
+    crossbar.append_attribute("pos") = crossbarPos.str().c_str();
+    crossbar.append_attribute("euler") = "1.5708 0 0";  // Rotate 90 degrees around Y
+    crossbar.append_attribute("rgba") = color.c_str();
+
+    // Add back left post (cylinder)
+    pugi::xml_node leftBackPost = worldbodyNode.append_child("geom");
+    leftBackPost.append_attribute("name") = (goalPrefix + "_left_back_post").c_str();
+    leftBackPost.append_attribute("type") = "cylinder";
+    leftBackPost.append_attribute("size") = backPostSize.str().c_str();
+    std::ostringstream leftBackPostPos;
+    leftBackPostPos << (goalX + directionSign * goalDepth) << " " << halfGoalWidth << " " << (goalHeight / 2.0f);
+    leftBackPost.append_attribute("pos") = leftBackPostPos.str().c_str();
+    leftBackPost.append_attribute("rgba") = color.c_str();
+
+    // Add back right post (cylinder)
+    pugi::xml_node rightBackPost = worldbodyNode.append_child("geom");
+    rightBackPost.append_attribute("name") = (goalPrefix + "_right_back_post").c_str();
+    rightBackPost.append_attribute("type") = "cylinder";
+    rightBackPost.append_attribute("size") = backPostSize.str().c_str();
+    std::ostringstream rightBackPostPos;
+    rightBackPostPos << (goalX + directionSign * goalDepth) << " " << -halfGoalWidth << " " << (goalHeight / 2.0f);
+    rightBackPost.append_attribute("pos") = rightBackPostPos.str().c_str();
+    rightBackPost.append_attribute("rgba") = color.c_str();
+
+    // Add back crossbar (cylinder connecting top of back posts)
+    pugi::xml_node backCrossbar = worldbodyNode.append_child("geom");
+    backCrossbar.append_attribute("name") = (goalPrefix + "_back_crossbar").c_str();
+    backCrossbar.append_attribute("type") = "cylinder";
+    backCrossbar.append_attribute("size") = backCrossbarSize.str().c_str();
+    std::ostringstream backCrossbarPos;
+    backCrossbarPos << (goalX + directionSign * goalDepth) << " 0 " << goalHeight;
+    backCrossbar.append_attribute("pos") = backCrossbarPos.str().c_str();
+    backCrossbar.append_attribute("euler") = "1.5708 0 0";
+    backCrossbar.append_attribute("rgba") = color.c_str();
+
+    // Add left side bar (connecting left posts)
+    pugi::xml_node leftSideBar = worldbodyNode.append_child("geom");
+    leftSideBar.append_attribute("name") = (goalPrefix + "_left_side_bar").c_str();
+    leftSideBar.append_attribute("type") = "cylinder";
+    leftSideBar.append_attribute("size") = depthSize.str().c_str();
+    std::ostringstream leftSideBarPos;
+    leftSideBarPos << (goalX + directionSign * goalDepth / 2.0f) << " " << halfGoalWidth << " " << goalHeight;
+    leftSideBar.append_attribute("pos") = leftSideBarPos.str().c_str();
+    std::ostringstream sideBarEuler;
+    sideBarEuler << "0 " << (directionSign > 0 ? 1.5708 : -1.5708) << " 0";
+    leftSideBar.append_attribute("euler") = sideBarEuler.str().c_str();
+    leftSideBar.append_attribute("rgba") = color.c_str();
+
+    // Add right side bar (connecting right posts)
+    pugi::xml_node rightSideBar = worldbodyNode.append_child("geom");
+    rightSideBar.append_attribute("name") = (goalPrefix + "_right_side_bar").c_str();
+    rightSideBar.append_attribute("type") = "cylinder";
+    rightSideBar.append_attribute("size") = depthSize.str().c_str();
+    std::ostringstream rightSideBarPos;
+    rightSideBarPos << (goalX + directionSign * goalDepth / 2.0f) << " " << -halfGoalWidth << " " << goalHeight;
+    rightSideBar.append_attribute("pos") = rightSideBarPos.str().c_str();
+    rightSideBar.append_attribute("euler") = sideBarEuler.str().c_str();
+    rightSideBar.append_attribute("rgba") = color.c_str();
+
+    // Add net - grid of small cylinders
+    float netRadius = 0.002f;  // 1cm radius for net strands
+    float netSpacing = 0.10f; // 10cm spacing between strands
+    std::string netColor = "0.7 0.7 0.7 0.75";  // Semi-transparent white
+
+    // Vertical net strands (parallel to Y-axis)
+    int numVerticalStrands = static_cast<int>(goalHeight / netSpacing) + 1;
+    for (int i = 0; i <= numVerticalStrands; ++i) {
+        float z = i * netSpacing;
+        if (z > goalHeight) z = goalHeight;
+
+        // Horizontal strand along width
+        pugi::xml_node vertStrand = worldbodyNode.append_child("geom");
+        std::ostringstream vertStrandName;
+        vertStrandName << goalPrefix << "_net_horiz_" << i;
+        vertStrand.append_attribute("name") = vertStrandName.str().c_str();
+        vertStrand.append_attribute("type") = "cylinder";
+        std::ostringstream vertStrandSize;
+        vertStrandSize << netRadius << " " << (goalWidth / 2.0f);
+        vertStrand.append_attribute("size") = vertStrandSize.str().c_str();
+        std::ostringstream vertStrandPos;
+        vertStrandPos << (goalX + directionSign * goalDepth) << " 0 " << z;
+        vertStrand.append_attribute("pos") = vertStrandPos.str().c_str();
+        vertStrand.append_attribute("euler") = "1.5708 0 0";  // Rotate to align with Y-axis
+        vertStrand.append_attribute("rgba") = netColor.c_str();
+        vertStrand.append_attribute("contype") = "0";
+        vertStrand.append_attribute("conaffinity") = "0";
+    }
+
+    // Horizontal net strands (parallel to Z-axis)
+    int numHorizontalStrands = static_cast<int>(goalWidth / netSpacing) + 1;
+    for (int i = 0; i <= numHorizontalStrands; ++i) {
+        float y = -halfGoalWidth + i * netSpacing;
+        if (y > halfGoalWidth) y = halfGoalWidth;
+
+        // Vertical strand along height
+        pugi::xml_node horizStrand = worldbodyNode.append_child("geom");
+        std::ostringstream horizStrandName;
+        horizStrandName << goalPrefix << "_net_vert_" << i;
+        horizStrand.append_attribute("name") = horizStrandName.str().c_str();
+        horizStrand.append_attribute("type") = "cylinder";
+        std::ostringstream horizStrandSize;
+        horizStrandSize << netRadius << " " << (goalHeight / 2.0f);
+        horizStrand.append_attribute("size") = horizStrandSize.str().c_str();
+        std::ostringstream horizStrandPos;
+        horizStrandPos << (goalX + directionSign * goalDepth) << " " << y << " " << (goalHeight / 2.0f);
+        horizStrand.append_attribute("pos") = horizStrandPos.str().c_str();
+        horizStrand.append_attribute("rgba") = netColor.c_str();
+        horizStrand.append_attribute("contype") = "0";
+        horizStrand.append_attribute("conaffinity") = "0";
+    }
+
+    // Side nets (left and right sides connecting front to back)
+    // Left side net - vertical strands
+    for (int i = 0; i <= numVerticalStrands; ++i) {
+        float z = i * netSpacing;
+        if (z > goalHeight) z = goalHeight;
+
+        pugi::xml_node leftSideStrand = worldbodyNode.append_child("geom");
+        std::ostringstream leftSideStrandName;
+        leftSideStrandName << goalPrefix << "_net_left_side_horiz_" << i;
+        leftSideStrand.append_attribute("name") = leftSideStrandName.str().c_str();
+        leftSideStrand.append_attribute("type") = "cylinder";
+        std::ostringstream leftSideStrandSize;
+        leftSideStrandSize << netRadius << " " << (goalDepth / 2.0f);
+        leftSideStrand.append_attribute("size") = leftSideStrandSize.str().c_str();
+        std::ostringstream leftSideStrandPos;
+        leftSideStrandPos << (goalX + directionSign * goalDepth / 2.0f) << " " << halfGoalWidth << " " << z;
+        leftSideStrand.append_attribute("pos") = leftSideStrandPos.str().c_str();
+        std::ostringstream leftSideEuler;
+        leftSideEuler << "0 " << (directionSign > 0 ? 1.5708 : -1.5708) << " 0";
+        leftSideStrand.append_attribute("euler") = leftSideEuler.str().c_str();
+        leftSideStrand.append_attribute("rgba") = netColor.c_str();
+        leftSideStrand.append_attribute("contype") = "0";
+        leftSideStrand.append_attribute("conaffinity") = "0";
+    }
+
+    // Right side net - vertical strands
+    for (int i = 0; i <= numVerticalStrands; ++i) {
+        float z = i * netSpacing;
+        if (z > goalHeight) z = goalHeight;
+
+        pugi::xml_node rightSideStrand = worldbodyNode.append_child("geom");
+        std::ostringstream rightSideStrandName;
+        rightSideStrandName << goalPrefix << "_net_right_side_horiz_" << i;
+        rightSideStrand.append_attribute("name") = rightSideStrandName.str().c_str();
+        rightSideStrand.append_attribute("type") = "cylinder";
+        std::ostringstream rightSideStrandSize;
+        rightSideStrandSize << netRadius << " " << (goalDepth / 2.0f);
+        rightSideStrand.append_attribute("size") = rightSideStrandSize.str().c_str();
+        std::ostringstream rightSideStrandPos;
+        rightSideStrandPos << (goalX + directionSign * goalDepth / 2.0f) << " " << -halfGoalWidth << " " << z;
+        rightSideStrand.append_attribute("pos") = rightSideStrandPos.str().c_str();
+        std::ostringstream rightSideEuler;
+        rightSideEuler << "0 " << (directionSign > 0 ? 1.5708 : -1.5708) << " 0";
+        rightSideStrand.append_attribute("euler") = rightSideEuler.str().c_str();
+        rightSideStrand.append_attribute("rgba") = netColor.c_str();
+        rightSideStrand.append_attribute("contype") = "0";
+        rightSideStrand.append_attribute("conaffinity") = "0";
+    }
+
+    // Left side net - horizontal strands (along depth)
+    int numDepthStrands = static_cast<int>(goalDepth / netSpacing) + 1;
+    for (int i = 0; i <= numDepthStrands; ++i) {
+        float x = goalX + directionSign * i * netSpacing;
+        if (std::abs(x - goalX) > goalDepth) x = goalX + directionSign * goalDepth;
+
+        pugi::xml_node leftDepthStrand = worldbodyNode.append_child("geom");
+        std::ostringstream leftDepthStrandName;
+        leftDepthStrandName << goalPrefix << "_net_left_side_vert_" << i;
+        leftDepthStrand.append_attribute("name") = leftDepthStrandName.str().c_str();
+        leftDepthStrand.append_attribute("type") = "cylinder";
+        std::ostringstream leftDepthStrandSize;
+        leftDepthStrandSize << netRadius << " " << (goalHeight / 2.0f);
+        leftDepthStrand.append_attribute("size") = leftDepthStrandSize.str().c_str();
+        std::ostringstream leftDepthStrandPos;
+        leftDepthStrandPos << x << " " << halfGoalWidth << " " << (goalHeight / 2.0f);
+        leftDepthStrand.append_attribute("pos") = leftDepthStrandPos.str().c_str();
+        leftDepthStrand.append_attribute("rgba") = netColor.c_str();
+        leftDepthStrand.append_attribute("contype") = "0";
+        leftDepthStrand.append_attribute("conaffinity") = "0";
+    }
+
+    // Right side net - horizontal strands (along depth)
+    for (int i = 0; i <= numDepthStrands; ++i) {
+        float x = goalX + directionSign * i * netSpacing;
+        if (std::abs(x - goalX) > goalDepth) x = goalX + directionSign * goalDepth;
+
+        pugi::xml_node rightDepthStrand = worldbodyNode.append_child("geom");
+        std::ostringstream rightDepthStrandName;
+        rightDepthStrandName << goalPrefix << "_net_right_side_vert_" << i;
+        rightDepthStrand.append_attribute("name") = rightDepthStrandName.str().c_str();
+        rightDepthStrand.append_attribute("type") = "cylinder";
+        std::ostringstream rightDepthStrandSize;
+        rightDepthStrandSize << netRadius << " " << (goalHeight / 2.0f);
+        rightDepthStrand.append_attribute("size") = rightDepthStrandSize.str().c_str();
+        std::ostringstream rightDepthStrandPos;
+        rightDepthStrandPos << x << " " << -halfGoalWidth << " " << (goalHeight / 2.0f);
+        rightDepthStrand.append_attribute("pos") = rightDepthStrandPos.str().c_str();
+        rightDepthStrand.append_attribute("rgba") = netColor.c_str();
+        rightDepthStrand.append_attribute("contype") = "0";
+        rightDepthStrand.append_attribute("conaffinity") = "0";
     }
 }
 
