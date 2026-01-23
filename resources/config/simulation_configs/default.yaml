@@ -1,11 +1,9 @@
 simulation:
   max_simulation_time: -1                         # maximum simulation time in seconds (if -1 -> no limit)
 
-field:
-  name: fieldSPL                                  # field type < fieldAdultSize | ... >
-  type: lite                                      # field quality < full | lite >
-
 game:
+  field: fieldAdultSize                           # field type for the game < fieldAdultSize | fieldRCAP | fieldSPL >
+
   game_state_logging: true                        # whether to log game state changes to a file
   game_state_logging_path: "game_state.log"       # path to the game state log file
   game_state_logging_interval: 0.1                # interval in seconds for logging game state

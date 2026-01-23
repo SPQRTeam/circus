@@ -36,15 +36,31 @@ SceneParser::SceneParser(const string& yamlPath) {
 
     YAML::Node simConfigRoot = YAML::LoadFile(simConfigPath.string());
 
-    // Load field configuration
-    if (!simConfigRoot["field"])
-        throw runtime_error("Simulation config missing 'field' entry.");
+    // Load simulation settings
+    if (simConfigRoot["simulation"]) {
+        const YAML::Node& simNode = simConfigRoot["simulation"];
+        scene.simulationConfig.simulation.max_simulation_time = simNode["max_simulation_time"].as<int>(-1);
+    }
 
-    const YAML::Node& fieldNode = simConfigRoot["field"];
-    scene.simulationConfig.field.name = fieldNode["name"].as<string>("fieldAdultSize");
-    scene.simulationConfig.field.type = fieldNode["type"].as<string>("full");
+    // Load game configuration
+    if (simConfigRoot["game"]) {
+        const YAML::Node& gameNode = simConfigRoot["game"];
+        scene.simulationConfig.game.field = gameNode["field"].as<string>("fieldAdultSize");
+        scene.simulationConfig.game.game_state_logging = gameNode["game_state_logging"].as<bool>(true);
+        scene.simulationConfig.game.game_state_logging_path = gameNode["game_state_logging_path"].as<string>("game_state.log");
+        scene.simulationConfig.game.game_state_logging_interval = gameNode["game_state_logging_interval"].as<float>(1.0f);
+        scene.simulationConfig.game.game_duration = gameNode["game_duration"].as<int>(600);
+        scene.simulationConfig.game.automatic_restart = gameNode["automatic_restart"].as<bool>(true);
+        scene.simulationConfig.game.initial_phase_duration = gameNode["initial_phase_duration"].as<int>(30);
+        scene.simulationConfig.game.ready_phase_duration = gameNode["ready_phase_duration"].as<int>(45);
+        scene.simulationConfig.game.set_phase_duration = gameNode["set_phase_duration"].as<int>(10);
+        scene.simulationConfig.game.kickoff_subphase_duration = gameNode["kickoff_subphase_duration"].as<int>(10);
+        scene.simulationConfig.game.other_subphase_duration = gameNode["other_subphase_duration"].as<int>(30);
+        scene.simulationConfig.game.first_kickoff_team = gameNode["first_kickoff_team"].as<string>("red");
+        scene.simulationConfig.game.penalty_duration = gameNode["penalty_duration"].as<int>(45);
+    }
 
-    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / (scene.simulationConfig.field.name + ".yaml");
+    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "includes" / "fields" / (scene.simulationConfig.game.field + ".yaml");
     if (!filesystem::exists(fieldPath))
         throw runtime_error("Field config file does not exist: " + fieldPath.string());
 
@@ -63,29 +79,6 @@ SceneParser::SceneParser(const string& yamlPath) {
     scene.simulationConfig.field.goal_depth = fieldConfigRoot["goal_depth"].as<float>(0.6f);
     scene.simulationConfig.field.line_width = fieldConfigRoot["line_width"].as<float>(0.08f);
     scene.simulationConfig.field.ball_radius = fieldConfigRoot["ball_radius"].as<float>(0.11f);
-
-    // Load simulation settings
-    if (simConfigRoot["simulation"]) {
-        const YAML::Node& simNode = simConfigRoot["simulation"];
-        scene.simulationConfig.simulation.max_simulation_time = simNode["max_simulation_time"].as<int>(-1);
-    }
-
-    // Load game configuration
-    if (simConfigRoot["game"]) {
-        const YAML::Node& gameNode = simConfigRoot["game"];
-        scene.simulationConfig.game.game_state_logging = gameNode["game_state_logging"].as<bool>(true);
-        scene.simulationConfig.game.game_state_logging_path = gameNode["game_state_logging_path"].as<string>("game_state.log");
-        scene.simulationConfig.game.game_state_logging_interval = gameNode["game_state_logging_interval"].as<float>(1.0f);
-        scene.simulationConfig.game.game_duration = gameNode["game_duration"].as<int>(600);
-        scene.simulationConfig.game.automatic_restart = gameNode["automatic_restart"].as<bool>(true);
-        scene.simulationConfig.game.initial_phase_duration = gameNode["initial_phase_duration"].as<int>(30);
-        scene.simulationConfig.game.ready_phase_duration = gameNode["ready_phase_duration"].as<int>(45);
-        scene.simulationConfig.game.set_phase_duration = gameNode["set_phase_duration"].as<int>(10);
-        scene.simulationConfig.game.kickoff_subphase_duration = gameNode["kickoff_subphase_duration"].as<int>(10);
-        scene.simulationConfig.game.other_subphase_duration = gameNode["other_subphase_duration"].as<int>(30);
-        scene.simulationConfig.game.first_kickoff_team = gameNode["first_kickoff_team"].as<string>("red");
-        scene.simulationConfig.game.penalty_duration = gameNode["penalty_duration"].as<int>(45);
-    }
 
     ballSpec.position = Eigen::Vector3d(0.0, 0.0, 0.12);
 

@@ -22,8 +22,6 @@ struct BallSpec {
 };
 
 struct FieldConfig {
-        std::string name;
-        std::string type;
         float width = 14.0f;
         float height = 9.0f;
         float center_radius = 1.5f;
@@ -44,6 +42,7 @@ struct SimulationSettings {
 };
 
 struct GameConfig {
+        std::string field = "fieldAdultSize";
         bool game_state_logging = true;
         std::string game_state_logging_path = "game_state.log";
         float game_state_logging_interval = 1.0f;
