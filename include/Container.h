@@ -20,12 +20,6 @@ class Container {
         void stop();
         void remove();
 
-        // Terminal/exec methods
-        std::string createExec(const std::vector<std::string>& cmd, bool attachStdin = true, bool attachStdout = true, bool attachStderr = true,
-                               bool tty = true);
-        std::string startExec(const std::string& exec_id, bool tty = true);
-        void writeToExec(const std::string& data);
-
         std::string getId() const {
             return id;
         }
