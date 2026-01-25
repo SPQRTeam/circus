@@ -21,6 +21,8 @@
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
+#include "sensors/Oracle.h"
+
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -33,6 +35,7 @@ class BoosterT1 : public Robot {
         Imu* imu = nullptr;
         Joints* joints = nullptr;
         std::array<Camera*, 2> cameras = {};
+        Oracle* oracle = nullptr;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::tuple<int, int, int> color, const std::shared_ptr<Team>& team)
@@ -92,6 +95,8 @@ class BoosterT1 : public Robot {
 
             cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
             cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
+
+            oracle = new Oracle(mujCtx->model, mujCtx->data, pose);
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
@@ -124,6 +129,7 @@ class BoosterT1 : public Robot {
             msg["pose"] = pose->serialize(buffer_zone_);
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
+            msg["oracle"] = oracle->serialize(buffer_zone_);
 
             return msg;
         }
@@ -144,6 +150,7 @@ class BoosterT1 : public Robot {
             joints->update();
             cameras[0]->update();
             cameras[1]->update();
+            oracle->update();
         }
 
         ~BoosterT1() = default;
