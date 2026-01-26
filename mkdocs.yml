@@ -7,10 +7,10 @@ repo_name: SPQRTeam/circus
 
 nav:
   - Overview: index.md
-  - Getting Started:
-      - Introduction: getting_started/introduction.md
-      - Installation: getting_started/installation.md
-      - Quick Start Guide: getting_started/quick_start_guide.md
+  - Circus:
+      - Introduction: circus/introduction.md
+      - Installation: circus/installation.md
+      - Circus Architecture Overview: circus/architecture.md
 
 theme:
   name: material

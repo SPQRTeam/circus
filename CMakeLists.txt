@@ -10,6 +10,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(QT_QML_GENERATE_QMLLS_INI ON)  # For QML language server support
+file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
+  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n")
 add_compile_definitions(PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 include(FetchContent)
 
@@ -28,7 +31,7 @@ option(BUILD_PYTHON_BINDINGS "Build python bindings" ON)
 # ============================= Dependencies ==================================================
 find_package(Eigen3 REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets OpenGLWidgets Quick Charts)
 
 # Optional deps (linked only if found)
 find_package(nlohmann_json QUIET)
@@ -36,8 +39,12 @@ find_package(CURL QUIET)
 
 # Generate .clangd configuration after dependencies are found
 get_target_property(EIGEN_INCLUDE_DIR Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(QT_CORE_INCLUDE_DIRS Qt6::Core INTERFACE_INCLUDE_DIRECTORIES)
+# Extract the base Qt6 include path (get parent of QtCore path)
+list(GET QT_CORE_INCLUDE_DIRS 0 QT_CORE_PATH)
+get_filename_component(QT_INCLUDE_BASE "${QT_CORE_PATH}" DIRECTORY)
 file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/.clangd"
-  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n  Add:\n    - -I${CMAKE_CURRENT_SOURCE_DIR}/include\n    - -isystem${EIGEN_INCLUDE_DIR}\n")
+  "CompileFlags:\n  CompilationDatabase: ${CMAKE_CURRENT_BINARY_DIR}\n  Add:\n    - -I${CMAKE_CURRENT_SOURCE_DIR}/include\n    - -isystem${EIGEN_INCLUDE_DIR}\n    - -isystem${QT_INCLUDE_BASE}\n    - -isystem${QT_INCLUDE_BASE}/QtCore\n    - -isystem${QT_INCLUDE_BASE}/QtWidgets\n    - -isystem${QT_INCLUDE_BASE}/QtGui\n    - -fPIC\n")
 
 # -------------------- yaml-cpp (config -> module -> manual) [robust]
 set(_YAML_HINT "/opt/homebrew/opt/yaml-cpp")
@@ -166,14 +173,20 @@ set(_EXTRA_LIBS
   Qt6::Core
   Qt6::Widgets
   Qt6::OpenGLWidgets
-  OpenGL::GL
+  Qt6::Quick
+  Qt6::Charts
   ${_PUGI_TGT}
   CURL::libcurl
   nlohmann_json::nlohmann_json
 )
 
+# Add util library for PTY support on Linux
+if(UNIX AND NOT APPLE)
+  list(APPEND _EXTRA_LIBS util)
+endif()
+
 # --- Build core library (ensure AUTOMOC is on for the target)
-add_library(${LIBRARY} STATIC ${SOURCES})
+add_library(${LIBRARY} STATIC ${SOURCES} ${QML_RESOURCES})
 target_sources(${LIBRARY} PRIVATE ${HEADERS} ${ALL_UIS} ${ALL_QRCS}) # Just used for IDE discovering headers
 
 set_target_properties(${LIBRARY} PROPERTIES AUTOMOC ON AUTOUIC ON AUTORCC ON)

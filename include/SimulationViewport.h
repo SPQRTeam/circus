@@ -2,7 +2,6 @@
 
 #include <mujoco/mujoco.h>
 #include <qpoint.h>
-#include <yaml-cpp/node/node.h>
 
 #include <QOpenGLWindow>
 #include <QTimer>
@@ -12,57 +11,66 @@
 #include "MujocoContext.h"
 namespace spqr {
 
-struct ViewportSettings {
-    bool flipZoom;
-};
-
 class SimulationViewport : public QOpenGLWindow {
-   public:
-    SimulationViewport(MujocoContext& mujContext, YAML::Node viewportSettings);
+    public:
+        SimulationViewport(MujocoContext& mujContext);
 
-   protected:
-    void initializeGL() override;
-    void resizeGL(int w, int h) override;
-    void paintGL() override;
+        void pauseRendering() {
+            if (timer) {
+                timer->stop();
+            }
+        }
 
-    void wheelEvent(QWheelEvent* event) override;
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void keyPressEvent(QKeyEvent* event) override;
+        void resumeRendering() {
+            if (timer) {
+                timer->start(16);
+            }
+        }
 
-   private:
-    QPointF lastMousePosition;
-    mjtMouse mouseAction = mjMOUSE_NONE;
+    protected:
+        void initializeGL() override;
+        void resizeGL(int w, int h) override;
+        void paintGL() override;
 
-    mjModel* model;
-    mjData* data;
-    mjvCamera* cam;
-    mjvOption* opt;
-    mjvScene* scene;
-    mjrContext* context;
-    QTimer* timer;
-    mjvPerturb pert;
+        void wheelEvent(QWheelEvent* event) override;
+        void mousePressEvent(QMouseEvent* event) override;
+        void mouseReleaseEvent(QMouseEvent* event) override;
+        void mouseMoveEvent(QMouseEvent* event) override;
+        void keyPressEvent(QKeyEvent* event) override;
 
-    struct ViewportSettings viewportSettings;
+    private:
+        QPointF lastMousePosition;
+        mjtMouse mouseAction = mjMOUSE_NONE;
 
-    /**
-     * @brief Selects a body in the simulation based on relative x and y coordinates.
-     *
-     * This function determines which body in the simulation is located at the given
-     * relative screen coordinates (relx, rely). The coordinates are typically normalized
-     * between 0 and 1, representing the position within the viewport.
-     *
-     * @param relx The relative x-coordinate within the viewport (0.0 to 1.0).
-     * @param rely The relative y-coordinate within the viewport (0.0 to 1.0).
-     * @return The index of the selected body, or -1 if no body is selected.
-     */
-    int selectBody(float relx, float rely) const;
-    int findBodyRoot(int bodyId) const;
-    int selectedRobot = -1;
+        mjModel* model;
+        mjData* data;
+        mjvCamera* cam;
+        mjvOption* opt;
+        mjvScene* scene;
+        mjrContext* context;
+        QTimer* timer;
+        mjvPerturb pert;
 
-    int width = initialWindowWidth, height = initialWindowHeight;
-    int logicalWidth = initialWindowWidth, logicalHeight = initialWindowHeight;
+        /**
+         * @brief Selects a body in the simulation based on relative x and y coordinates.
+         *
+         * This function determines which body in the simulation is located at the given
+         * relative screen coordinates (relx, rely). The coordinates are typically normalized
+         * between 0 and 1, representing the position within the viewport.
+         *
+         * @param relx The relative x-coordinate within the viewport (0.0 to 1.0).
+         * @param rely The relative y-coordinate within the viewport (0.0 to 1.0).
+         * @return The index of the selected body, or -1 if no body is selected.
+         */
+        int selectBody(float relx, float rely) const;
+        int findBodyRoot(int bodyId) const;
+        bool screenToWorldPlane(float relx, float rely, mjtNum planeZ, mjtNum worldPos[3]) const;
+        int selectedRobot = -1;
+        mjtNum dragPlaneZ = 0.0;            // Z height of the plane for dragging
+        mjtNum dragOffset[2] = {0.0, 0.0};  // Offset from object center to click point
+
+        int width = initialWindowWidth, height = initialWindowHeight;
+        int logicalWidth = initialWindowWidth, logicalHeight = initialWindowHeight;
 };
 
 }  // namespace spqr

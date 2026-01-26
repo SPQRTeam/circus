@@ -51,5 +51,16 @@
         <mesh name="Booster-T1_Shank_Right" file="Booster-T1/Shank_Right.STL" />
         <mesh name="Booster-T1_Ankle_Cross_Right" file="Booster-T1/Ankle_Cross_Right.STL" />
         <mesh name="Booster-T1_right_foot_link" file="Booster-T1/right_foot_link.STL" />
+
+        <!-- Loading numbers -->
+        <mesh name="Booster-T1_num_1" file="../meshes/numbers/1.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_2" file="../meshes/numbers/2.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_3" file="../meshes/numbers/3.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_4" file="../meshes/numbers/4.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_5" file="../meshes/numbers/5.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_6" file="../meshes/numbers/6.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_7" file="../meshes/numbers/7.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_8" file="../meshes/numbers/8.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T1_num_9" file="../meshes/numbers/9.obj" scale="0.3 0.3 0.3"/>
     </asset>
 </mujoco>
