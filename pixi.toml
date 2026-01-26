@@ -42,6 +42,7 @@ libegl-devel = "==1.7.0"
 
 [tasks]
 test = "python -c 'import circuspy; circuspy.test()'"
+clean-containers = "bash clean-containers.sh"
 
 [activation]
 # Add DYLD_LIBRARY_PATH on macOS so the MuJoCo dylib is found when running binaries directly
