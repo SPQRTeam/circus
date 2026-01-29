@@ -5,11 +5,6 @@ source /opt/booster/sdk_ros2/install/setup.bash
 export LD_LIBRARY_PATH=/app/booster_motion/lib:/app/booster_motion/lib-usr-local:/app/booster_motion/lib-x86_64-linux-gnu:$LD_LIBRARY_PATH
 export FASTRTPS_DEFAULT_PROFILES_FILE=/app/booster_motion/fastdds_profile.xml
 
-# Export environment variables for MAXIMUS framework
-# (They should not be used, but jsut in case ...)
-export SPQR_CONFIG_ROOT=/app/maximus/src/app/config
-export SPQR_BEHAVIOR_TREE_PATH=/app/maximus/src/app/behaviors/trees
-
 alias loco="/opt/booster/sdk/build/b1_loco_example_client 127.0.0.1"
 alias looc="loco"
 alias lcoo="loco"
