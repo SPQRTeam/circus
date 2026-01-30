@@ -21,6 +21,7 @@
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
+#include "sensors/CameraDepth.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -33,6 +34,7 @@ class BoosterK1 : public Robot {
         Imu* imu;
         Joints* joints = nullptr;
         std::array<Camera*, 2> cameras = {};
+        CameraDepth* cameraDepth;
 
         BoosterK1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::tuple<int, int, int> color, const std::shared_ptr<Team>& team)
@@ -66,6 +68,7 @@ class BoosterK1 : public Robot {
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
             cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
             cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
+            cameraDepth = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
@@ -98,6 +101,7 @@ class BoosterK1 : public Robot {
             sensors["joints"] = joints;
             sensors["rgb_left_camera"] = cameras[0];
             sensors["rgb_right_camera"] = cameras[1];
+            sensors["depth_camera"] = cameraDepth;
             return sensors;
         }
 
@@ -107,6 +111,7 @@ class BoosterK1 : public Robot {
             joints->update();
             cameras[0]->update();
             cameras[1]->update();
+            cameraDepth->update();
         }
 
         ~BoosterK1() = default;
