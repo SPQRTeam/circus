@@ -9,7 +9,7 @@ else
     echo "Nothing to stop"
 fi
 
-EXITED_IDS=$(docker ps --filter name="CIRCUS_*" --filter status=exited -aq)
+EXITED_IDS=$(docker ps --filter name="CIRCUS_*" -aq)
 if [ -n "$EXITED_IDS" ]; then
     echo "Removing circus containers"
     docker rm $EXITED_IDS
