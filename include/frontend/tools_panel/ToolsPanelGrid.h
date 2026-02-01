@@ -21,6 +21,7 @@
 
 #include "MujocoContext.h"
 #include "robots/Robot.h"
+#include "sensors/CameraDepth.h"
 #include "sensors/CameraRGB.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
@@ -635,6 +636,30 @@ class ToolsPanelGrid : public QWidget {
 
                                             if (!imageData.empty() && width > 0 && height > 0) {
                                                 imageTool->setImage(imageData.data(), width, height, 3);
+                                            } else {
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (sensorType == "depth_camera") {
+                                    auto it = sensors.find("depth_camera");
+
+                                    if (it != sensors.end()) {
+                                        CameraDepth* depthCamera = dynamic_cast<CameraDepth*>(it->second);
+
+                                        if (depthCamera) {
+                                            // const std::vector<float>& depthData = depthCamera->getDepthNormalized();
+                                            const std::vector<uint16_t>& depthData = depthCamera->getDepth();
+                                            int width = depthCamera->getWidth();
+                                            int height = depthCamera->getHeight();
+
+                                            if (!depthData.empty() && width > 0 && height > 0) {
+                                                std::vector<uint8_t> depthImage(depthData.size());
+                                                for (size_t i = 0; i < depthData.size(); ++i) {
+                                                    depthImage[i] = static_cast<uint8_t>(depthData[i] / 256);  // Scale 16-bit to 8-bit
+                                                }
+                                                imageTool->setImage(depthImage.data(), width, height, 1);
                                             } else {
                                             }
                                         }
