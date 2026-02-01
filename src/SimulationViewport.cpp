@@ -55,6 +55,7 @@ void SimulationViewport::paintGL() {
         std::map<std::string, Sensor*> sensors = robot->getSensors();
         Camera* leftCamera = dynamic_cast<Camera*>(sensors["rgb_left_camera"]);
         Camera* rightCamera = dynamic_cast<Camera*>(sensors["rgb_right_camera"]);
+        CameraDepth* depthCamera = dynamic_cast<CameraDepth*>(sensors["depth_camera"]);
 
         if (!leftCamera || !rightCamera)
             continue;
@@ -62,6 +63,7 @@ void SimulationViewport::paintGL() {
         // Render and capture camera images (save every 60 frames)
         leftCamera->render();
         rightCamera->render();
+        depthCamera->render();
     }
 
     // Restore main viewport scene
