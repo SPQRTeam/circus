@@ -55,7 +55,9 @@ class ImageDisplay : public QWidget {
             }
 
             QImage::Format format;
-            if (channels == 3) {
+            if (channels == 1) {
+                format = QImage::Format_Grayscale8;
+            } else if (channels == 3) {
                 format = QImage::Format_RGB888;
             } else if (channels == 4) {
                 format = QImage::Format_RGBA8888;
