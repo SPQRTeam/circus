@@ -21,7 +21,7 @@
 
 #include "MujocoContext.h"
 #include "robots/Robot.h"
-#include "sensors/Camera.h"
+#include "sensors/CameraRGB.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
@@ -622,17 +622,16 @@ class ToolsPanelGrid : public QWidget {
                                 Image* imageTool = dynamic_cast<Image*>(tool);
 
                                 // Add image data based on sensor type
-                                if (sensorType == "rgb_left_camera" || sensorType == "rgb_right_camera") {
-                                    std::string cameraName = (sensorType == "rgb_left_camera") ? "rgb_left_camera" : "rgb_right_camera";
-                                    auto it = sensors.find(cameraName);
+                                if (sensorType == "rgb_camera") {
+                                    auto it = sensors.find("rgb_camera");
 
                                     if (it != sensors.end()) {
-                                        Camera* camera = dynamic_cast<Camera*>(it->second);
+                                        CameraRGB* rgbCamera = dynamic_cast<CameraRGB*>(it->second);
 
-                                        if (camera) {
-                                            const std::vector<uint8_t>& imageData = camera->getImage();
-                                            int width = camera->getWidth();
-                                            int height = camera->getHeight();
+                                        if (rgbCamera) {
+                                            const std::vector<uint8_t>& imageData = rgbCamera->getImage();
+                                            int width = rgbCamera->getWidth();
+                                            int height = rgbCamera->getHeight();
 
                                             if (!imageData.empty() && width > 0 && height > 0) {
                                                 imageTool->setImage(imageData.data(), width, height, 3);

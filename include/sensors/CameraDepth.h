@@ -5,7 +5,6 @@
 
 #include <QImage>
 #include <QOpenGLFunctions>
-#include <cstring>
 #include <msgpack.hpp>
 #include <string>
 #include <vector>
@@ -27,7 +26,7 @@ class CameraDepth : public Sensor {
             w = mujContext->model->cam_resolution[2 * cam.fixedcamid + 0];
             h = mujContext->model->cam_resolution[2 * cam.fixedcamid + 1];
             fovy_deg = mujContext->model->cam_fovy[cam.fixedcamid];
-            
+
             depthNormalized.resize(w * h);
             depth.resize(w * h);
         }
@@ -79,15 +78,15 @@ class CameraDepth : public Sensor {
             std::vector<float> tempDepth(viewWidth * viewHeight);
             mjr_readPixels(nullptr, tempDepth.data(), viewport, &mujContext->ctx);
 
-            float znear = mujContext->model->vis.map.znear; // 0.0001
-            float zfar = mujContext->model->vis.map.zfar; // 50.0
-            float max_u16 = static_cast<float>(std::numeric_limits<uint16_t>::max() );
+            float znear = mujContext->model->vis.map.znear;  // 0.0001
+            float zfar = mujContext->model->vis.map.zfar;    // 50.0
+            float max_u16 = static_cast<float>(std::numeric_limits<uint16_t>::max());
 
             // Process depth to match camera resolution
             for (int y = 0; y < h; y++) {
                 int srcRow = (h - 1 - y) * w;  // flip y-axes
                 int dstRow = y * w;
-                for (int x=0; x < w; x++) {
+                for (int x = 0; x < w; x++) {
                     float z_raw = tempDepth[srcRow + x];
                     float z_converted = (znear * zfar) / (zfar - z_raw * (zfar - znear));
                     depthNormalized[dstRow + x] = z_converted;
