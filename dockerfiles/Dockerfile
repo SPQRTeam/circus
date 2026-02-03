@@ -61,4 +61,7 @@ RUN mkdir /app
 COPY entrypoint.sh /app
 RUN chmod +x /app/entrypoint.sh
 
+# used to test communication, can be removed at a later date if so desired
+RUN apt install -y iputils-ping netcat net-tools
+
 CMD ["/app/entrypoint.sh"]
