@@ -215,6 +215,8 @@ void AppWindow::loadScene(const QString& yaml_file) {
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);
 
+        DebugDrawings::init(&(mujContext->scene));
+
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error", QString("Error loading scene: %1").arg(e.what()));
     } catch (...) {

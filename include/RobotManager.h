@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "Constants.h"
+#include "DebugDrawings.h"
 #include "MujocoContext.h"
 #include "Utils.h"
 #include "robots/BoosterK1.h"
@@ -254,8 +255,14 @@ class RobotManager {
                             msgpack::object_handle oh = msgpack::unpack(buffer, n);
                             auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
                             auto it = data_map.find("robot_name");
-                            if (it == data_map.end())
+                            auto it_debug = data_map.find("isDebugMessage");
+                            if (it == data_map.end() && it_debug == data_map.end())
                                 continue;
+
+                            if (it == data_map.end() && it_debug != data_map.end()) {
+                                DebugDrawings::processDebugMessage(data_map);
+                                continue;
+                            }
 
                             std::string messageRecipient = it->second.as<std::string>();
 
@@ -271,8 +278,17 @@ class RobotManager {
                                             std::cout << "Robot ready: " << r->name << std::endl;
                                             areAllRobotsReadyWrapper();
                                         }
-                                        r->receiveMessage(data_map);
+                                        
+
+                                        if (it_debug != data_map.end() )
+                                            DebugDrawings::processDebugMessage(data_map);
+                                        else
+                                            r->receiveMessage(data_map);
+
+                                        std::cout << "Received message from robot: " << r->name << std::endl;
+                                        std::cout << "Sending answer to robot: " << r->name << std::endl;
                                         answ = r->sendMessage();
+                                        std::cout << "Answer sent to robot: " << r->name << std::endl;
                                         answOk = true;
                                         break;
                                     }

@@ -7,42 +7,75 @@ void DebugDrawings::init(mjvScene* s) noexcept {
 }
 
 void DebugDrawings::processDebugMessage(std::map<std::string, msgpack::object> data_map) {
+    bool removeAll = data_map.find("removeAll") != data_map.end() && data_map["removeAll"].as<bool>();
+    bool removeFigure = data_map.find("removeFigure") != data_map.end() && data_map["removeFigure"].as<bool>();
+    
+    if ( removeAll == true) {
+        DebugDrawings::removeAll();
+        return;
+    }
+    
     std::string idLocal = data_map["idLocal"].as<std::string>();
     std::string drawGeomTypeStr = data_map["drawGeomType"].as<std::string>();
 
+    if (idLocal.empty()){
+        throw std::runtime_error("idLocal is required in the debug message");
+    } else if (drawGeomTypeStr.empty()) {
+        throw std::runtime_error("drawGeomType is required in the debug message");
+    }
+
     // Find debug figure
-    DebugDrawings::drawGeomType drawGeomType;
+    DebugDrawings::drawGeomType customType;
     bool found = false;
     for (int i = 0; i < static_cast<int>(DebugDrawings::drawGeomType::COUNT); i++) {
         if (DebugDrawings::toString(static_cast<DebugDrawings::drawGeomType>(i)) == drawGeomTypeStr) {
-            drawGeomType = static_cast<DebugDrawings::drawGeomType>(i);
+            customType = static_cast<DebugDrawings::drawGeomType>(i);
             found = true;
             break;
         }
     }
 
-    if (found == false)
-        throw std::runtime_error("Unknown drawGeomType: " + drawGeomTypeStr);
+    if (found == false){
+        std::stringstream ss;
+        ss << "Unknown drawGeomType: " << drawGeomTypeStr << ". Available types: ";
+        for (int i = 0; i < static_cast<int>(drawGeomType::COUNT); ++i) {
+            ss << toString(static_cast<drawGeomType>(i)) << " ";
+        }
+        throw std::runtime_error(ss.str());
+    }
 
-    if (drawGeomType == DebugDrawings::drawGeomType::Sphere) {
+    if (removeFigure == true) {
+        DebugDrawings::removeGeom(idLocal, customType);
+        return;
+    }
+
+    if (customType == DebugDrawings::drawGeomType::Sphere) {
         DebugDrawings::drawSphere(data_map);
-    } else if (drawGeomType == DebugDrawings::drawGeomType::Circle) {
+    } else if (customType == DebugDrawings::drawGeomType::Circle) {
         DebugDrawings::drawCircle(data_map);
-    } else if (drawGeomType == DebugDrawings::drawGeomType::Cylinder) {
+    } else if (customType == DebugDrawings::drawGeomType::Cylinder) {
         DebugDrawings::drawCylinder(data_map);
-    } else if (drawGeomType == DebugDrawings::drawGeomType::Arrow) {
+    } else if (customType == DebugDrawings::drawGeomType::Arrow) {
         DebugDrawings::drawArrow(data_map);
-    } else if (drawGeomType == DebugDrawings::drawGeomType::Line) {
+    } else if (customType == DebugDrawings::drawGeomType::Line) {
         DebugDrawings::drawLine(data_map);
+    } else{
+        throw std::runtime_error("Unsupported drawGeomType: " + drawGeomTypeStr);
     }
 }
 
-static void removeGeom(const std::string& idLocal) {}
+void DebugDrawings::removeGeom(const std::string& idLocal, const drawGeomType customType) {
+    mjString extendedId = getMapIdGeomLocalId(idLocal, customType);
+    mapIdGeom.erase(mapIdGeom.find(extendedId));
+}
+
+void DebugDrawings::removeAll() {
+    mapIdGeom.clear();
+}
 
 void DebugDrawings::drawDebugDrawings() {
     if (!ptrDebugDrawingsScene)
         return;
-
     for (const auto& pair : mapIdGeom) {
         if (ptrDebugDrawingsScene->ngeom == ptrDebugDrawingsScene->maxgeom)
             break;
@@ -52,6 +85,12 @@ void DebugDrawings::drawDebugDrawings() {
     }
 }
 
+mjString DebugDrawings::getMapIdGeomLocalId(const std::string& idLocal, const drawGeomType customType) {
+    mjString customTypeStr = toString(customType);
+    mjString extendedIdPrefix = idLocal + "_" + customTypeStr;
+    return extendedIdPrefix;
+}
+
 void DebugDrawings::drawRegularGeom(mjString idLocal, mjtGeom mujocoType, drawGeomType customType,
                                     const double size[3], const double pos[3], QColor color) {
     mjvGeom geom;
@@ -59,7 +98,7 @@ void DebugDrawings::drawRegularGeom(mjString idLocal, mjtGeom mujocoType, drawGe
 
     mjv_initGeom(&geom, mujocoType, size, pos, NULL, colorRGBA);
 
-    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(customType));
+    mjString extendedId = getMapIdGeomLocalId(idLocal, customType);
     mapIdGeom[extendedId] = {.geom = geom, .customType = customType};
 }
 
@@ -72,12 +111,12 @@ void DebugDrawings::drawRenderOnlyGeom(mjString idLocal, mjtGeom mujocoType, dra
     mjv_initGeom(&geom, mujocoType, size, start, NULL, colorRGBA);
     mjv_connector(&geom, mujocoType, width, start, end);
 
-    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(customType));
+    mjString extendedId = getMapIdGeomLocalId(idLocal, customType);
     mapIdGeom[extendedId] = {.geom = geom, .customType = customType};
 }
 
 mjvGeom* DebugDrawings::isGeomExist(mjString idLocal, drawGeomType customType) {
-    mjString extendedId = idLocal + "_" + std::to_string(static_cast<int>(customType));
+    mjString extendedId = getMapIdGeomLocalId(idLocal, customType);
     auto it = mapIdGeom.find(extendedId);
 
     if (it == mapIdGeom.end())
@@ -112,7 +151,8 @@ void DebugDrawings::drawSphere(const std::map<std::string, msgpack::object>& dat
     const auto centerArray = data_map.at("center").as<std::array<double, 3>>();
     const auto colorArray = data_map.at("color").as<std::array<double, 4>>();
 
-    const auto idLocal = data_map.at("idLocal").as<std::string>().c_str();
+    const auto idLocal = data_map.at("idLocal").as<std::string>();
+
     const double center[3] = {centerArray[0], centerArray[1], centerArray[2]};
     const double radius = data_map.at("radius").as<double>();
     QColor color = QColor::fromRgbF(colorArray[0], colorArray[1], colorArray[2], colorArray[3]);
@@ -134,7 +174,7 @@ void DebugDrawings::drawCircle(const std::map<std::string, msgpack::object>& dat
     const auto centerArray = data_map.at("center").as<std::array<double, 3>>();
     const auto colorArray = data_map.at("color").as<std::array<double, 4>>();
 
-    const auto idLocal = data_map.at("idLocal").as<std::string>().c_str();
+    const auto idLocal = data_map.at("idLocal").as<std::string>();
     const double center[3] = {centerArray[0], centerArray[1], centerArray[2]};
     const double radius = data_map.at("radius").as<double>();
     QColor color = QColor::fromRgbF(colorArray[0], colorArray[1], colorArray[2], colorArray[3]);
@@ -156,7 +196,7 @@ void DebugDrawings::drawCylinder(const std::map<std::string, msgpack::object>& d
     const auto centerArray = data_map.at("center").as<std::array<double, 3>>();
     const auto colorArray = data_map.at("color").as<std::array<double, 4>>();
 
-    const auto idLocal = data_map.at("idLocal").as<std::string>().c_str();
+    const auto idLocal = data_map.at("idLocal").as<std::string>();
     const double center[3] = {centerArray[0], centerArray[1], centerArray[2]};
     const double radius = data_map.at("radius").as<double>();
     const double length = data_map.at("length").as<double>();
@@ -180,7 +220,7 @@ void DebugDrawings::drawArrow(const std::map<std::string, msgpack::object>& data
     const auto endArray = data_map.at("end").as<std::array<double, 3>>();
     const auto colorArray = data_map.at("color").as<std::array<double, 4>>();
 
-    const auto idLocal = data_map.at("idLocal").as<std::string>().c_str();
+    const auto idLocal = data_map.at("idLocal").as<std::string>();
     const double start[3] = {startArray[0], startArray[1], startArray[2]};
     const double end[3] = {endArray[0], endArray[1], endArray[2]};
     const double thickness = data_map.at("thickness").as<double>();
@@ -205,7 +245,7 @@ void DebugDrawings::drawLine(const std::map<std::string, msgpack::object>& data_
     const auto endArray = data_map.at("end").as<std::array<double, 3>>();
     const auto colorArray = data_map.at("color").as<std::array<double, 4>>();
 
-    const auto idLocal = data_map.at("idLocal").as<std::string>().c_str();
+    const auto idLocal = data_map.at("idLocal").as<std::string>();
     const double start[3] = {startArray[0], startArray[1], startArray[2]};
     const double end[3] = {endArray[0], endArray[1], endArray[2]};
     const double thickness = data_map.at("thickness").as<double>();
