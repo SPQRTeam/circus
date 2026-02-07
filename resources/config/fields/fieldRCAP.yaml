@@ -1,0 +1,13 @@
+width: 22.0                 # x dimension (long side length of the field)
+height: 14.0                # y dimension (short side length of the field)
+center_radius: 2.0          # center circle radius
+goal_area_width: 2.0        # goal area width (short side length of the goal area)
+goal_area_height: 5.0       # goal area height (long side length of the goal area)
+penalty_area_width: 5.0     # penalty area width (short side length of the penalty area)
+penalty_area_height: 8.0    # penalty area height (long side length of the penalty area)
+penalty_mark_distance: 3.5  # distance of penalty mark from goal line
+goal_width: 2.6             # goal width
+goal_height: 1.8            # goal height
+goal_depth: 0.6             # goal depth
+line_width: 0.1             # line thickness
+ball_radius: 0.11           # ball radius

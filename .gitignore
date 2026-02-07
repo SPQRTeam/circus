@@ -89,6 +89,8 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
+# Exception: track 3D mesh files in resources
+!resources/**/*.obj
 *.idb
 *.iobj
 *.pch
@@ -425,3 +427,8 @@ build/
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+
+MUJOCO_LOG.TXT
+path_constants.yaml
+dockerfiles/booster_robotics_sdk
+dockerfiles/booster_robotics_sdk_ros2

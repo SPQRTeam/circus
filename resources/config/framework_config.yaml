@@ -1,0 +1,6 @@
+# advice: NO FINAL SLASH in the path_constants paths.
+
+image: spqr:booster
+volumes:
+  - "<simbridge>/tools/booster_motion:/app/booster_motion"
+  - "<simbridge>/build:/app/bridge"
