@@ -61,7 +61,11 @@ RUN mkdir /app
 COPY entrypoint.sh /app
 RUN chmod +x /app/entrypoint.sh
 
+COPY delayed_start.sh /app
+RUN chmod +x /app/delayed_start.sh
+
 # used to test communication, can be removed at a later date if so desired
 RUN apt install -y iputils-ping netcat net-tools
+
 
 CMD ["/app/entrypoint.sh"]
