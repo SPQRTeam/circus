@@ -30,303 +30,338 @@ namespace spqr {
 struct Team;  // Forward declaration
 
 class RobotManager {
-    public:
-        // Singleton class
-        static RobotManager& instance() {
-            static RobotManager mgr;
-            return mgr;
-        }
+   public:
+    // Singleton class
+    static RobotManager& instance() {
+        static RobotManager mgr;
+        return mgr;
+    }
 
-        void registerRobot(std::shared_ptr<Robot> robot) {
-            std::lock_guard<std::mutex> lock(mutex_);
+    void registerRobot(std::shared_ptr<Robot> robot) {
+        std::lock_guard<std::mutex> lock(mutex_);
 
-            robots_.push_back(std::move(robot));
-        }
+        robots_.push_back(std::move(robot));
+    }
 
-        std::vector<std::shared_ptr<Robot>> getRobots() const {
-            std::lock_guard<std::mutex> lock(mutex_);
-            return robots_;
-        }
+    std::vector<std::shared_ptr<Robot>> getRobots() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return robots_;
+    }
 
-        size_t count() const {
-            std::lock_guard<std::mutex> lock(mutex_);
-            return robots_.size();
-        }
+    size_t count() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return robots_.size();
+    }
 
-        void update() {
-            std::lock_guard lock(mutex_);
-            for (std::shared_ptr<Robot> r : robots_) {
-                r->update();
-            }
+    void update() {
+        std::lock_guard lock(mutex_);
+        for (std::shared_ptr<Robot> r : robots_) {
+            r->update();
         }
+    }
 
-        void clear() {
-            std::lock_guard lock(mutex_);
-            for (std::shared_ptr<Robot> r : robots_) {
-                // Drop ownership first
-                r->container.reset();
-                r->team.reset();
-            }
-            robots_.clear();
+    void clear() {
+        std::lock_guard lock(mutex_);
+        for (std::shared_ptr<Robot> r : robots_) {
+            // Drop ownership first
+            r->container.reset();
+            r->team.reset();
         }
+        robots_.clear();
+    }
 
-        void bindMujoco(MujocoContext* mujContext) {
-            for (std::shared_ptr<Robot> r : robots_)
-                r->bindMujoco(mujContext);
-        }
+    void bindMujoco(MujocoContext* mujContext) {
+        for (std::shared_ptr<Robot> r : robots_)
+            r->bindMujoco(mujContext);
+    }
 
         std::shared_ptr<Robot> create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
                                       const Eigen::Vector3d& ori, std::tuple<int, int, int> color, const std::shared_ptr<Team> team) {
-            auto it = robotFactory.find(type);
-            if (it != robotFactory.end())
+        auto it = robotFactory.find(type);
+        if (it != robotFactory.end())
                 return it->second(name, type, number, pos, ori, color, team);
-            return nullptr;
-        }
+        return nullptr;
+    }
 
-        void startContainers() {
-            startCommunicationServer(frameworkCommunicationPort);
+    void startContainers() {
+        startCommunicationServer(frameworkCommunicationPort);
 
-            YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
-            YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
+        YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
+        YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
 
-            if (!configRoot["image"])
-                throw std::runtime_error("Missing 'image' key in YAML file");
+        if (!configRoot["image"])
+            throw std::runtime_error("Missing 'image' key in YAML file");
 
-            std::string image = tryString(configRoot["image"], "'image' must be a string: ");
+        std::string image = tryString(configRoot["image"], "'image' must be a string: ");
 
-            if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
-                throw std::runtime_error("'volumes' key missing or not a sequence");
+        if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
+            throw std::runtime_error("'volumes' key missing or not a sequence");
 
-            std::vector<std::string> binds;
-            for (const auto& v : configRoot["volumes"]) {
-                std::string v2 = tryString(v, "Volume entry must be a string: ");
-                if (v2.starts_with("<")) {
-                    int end = v2.find('>');
-                    std::string name = v2.substr(1, end - 1);
+        std::vector<std::string> binds;
+        for (const auto& v : configRoot["volumes"]) {
+            std::string v2 = tryString(v, "Volume entry must be a string: ");
+            if (v2.starts_with("<")) {
+                int end = v2.find('>');
+                std::string name = v2.substr(1, end - 1);
 
-                    if (!pathsRoot[name]) {
-                        throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
-                    }
-
-                    std::string name_str = tryString(pathsRoot[name], "path_constants entries must be strings: ");
-                    v2.replace(0, end + 1, name_str);
+                if (!pathsRoot[name]) {
+                    throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
                 }
-                binds.push_back(v2);
-            }
 
-            for (std::shared_ptr<Robot> r : robots_) {
+                std::string name_str = tryString(pathsRoot[name], "path_constants entries must be strings: ");
+                v2.replace(0, end + 1, name_str);
+            }
+            binds.push_back(v2);
+        }
+
+        for (std::shared_ptr<Robot> r : robots_) {
                 r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
-                r->container->create(r->name, image, binds);
-                r->container->start();
+            r->container->create(r->name, image, binds);
+            r->container->start();
+        }
+    }
+
+    void startCommunicationServer(int port) {
+        if (serverRunning_)
+            throw std::runtime_error("Server already running");
+        serverRunning_ = true;
+        serverThread_ = std::thread(&RobotManager::_serverInternal, this, port);
+    }
+
+    void stopCommunicationServer() {
+        if (!serverRunning_)
+            return;
+
+        serverRunning_ = false;
+
+        if (serverThread_.joinable())
+            serverThread_.join();
+    }
+
+    void setAreAllRobotsReadyCallback(std::function<void()> cb) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        areAllRobotsReadyCallback_ = std::move(cb);
+    }
+
+   private:
+    RobotManager() = default;
+    ~RobotManager() = default;
+
+    RobotManager(const RobotManager&) = delete;
+    RobotManager& operator=(const RobotManager&) = delete;
+
+    // Source - https://stackoverflow.com/a
+    // Posted by Arun, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-01-12, License - CC BY-SA 3.0
+    // TCP Communication, it sends before the size of the message and then the message itself
+    ssize_t send_all(int fd, char *buf, size_t len)
+    {
+        // First, send the size of the message
+        uint32_t msg_size = htonl(len);
+        ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
+        if (bytes_sent != sizeof(msg_size)) {
+            return -1;
+        }
+
+        ssize_t total = 0; // how many bytes we've sent
+        size_t bytesleft = len; // how many we have left to send
+        ssize_t n = 0;
+        while(total < len) {
+            n = send(fd, buf+total, bytesleft, 0);
+            if (n == -1) { 
+                /* print/log error details */
+                return -1;
             }
+            total += n;
+            bytesleft -= n;
         }
+        return total; 
+    }
 
-        void startCommunicationServer(int port) {
-            if (serverRunning_)
-                throw std::runtime_error("Server already running");
-            serverRunning_ = true;
-            serverThread_ = std::thread(&RobotManager::_serverInternal, this, port);
+    void _serverInternal(int port) {
+        int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_fd < 0)
+            throw std::runtime_error("Failed to create socket");
+
+        int opt = 1;
+        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        int send_buf_size = 1 * 1024 * 1024;
+        if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF,
+                    &send_buf_size, sizeof(send_buf_size)) < 0) {
+            perror("setsockopt(SO_SNDBUF)");
         }
-
-        void stopCommunicationServer() {
-            if (!serverRunning_)
-                return;
-
-            serverRunning_ = false;
-
-            if (serverThread_.joinable())
-                serverThread_.join();
+        int recv_buf_size = 1 * 1024 * 1024;
+        if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF,
+                    &recv_buf_size, sizeof(recv_buf_size)) < 0) {
+            perror("setsockopt(SO_RCVBUF)");
         }
+        
+        sockaddr_in address{};
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons(port);
 
-        void setAreAllRobotsReadyCallback(std::function<void()> cb) {
-            std::lock_guard<std::mutex> lock(mutex_);
-            areAllRobotsReadyCallback_ = std::move(cb);
-        }
+        if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0)
+            throw std::runtime_error("Socket bind failed");
+        if (listen(server_fd, robots_.size()) < 0)
+            throw std::runtime_error("Listen failed");
 
-    private:
-        RobotManager() = default;
-        ~RobotManager() = default;
+        std::vector<pollfd> fds;
+        fds.push_back({server_fd, POLLIN, 0});
 
-        RobotManager(const RobotManager&) = delete;
-        RobotManager& operator=(const RobotManager&) = delete;
+        // Using a polling server. It isn't immediately intuitive, but it is efficient for this use case.
+        while (serverRunning_) {
+            // the poll blocks until a new connection arrives on server_fd or data arrives in one of the
+            // monitored fd or a socket closes or the timeout expires.
+            int ret = poll(fds.data(), fds.size(), 100);
+            if (ret <= 0)
+                continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
+                           // still true)
 
-        void _serverInternal(int port) {
-            int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-            if (server_fd < 0)
-                throw std::runtime_error("Failed to create socket");
+            for (size_t i = 0; i < fds.size(); ++i) {
+                // An event occured for the i-th fd
+                if (fds[i].revents & POLLIN) {
+                    if (fds[i].fd == server_fd) {
+                        // The only event for the server is someone knocking
+                        int client_fd = accept(server_fd, nullptr, nullptr);
+                        if (client_fd >= 0) {
+                            fds.push_back({client_fd, POLLIN, 0});
 
-            int opt = 1;
-            setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-            sockaddr_in address{};
-            address.sin_family = AF_INET;
-            address.sin_addr.s_addr = INADDR_ANY;
-            address.sin_port = htons(port);
-
-            if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0)
-                throw std::runtime_error("Socket bind failed");
-            if (listen(server_fd, robots_.size()) < 0)
-                throw std::runtime_error("Listen failed");
-
-            std::vector<pollfd> fds;
-            fds.push_back({server_fd, POLLIN, 0});
-
-            // Using a polling server. It isn't immediately intuitive, but it is efficient for this use case.
-            while (serverRunning_) {
-                // the poll blocks until a new connection arrives on server_fd or data arrives in one of the
-                // monitored fd or a socket closes or the timeout expires.
-                int ret = poll(fds.data(), fds.size(), 100);
-                if (ret <= 0)
-                    continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
-                               // still true)
-
-                for (size_t i = 0; i < fds.size(); ++i) {
-                    // An event occured for the i-th fd
-                    if (fds[i].revents & POLLIN) {
-                        if (fds[i].fd == server_fd) {
-                            // The only event for the server is someone knocking
-                            int client_fd = accept(server_fd, nullptr, nullptr);
-                            if (client_fd >= 0) {
-                                fds.push_back({client_fd, POLLIN, 0});
-
-                                // Receive initial message with robot name
-                                char buffer[MAX_MSG_SIZE];
-                                int n = read(client_fd, buffer, sizeof(buffer) - 1);
-
-                                if (n <= 0) {
-                                    std::cerr << "Error reading the initial message.\n";
-                                    // close(client_fd);
-                                    continue;
-                                }
-
-                                // unpack of the MsgPack message
-                                msgpack::object_handle oh = msgpack::unpack(buffer, n);
-                                msgpack::object obj = oh.get();
-
-                                // First message is the robot name as a string
-                                if (obj.type != msgpack::type::STR) {
-                                    std::cerr << "First message must be a string. Ignore it...\n";
-                                    continue;
-                                }
-
-                                std::string robotName = obj.as<std::string>();
-
-                                // Send message with initial state
-                                msgpack::sbuffer sbuf;
-                                std::map<std::string, msgpack::object> answ;
-                                bool answOk = false;
-                                // Pack initial message
-                                {
-                                    std::lock_guard<std::mutex> lock(mutex_);
-                                    for (auto& r : robots_) {
-                                        if (r->name == robotName) {
-                                            r->isConnected = true;
-                                            answ = r->sendMessage();
-                                            answOk = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (answOk) {
-                                    msgpack::pack(sbuf, answ);
-                                    if (sbuf.size() > 0) {
-                                        std::cout << "Connected Robot: " << robotName << "\n";
-                                        std::cout << "Sending initial message to " << robotName << std::endl;
-                                        ssize_t bytes_sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
-                                        if (bytes_sent <= 0) {
-                                            perror("Error in sending initial message");
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            // The events for other fds indicate either an incoming message or a closed connection
-                            // the read call disambiguates the two cases
+                            // Receive initial message with robot name
                             char buffer[MAX_MSG_SIZE];
-                            int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                            int n = read(client_fd, buffer, sizeof(buffer) - 1);
+
                             if (n <= 0) {
-                                close(fds[i].fd);
-                                fds.erase(fds.begin() + i);
-                                --i;
+                                std::cerr << "Error reading the initial message.\n";
+                                // close(client_fd);
                                 continue;
                             }
 
+                            // unpack of the MsgPack message
                             msgpack::object_handle oh = msgpack::unpack(buffer, n);
-                            auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
-                            auto it = data_map.find("robot_name");
-                            if (it == data_map.end())
+                            msgpack::object obj = oh.get();
+
+                            // First message is the robot name as a string
+                            if (obj.type != msgpack::type::STR) {
+                                std::cerr << "First message must be a string. Ignore it...\n";
                                 continue;
+                            }
 
-                            std::string messageRecipient = it->second.as<std::string>();
-
+                            std::string robotName = obj.as<std::string>();
                             msgpack::sbuffer sbuf;
                             std::map<std::string, msgpack::object> answ;
                             bool answOk = false;
+                            // Pack initial message
                             {
-                                std::unique_lock lock(mutex_);
+                                std::lock_guard<std::mutex> lock(mutex_);
                                 for (auto& r : robots_) {
-                                    if (r->name == messageRecipient) {
-                                        if (!r->isReady) {
-                                            r->isReady = true;
-                                            std::cout << "Robot ready: " << r->name << std::endl;
-                                            areAllRobotsReadyWrapper();
-                                        }
-                                        r->receiveMessage(data_map);
+                                    if (r->name == robotName) {
+                                        r->isConnected = true;
                                         answ = r->sendMessage();
                                         answOk = true;
                                         break;
                                     }
                                 }
                             }
-
-                            if (answOk) {
+                            if (answOk){
                                 msgpack::pack(sbuf, answ);
-                                if (sbuf.size() > 0) {
-                                    ssize_t bytes_sent = send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
+                                if(sbuf.size() > 0) {
+                                    std::cout << "Connected Robot: " << robotName << "\n";
+                                    std::cout << "Sending initial message to " << robotName << std::endl;
+                                    ssize_t bytes_sent = send_all(client_fd, sbuf.data(), sbuf.size());
                                     if (bytes_sent <= 0) {
-                                        perror("Error in sending message");
+                                        perror("Sending initial message");
                                     }
+                                }
+                            }
+                        }
+                    } else {
+                        // The events for other fds indicate either an incoming message or a closed connection
+                        // the read call disambiguates the two cases
+                        char buffer[MAX_MSG_SIZE];
+                        int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                        if (n <= 0) {
+                            close(fds[i].fd);
+                            fds.erase(fds.begin() + i);
+                            --i;
+                            continue;
+                        }
+
+                        msgpack::object_handle oh = msgpack::unpack(buffer, n);
+                        auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
+                        auto it = data_map.find("robot_name");
+                        if (it == data_map.end())
+                            continue;
+
+                        std::string messageRecipient = it->second.as<std::string>();
+                        msgpack::sbuffer sbuf;
+                        std::map<std::string, msgpack::object> answ;
+                        bool answOk = false;
+                        {
+                            std::unique_lock lock(mutex_);
+                            for (auto& r : robots_) {
+                                if (r->name == messageRecipient) {
+                                    if (!r->isReady) {
+                                        r->isReady = true;
+                                        std::cout << "Robot ready: " << r->name << std::endl;
+                                        areAllRobotsReadyWrapper();
+                                    }
+                                    r->receiveMessage(data_map);
+                                    answ = r->sendMessage();
+                                    answOk = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (answOk){
+                            msgpack::pack(sbuf, answ);
+                            if(sbuf.size() > 0){
+                                ssize_t bytes_sent = send_all(fds[i].fd, sbuf.data(), sbuf.size());
+                                if (bytes_sent <= 0) {
+                                    perror("Sending message");
                                 }
                             }
                         }
                     }
                 }
             }
-
-            for (auto& fd : fds)
-                close(fd.fd);
         }
 
-        void areAllRobotsReadyWrapper() {
-            if (areAllRobotsReady() && areAllRobotsReadyCallback_) {
-                areAllRobotsReadyCallback_();
-            }
-        }
-        bool areAllRobotsReady() const {
-            for (const auto& r : robots_)
-                if (!r->isReady)
-                    return false;
-            std::cout << "All robots are ready!" << std::endl;
-            return true;
-        }
+        for (auto& fd : fds)
+            close(fd.fd);
+    }
 
-        std::atomic<bool> serverRunning_ = false;
-        std::thread serverThread_;
+    void areAllRobotsReadyWrapper() {
+        if (areAllRobotsReady() && areAllRobotsReadyCallback_) {
+            areAllRobotsReadyCallback_();
+        }
+    }
+    bool areAllRobotsReady() const {
+        for (const auto& r : robots_)
+            if (!r->isReady)
+                return false;
+        std::cout << "All robots are ready!" << std::endl;
+        return true;
+    }
 
-        mutable std::mutex mutex_;
-        std::vector<std::shared_ptr<Robot>> robots_;
-        std::function<void()> areAllRobotsReadyCallback_;
+    std::atomic<bool> serverRunning_ = false;
+    std::thread serverThread_;
+
+    mutable std::mutex mutex_;
+    std::vector<std::shared_ptr<Robot>> robots_;
+    std::function<void()> areAllRobotsReadyCallback_;
 
         using RobotCreator
             = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&, const Eigen::Vector3d&,
                                                    const std::tuple<int, int, int>&, const std::shared_ptr<Team>&)>;
 
-        std::unordered_map<std::string, RobotCreator> robotFactory
+    std::unordered_map<std::string, RobotCreator> robotFactory
             = {{"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& color,
                                  auto&& team) { return std::make_shared<BoosterK1>(name, type, number, pos, ori, color, team); }},
                {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& color, auto&& team) {
                     return std::make_shared<BoosterT1>(name, type, number, pos, ori, color, team);
-                }}};
+            }}};
 };
 
 }  // namespace spqr
