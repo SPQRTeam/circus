@@ -1,6 +1,8 @@
 simulation_config: default
 teams:
   red:
+    number: 8
+    players:
     - type: Booster-T1
       number: 1
       position: [-7.0, 0.0, 0.68]
@@ -23,6 +25,8 @@ teams:
       orientation: [0.0, 0.0, 0.0]
 
   blue:
+    number: 51
+    players:
     - type: Booster-T1
       number: 1
       position: [7.0, 0.0, 0.68]
