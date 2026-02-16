@@ -1,4 +1,5 @@
 #include "Utils.h"
+#include <fstream>
 
 namespace spqr {
 YAML::Node loadYamlFile(const char* path) {
@@ -8,6 +9,18 @@ YAML::Node loadYamlFile(const char* path) {
         throw std::runtime_error("Failed to open YAML file: " + std::string(path));
     } catch (const YAML::ParserException& e) {
         throw std::runtime_error("Failed to parse YAML file: " + std::string(e.what()));
+    }
+}
+void writeYamlFile(const YAML::Node& root, const char* path) {  // untested probably
+    YAML::Emitter out;
+    out << root;
+    if (!out.good()) {
+        throw std::runtime_error("Failed to emit YAML: " + out.GetLastError());
+    }
+    std::ofstream ofout(path);
+    ofout << out.c_str();
+    if (!ofout.good()) {
+        throw std::runtime_error("Failed to write YAML file.");
     }
 }
 
