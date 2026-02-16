@@ -5,10 +5,13 @@
 
 #include "Constants.h"
 
-#include "Utils.h"
 #include "robots/Robot.h"
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
+
+// for the forward declarations
+#include "robots/Robot.h"
+#include "Team.h"
 
 #define POST "POST"
 #define GET "GET"
@@ -69,7 +72,7 @@ Container::~Container() {
         curl_easy_cleanup(curl_handle);
 }
 
-void Container::create(const std::string& robot_name, const int& team_number, const int& player_number, const std::string& team_color, const std::string& image, const std::vector<std::string>& binds) {
+void Container::create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds) {
     nlohmann::json payload;
     payload["Image"] = image;
 
@@ -81,12 +84,12 @@ void Container::create(const std::string& robot_name, const int& team_number, co
                              {"Privileged", true}};
 
     payload["Env"] = {
-        "ROBOT_NAME=" + robot_name,
+        "ROBOT_NAME=" + robot->name,
         "SERVER_IP=172.17.0.1",
         "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
-        "TEAM_NUMBER=" + std::to_string(team_number),
-        "PLAYER_NUMBER=" + std::to_string(player_number),
-        "TEAM_COLOR=" + team_color
+        "TEAM_NUMBER=" + std::to_string(robot->team->number),
+        "PLAYER_NUMBER=" + std::to_string(robot->number),
+        "TEAM_COLOR=" + robot->colorName
     };
 
     payload["Tty"] = true;

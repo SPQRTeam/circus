@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
@@ -7,6 +8,8 @@
 
 namespace spqr {
 
+class Robot;  // forwards declaration
+
 enum class ContainerState { NONE, IDLE, RUNNING, REMOVED };
 class Container {
     public:
@@ -14,7 +17,7 @@ class Container {
         Container(const std::string& name, const std::string& sockPath = "/var/run/docker.sock");
         ~Container();
 
-        void create(const std::string& robot_name, const int& team_number, const int& player_number, const std::string& team_color, const std::string& image, const std::vector<std::string>& binds);
+        void create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds);
 
         void start();
         void stop();
