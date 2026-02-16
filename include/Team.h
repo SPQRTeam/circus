@@ -10,6 +10,7 @@ namespace spqr {
 
 struct Team {
         std::string name;
+        int number;
         std::vector<std::shared_ptr<Robot>> robots;
 };
 
