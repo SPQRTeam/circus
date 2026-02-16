@@ -12,7 +12,6 @@
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
 #include <mutex>
-#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>

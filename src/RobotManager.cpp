@@ -86,8 +86,7 @@ void RobotManager::startContainers() {
 
     for (std::shared_ptr<Robot> r : robots_) {
         r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
-        // r->container->create(r->name, r->team->number, r->number, r->colorName, image, binds);  // this is for the next commit, don't mind it for now
-        r->container->create(r->name, image, binds);
+        r->container->create(r->name, r->team->number, r->number, r->colorName, image, binds);  // this is for the next commit, don't mind it for now
         r->container->start();
     }
 }
