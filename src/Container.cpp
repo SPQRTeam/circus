@@ -1,6 +1,9 @@
 #include "Container.h"
 
 #include <cassert>
+#include <memory>
+#include <nlohmann/json_fwd.hpp>
+#include <stdexcept>
 #include <string>
 
 #include "Constants.h"
@@ -18,6 +21,9 @@ namespace spqr {
 Container::Container(const std::string& name, const std::string& sockPath) : name(name), curlClient(sockPath), state(ContainerState::NONE) {}
 
 Container::~Container() {
+    if (isConnected()) {
+        disconnect();
+    }
     switch (state) {
         case ContainerState::RUNNING:
             stop();
@@ -92,6 +98,45 @@ void Container::remove() {
     const std::string endpoint = remove_container_endpoint(id);
     curlClient.request(DELETE, endpoint, DELETE_OK_RESPONSE);
     state = ContainerState::REMOVED;
+}
+
+void Container::connect(std::shared_ptr<Team> team, int robotNumber) {
+    if (!team->has_subnet()) {
+        throw std::runtime_error("Attempted to connect a robot to a team's subnet when it has none.");
+    }
+    if (isConnected()) {
+        throw std::runtime_error("Already connected.");
+    }
+
+    nlohmann::json payload;
+    payload["Container"] = id;
+    payload["EndpointConfig"] = {
+        {"IPAddress", UAN_SEVEN_CIU + std::to_string(team->number) + "." + std::to_string(robotNumber + 10)},
+        {"Gateway", UAN_SEVEN_CIU + std::to_string(team->number) + ".1"},
+        {"IPPrefixLen", 16},
+        {"IPAMConfig", {
+            {"IPv4Address", UAN_SEVEN_CIU + std::to_string(team->number) + "." + std::to_string(robotNumber + 10)}
+        }}
+    };
+
+    const std::string endpoint = connect_network_endpoint(team->subnetId);
+    curlClient.request(POST, endpoint, CONNECT_OK_RESPONSE, &payload);
+
+    connected_subnet_id = team->subnetId;
+}
+
+void Container::disconnect() {
+    if (!isConnected()) {
+        throw std::runtime_error("Already disconnected.");
+    }
+
+    nlohmann::json payload;
+    payload["Container"] = id;
+
+    const std::string endpoint = disconnect_network_endpoint(connected_subnet_id);
+    curlClient.request(POST, endpoint, DISCONNECT_OK_RESPONSE, &payload);
+
+    connected_subnet_id = "";
 }
 
 }  // namespace spqr

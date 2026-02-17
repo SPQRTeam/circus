@@ -210,6 +210,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         });
 
         RobotManager::instance().startContainers();
+        TeamManager::instance().createSubnets();
         RobotManager::instance().bindMujoco(mujContext.get());
 
         // Set initial simulation state (playing when scene is loaded)

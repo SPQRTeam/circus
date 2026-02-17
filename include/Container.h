@@ -9,6 +9,7 @@
 namespace spqr {
 
 class Robot;  // forwards declaration
+class Team;  // Forward declaration
 
 enum class ContainerState { NONE, IDLE, RUNNING, REMOVED };
 class Container {
@@ -23,6 +24,13 @@ class Container {
         void stop();
         void remove();
 
+        void connect(std::shared_ptr<Team> team, int robotNumber);
+        void disconnect();
+
+        inline bool isConnected() {
+            return connected_subnet_id.size() > 0;
+        }
+
         std::string getId() const {
             return id;
         }
@@ -31,6 +39,7 @@ class Container {
         std::string id;
         ContainerState state;
         std::string name;
+        std::string connected_subnet_id = "";
 
         CURLClient curlClient;
 };

@@ -20,6 +20,8 @@ https://docs.docker.com/reference/api/engine/version/v1.39/
 #define START_OK_RESPONSE 204
 #define STOP_OK_RESPONSE 204
 #define DELETE_OK_RESPONSE 204
+#define CONNECT_OK_RESPONSE 200
+#define DISCONNECT_OK_RESPONSE 200
 
 namespace spqr {
 
@@ -38,6 +40,20 @@ inline std::string stop_container_endpoint(const std::string& id) {
 
 inline std::string remove_container_endpoint(const std::string& id) {
     return "/containers/" + id;
+}
+
+const std::string create_network_endpoint = "/networks/create";
+
+inline std::string connect_network_endpoint(const std::string& id) {
+    return "/networks/" + id + "/connect";
+}
+
+inline std::string disconnect_network_endpoint(const std::string& id) {
+    return "/networks/" + id + "/disconnect";
+}
+
+inline std::string remove_network_endpoint(const std::string& id) {
+    return "/networks/" + id;
 }
 
 class CURLClient {
