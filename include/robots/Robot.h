@@ -34,7 +34,7 @@ class Robot {
                     color = {0, 103, 120};
                 } else {
                     throw std::runtime_error("Team color currently unsupported: " + colorName);
-            }
+                }
             }
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext) = 0;
