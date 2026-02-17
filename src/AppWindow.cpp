@@ -17,6 +17,7 @@
 #include <execinfo.h>
 #endif
 
+#include "CircusNetwork.h"
 #include "Constants.h"
 #include "GameController.h"
 #include "MujocoContext.h"
@@ -209,8 +210,8 @@ void AppWindow::loadScene(const QString& yaml_file) {
                 Qt::QueuedConnection);
         });
 
+        CircusNetwork::instance().init();
         RobotManager::instance().startContainers();
-        TeamManager::instance().createSubnets();
         RobotManager::instance().bindMujoco(mujContext.get());
 
         // Set initial simulation state (playing when scene is loaded)

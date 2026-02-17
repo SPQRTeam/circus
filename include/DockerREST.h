@@ -66,7 +66,6 @@ class CURLClient {
     ~CURLClient() {
         if (curl_handle)
             curl_easy_cleanup(curl_handle);
-        std::cout << "A CURLClient was destroyed!" << std::endl;
     };
 
     std::string request(const std::string& method, const std::string& endpoint, const long expected_response, const nlohmann::json* body = nullptr) {
