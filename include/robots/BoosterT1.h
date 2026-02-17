@@ -17,7 +17,8 @@
 
 #include "MujocoContext.h"
 #include "robots/Robot.h"
-#include "sensors/Camera.h"
+#include "sensors/CameraDepth.h"
+#include "sensors/CameraRGB.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
@@ -32,7 +33,8 @@ class BoosterT1 : public Robot {
         Pose* pose = nullptr;
         Imu* imu = nullptr;
         Joints* joints = nullptr;
-        std::array<Camera*, 2> cameras = {};
+        CameraRGB* rgbCamera;
+        CameraDepth* depthCamera;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team)
@@ -90,8 +92,8 @@ class BoosterT1 : public Robot {
                                   {JointValue::ANKLE_RIGHT_PITCH, 0},
                                   {JointValue::ANKLE_RIGHT_ROLL, 0}});
 
-            cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
-            cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
+            rgbCamera = new CameraRGB(mujCtx, (name + "_rgb_cam").c_str());
+            depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
@@ -133,8 +135,8 @@ class BoosterT1 : public Robot {
             sensors["pose"] = pose;
             sensors["imu"] = imu;
             sensors["joints"] = joints;
-            sensors["rgb_left_camera"] = cameras[0];
-            sensors["rgb_right_camera"] = cameras[1];
+            sensors["rgb_camera"] = rgbCamera;
+            sensors["depth_camera"] = depthCamera;
             return sensors;
         }
 
@@ -142,8 +144,8 @@ class BoosterT1 : public Robot {
             pose->update();
             imu->update();
             joints->update();
-            cameras[0]->update();
-            cameras[1]->update();
+            rgbCamera->update();
+            depthCamera->update();
         }
 
         ~BoosterT1() = default;

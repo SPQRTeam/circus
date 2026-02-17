@@ -21,7 +21,8 @@
 
 #include "MujocoContext.h"
 #include "robots/Robot.h"
-#include "sensors/Camera.h"
+#include "sensors/CameraDepth.h"
+#include "sensors/CameraRGB.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
@@ -622,20 +623,43 @@ class ToolsPanelGrid : public QWidget {
                                 Image* imageTool = dynamic_cast<Image*>(tool);
 
                                 // Add image data based on sensor type
-                                if (sensorType == "rgb_left_camera" || sensorType == "rgb_right_camera") {
-                                    std::string cameraName = (sensorType == "rgb_left_camera") ? "rgb_left_camera" : "rgb_right_camera";
-                                    auto it = sensors.find(cameraName);
+                                if (sensorType == "rgb_camera") {
+                                    auto it = sensors.find("rgb_camera");
 
                                     if (it != sensors.end()) {
-                                        Camera* camera = dynamic_cast<Camera*>(it->second);
+                                        CameraRGB* rgbCamera = dynamic_cast<CameraRGB*>(it->second);
 
-                                        if (camera) {
-                                            const std::vector<uint8_t>& imageData = camera->getImage();
-                                            int width = camera->getWidth();
-                                            int height = camera->getHeight();
+                                        if (rgbCamera) {
+                                            const std::vector<uint8_t>& imageData = rgbCamera->getImage();
+                                            int width = rgbCamera->getWidth();
+                                            int height = rgbCamera->getHeight();
 
                                             if (!imageData.empty() && width > 0 && height > 0) {
                                                 imageTool->setImage(imageData.data(), width, height, 3);
+                                            } else {
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (sensorType == "depth_camera") {
+                                    auto it = sensors.find("depth_camera");
+
+                                    if (it != sensors.end()) {
+                                        CameraDepth* depthCamera = dynamic_cast<CameraDepth*>(it->second);
+
+                                        if (depthCamera) {
+                                            // const std::vector<float>& depthData = depthCamera->getDepthNormalized();
+                                            const std::vector<uint16_t>& depthData = depthCamera->getDepth();
+                                            int width = depthCamera->getWidth();
+                                            int height = depthCamera->getHeight();
+
+                                            if (!depthData.empty() && width > 0 && height > 0) {
+                                                std::vector<uint8_t> depthImage(depthData.size());
+                                                for (size_t i = 0; i < depthData.size(); ++i) {
+                                                    depthImage[i] = static_cast<uint8_t>(depthData[i] / 256);  // Scale 16-bit to 8-bit
+                                                }
+                                                imageTool->setImage(depthImage.data(), width, height, 1);
                                             } else {
                                             }
                                         }

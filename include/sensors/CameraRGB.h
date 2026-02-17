@@ -15,9 +15,9 @@
 
 namespace spqr {
 
-class Camera : public Sensor {
+class CameraRGB : public Sensor {
     public:
-        Camera(MujocoContext* mujContext, const char* cameraName) : mujContext(mujContext), cameraName_(cameraName) {
+        CameraRGB(MujocoContext* mujContext, const char* cameraName) : mujContext(mujContext), cameraName_(cameraName) {
             cam.type = mjCAMERA_FIXED;
             cam.fixedcamid = mj_name2id(mujContext->model, mjOBJ_CAMERA, cameraName);
 
