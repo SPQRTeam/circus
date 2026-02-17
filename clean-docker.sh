@@ -6,7 +6,7 @@ if [ -n "$RUNNING_IDS" ]; then
     echo "Stopping circus containers"
     docker stop $RUNNING_IDS
 else
-    echo "Nothing to stop"
+    echo "No containers to stop"
 fi
 
 EXITED_IDS=$(docker ps --filter name="CIRCUS_*" -aq)
@@ -14,5 +14,13 @@ if [ -n "$EXITED_IDS" ]; then
     echo "Removing circus containers"
     docker rm $EXITED_IDS
 else
-    echo "Nothing to remove"
+    echo "No containers to remove"
+fi
+
+NETWORK_IDS=$(docker network list --filter name="CIRCUS_*" -q)
+if [ -n "$NETWORK_IDS" ]; then
+    echo "Removing circus networks"
+    docker network rm $NETWORK_IDS
+else
+    echo "No networks to remove"
 fi
