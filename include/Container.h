@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "curl/curl.h"
+#include "DockerREST.h"
 
 namespace spqr {
 
@@ -28,14 +28,10 @@ class Container {
         }
 
     private:
-        std::string request(const std::string& method, const std::string& endpoint, const long expected_response,
-                            const nlohmann::json* body = nullptr);
-
         std::string id;
         ContainerState state;
         std::string name;
 
-        std::string sockPath;
-        CURL* curl_handle;
+        CURLClient curlClient;
 };
 }  // namespace spqr
