@@ -97,9 +97,7 @@ SceneParser::SceneParser(const string& yamlPath) {
         if (!robotsNode.IsSequence())
             throw runtime_error("Each team must be a sequence of robots.");
 
-        shared_ptr<Team> teamSpec = std::make_shared<Team>();
-        teamSpec->name = teamName;
-        teamSpec->number = teamNumber;
+        shared_ptr<Team> teamSpec = std::make_shared<Team>(teamName, teamNumber);
 
         uint8_t typeIndex = 0;
         for (const YAML::Node& robotNode : robotsNode) {

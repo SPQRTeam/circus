@@ -24,7 +24,7 @@
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
 
-struct Team;  // Forward declaration
+class Team;  // Forward declaration
 
 class RobotManager {
     public:
