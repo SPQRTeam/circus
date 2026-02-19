@@ -124,6 +124,10 @@ class BoosterT1 : public Robot {
             msg["pose"] = pose->serialize(buffer_zone_);
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
+            msg["camera_left"] = cameras[0]->serialize(buffer_zone_);
+            msg["camera_right"] = cameras[1]->serialize(buffer_zone_);
+            msg["camera_width"] = msgpack::object(cameras[0]->getWidth(), buffer_zone_);
+            msg["camera_height"] = msgpack::object(cameras[0]->getHeight(), buffer_zone_);
 
             return msg;
         }
