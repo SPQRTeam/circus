@@ -75,7 +75,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-gazebo-ros-pkgs \
     ros-humble-navigation2 ros-humble-nav2-bringup ros-humble-slam-toolbox \
     ros-humble-xacro ros-humble-robot-state-publisher ros-humble-joint-state-publisher-gui \
-    ros-humble-rmw-cyclonedds-cpp
+    ros-humble-rmw-cyclonedds-cpp ros-humble-image-view
 
 RUN rosdep update
 
@@ -91,4 +91,5 @@ RUN rosdep install --from-paths src -y --ignore-src
 RUN . /opt/ros/humble/setup.sh && colcon build --symlink-install
 
 
+RUN apt install ros-humble-image-view -y
 CMD ["/app/entrypoint.sh"]
