@@ -4,3 +4,4 @@ image: spqr:booster
 volumes:
   - "<simbridge>/tools/booster_motion:/app/booster_motion"
   - "<simbridge>/.pixi/envs/default:/app/bridge"
+  - "/tmp/circus_ipc:/tmp/circus_ipc"

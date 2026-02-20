@@ -8,6 +8,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
+#include <cstdlib>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -18,6 +19,7 @@
 #include "MujocoContext.h"
 #include "robots/Robot.h"
 #include "sensors/Camera.h"
+#include "sensors/ImageSharedMemoryWriter.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
@@ -59,7 +61,10 @@ class BoosterT1 : public Robot {
                         {JointValue::HIP_RIGHT_YAW, name + "_Right_Hip_Yaw"},
                         {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
                         {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
-                        {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
+                        {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {
+            //Where to put the images
+            shm_dir_ = "/tmp/circus_ipc";
+        }
 
         void bindMujoco(MujocoContext* mujCtx) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
@@ -92,6 +97,13 @@ class BoosterT1 : public Robot {
 
             cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
             cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
+
+            //Configure the writer for the shared memory file
+            const int width = cameras[0]->getWidth();
+            const int height = cameras[0]->getHeight();
+            left_writer_.configure(shmFilePath_("left"), width, height, 3);
+            right_writer_.configure(shmFilePath_("right"), width, height, 3);
+            
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
@@ -125,6 +137,11 @@ class BoosterT1 : public Robot {
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
 
+            // Write in the shared file the information 
+            left_writer_.write(cameras[0]->getImage());
+            right_writer_.write(cameras[1]->getImage());
+            
+
             return msg;
         }
 
@@ -149,7 +166,14 @@ class BoosterT1 : public Robot {
         ~BoosterT1() = default;
 
     private:
+        std::string shmFilePath_(const std::string& camera) const {
+            return shm_dir_ + "/" + name + "_" + camera + ".shm";
+        }
+
         std::map<JointValue, std::string> joint_map;
+        std::string shm_dir_;
+        ImageSharedMemoryWriter left_writer_;
+        ImageSharedMemoryWriter right_writer_;
 };
 
 }  // namespace spqr

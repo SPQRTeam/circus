@@ -1,4 +1,4 @@
-FROM ros:humble-ros-base
+FROM ros:humble
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install dependencies
@@ -66,6 +66,29 @@ RUN chmod +x /app/delayed_start.sh
 
 # used to test communication, can be removed at a later date if so desired
 RUN apt install -y iputils-ping netcat net-tools
+
+
+# Base tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl ca-certificates unzip \
+    python3-vcstool python3-rosdep python3-colcon-common-extensions \
+    ros-humble-gazebo-ros-pkgs \
+    ros-humble-navigation2 ros-humble-nav2-bringup ros-humble-slam-toolbox \
+    ros-humble-xacro ros-humble-robot-state-publisher ros-humble-joint-state-publisher-gui \
+    ros-humble-rmw-cyclonedds-cpp
+
+RUN rosdep update
+
+# ── TIAGo workspace ────────────────────────────────────────────────────────────
+
+ENV WS=/root/tiago_public_ws
+RUN mkdir -p ${WS}/src
+WORKDIR ${WS}
+
+RUN vcs import --input https://raw.githubusercontent.com/pal-robotics/tiago_tutorials/humble-devel/tiago_public.repos src
+
+RUN rosdep install --from-paths src -y --ignore-src
+RUN . /opt/ros/humble/setup.sh && colcon build --symlink-install
 
 
 CMD ["/app/entrypoint.sh"]
