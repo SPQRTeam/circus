@@ -1,6 +1,5 @@
 #pragma once
 
-#include <arpa/inet.h>
 #include <mujoco/mujoco.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -9,9 +8,6 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
-#include <cerrno>
-#include <cstdint>
-#include <cstring>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -154,68 +150,6 @@ class RobotManager {
         RobotManager(const RobotManager&) = delete;
         RobotManager& operator=(const RobotManager&) = delete;
 
-        static bool readExact_(const int fd, void* dst, const size_t size) {
-            size_t total_read = 0;
-            auto* out = static_cast<uint8_t*>(dst);
-
-            while (total_read < size) {
-                const ssize_t n = recv(fd, out + total_read, size - total_read, 0);
-                if (n == 0)
-                    return false;
-                if (n < 0) {
-                    if (errno == EINTR)
-                        continue;
-                    return false;
-                }
-                total_read += static_cast<size_t>(n);
-            }
-            return true;
-        }
-
-        static bool sendFramedMsgpack_(const int fd, const msgpack::sbuffer& payload) {
-            const auto payload_size = static_cast<uint32_t>(payload.size());
-            const uint32_t net_size = htonl(payload_size);
-
-            size_t sent_total = 0;
-            const auto* size_ptr = reinterpret_cast<const uint8_t*>(&net_size);
-            while (sent_total < sizeof(net_size)) {
-                const ssize_t n = send(fd, size_ptr + sent_total, sizeof(net_size) - sent_total, 0);
-                if (n <= 0) {
-                    if (errno == EINTR)
-                        continue;
-                    return false;
-                }
-                sent_total += static_cast<size_t>(n);
-            }
-
-            sent_total = 0;
-            const auto* payload_ptr = reinterpret_cast<const uint8_t*>(payload.data());
-            while (sent_total < payload.size()) {
-                const ssize_t n = send(fd, payload_ptr + sent_total, payload.size() - sent_total, 0);
-                if (n <= 0) {
-                    if (errno == EINTR)
-                        continue;
-                    return false;
-                }
-                sent_total += static_cast<size_t>(n);
-            }
-
-            return true;
-        }
-
-        static bool recvFramedMsgpack_(const int fd, std::vector<char>& payload) {
-            uint32_t net_size = 0;
-            if (!readExact_(fd, &net_size, sizeof(net_size)))
-                return false;
-
-            const uint32_t payload_size = ntohl(net_size);
-            if ((payload_size == 0) || (payload_size > MAX_MSG_SIZE))
-                return false;
-
-            payload.resize(payload_size);
-            return readExact_(fd, payload.data(), payload_size);
-        }
-
         void _serverInternal(int port) {
             int server_fd = socket(AF_INET, SOCK_STREAM, 0);
             if (server_fd < 0)
@@ -255,15 +189,18 @@ class RobotManager {
                             if (client_fd >= 0) {
                                 fds.push_back({client_fd, POLLIN, 0});
 
-                                std::vector<char> payload;
-                                if (!recvFramedMsgpack_(client_fd, payload)) {
+                                // Receive initial message with robot name
+                                char buffer[MAX_MSG_SIZE];
+                                int n = read(client_fd, buffer, sizeof(buffer) - 1);
+
+                                if (n <= 0) {
                                     std::cerr << "Error reading the initial message.\n";
-                                    close(client_fd);
-                                    fds.pop_back();
+                                    // close(client_fd);
                                     continue;
                                 }
 
-                                msgpack::object_handle oh = msgpack::unpack(payload.data(), payload.size());
+                                // unpack of the MsgPack message
+                                msgpack::object_handle oh = msgpack::unpack(buffer, n);
                                 msgpack::object obj = oh.get();
 
                                 // First message is the robot name as a string
@@ -295,7 +232,8 @@ class RobotManager {
                                     if (sbuf.size() > 0) {
                                         std::cout << "Connected Robot: " << robotName << "\n";
                                         std::cout << "Sending initial message to " << robotName << std::endl;
-                                        if (!sendFramedMsgpack_(client_fd, sbuf)) {
+                                        ssize_t bytes_sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
+                                        if (bytes_sent <= 0) {
                                             perror("Error in sending initial message");
                                         }
                                     }
@@ -304,15 +242,16 @@ class RobotManager {
                         } else {
                             // The events for other fds indicate either an incoming message or a closed connection
                             // the read call disambiguates the two cases
-                            std::vector<char> payload;
-                            if (!recvFramedMsgpack_(fds[i].fd, payload)) {
+                            char buffer[MAX_MSG_SIZE];
+                            int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                            if (n <= 0) {
                                 close(fds[i].fd);
                                 fds.erase(fds.begin() + i);
                                 --i;
                                 continue;
                             }
 
-                            msgpack::object_handle oh = msgpack::unpack(payload.data(), payload.size());
+                            msgpack::object_handle oh = msgpack::unpack(buffer, n);
                             auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
                             auto it = data_map.find("robot_name");
                             if (it == data_map.end())
@@ -343,7 +282,8 @@ class RobotManager {
                             if (answOk) {
                                 msgpack::pack(sbuf, answ);
                                 if (sbuf.size() > 0) {
-                                    if (!sendFramedMsgpack_(fds[i].fd, sbuf)) {
+                                    ssize_t bytes_sent = send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
+                                    if (bytes_sent <= 0) {
                                         perror("Error in sending message");
                                     }
                                 }
