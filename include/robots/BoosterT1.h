@@ -23,7 +23,6 @@
 #include "sensors/Pose.h"
 #include "sensors/Oracle.h"
 
-
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
 
@@ -96,7 +95,8 @@ class BoosterT1 : public Robot {
             cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
             cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
 
-            oracle = new Oracle(mujCtx->model, mujCtx->data, pose);
+            // Create Oracle with the pose and all robots
+            oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {

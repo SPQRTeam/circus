@@ -1,6 +1,6 @@
 #!/bin/bash
 # Wait for 5 seconds
-sleep 6
+sleep 3
 
 # Start simbridge and maximus in parallel
 # This substitute the timer of 5 seconds inside the bridge.
