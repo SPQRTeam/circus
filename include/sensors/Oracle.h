@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "sensors/Sensor.h"
 namespace spqr {
@@ -21,6 +22,9 @@ class Oracle : public Sensor {
         Oracle(mjModel* mujModel, mjData* mujData, std::string robotName, Pose* robotPose) 
             : mujModel(mujModel), mujData(mujData), robotName(robotName), robotPose(robotPose) {
             
+            size_t pos = robotName.find('_');
+            teamName = robotName.substr(0, pos);
+
             ballId = mj_name2id(mujModel, mjOBJ_BODY, "ball");
             ballAdr = mujModel->body_jntadr[ballId];
 
@@ -37,7 +41,8 @@ class Oracle : public Sensor {
             updateBallPosition();
 
             // Update all other robots' local positions
-            updateOtherRobotsLocalPositions();
+            updateTeammatesLocalPositions();
+            updateOpponentsLocalPositions();
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
@@ -46,13 +51,22 @@ class Oracle : public Sensor {
             std::map<std::string, msgpack::object> oracle_data;
             oracle_data["ball_position"] = msgpack::object(ball_pos, z);
             
-            // Serialize other robots' positions
-            std::map<std::string, msgpack::object> robots_data;
-            for (const auto& [robotName, robotLocalPos] : otherRobotsLocalPositions) {
-                std::vector<double> robot_pos = {robotLocalPos(0), robotLocalPos(1), robotLocalPos(2)};
-                robots_data[robotName] = msgpack::object(robot_pos, z);
+            // Serialize teammates' positions
+            std::map<std::string, msgpack::object> teammates_data;
+            for (const auto& [robotName, robotLocalPos] : teammatesLocalPositions) {
+                std::vector<double> robot_pos = {robotLocalPos(0), robotLocalPos(1), robotLocalPos(2)};                
+                teammates_data[robotName] = msgpack::object(robot_pos, z);
             }
-            oracle_data["robots_positions"] = msgpack::object(robots_data, z);
+
+            // Serialize opponents' positions
+            std::map<std::string, msgpack::object> opponents_data;
+            for (const auto& [robotName, robotLocalPos] : opponentsLocalPositions) {
+                std::vector<double> robot_pos = {robotLocalPos(0), robotLocalPos(1), robotLocalPos(2)};                
+                opponents_data[robotName] = msgpack::object(robot_pos, z);
+            }
+
+            oracle_data["teammates_positions"] = msgpack::object(teammates_data, z);
+            oracle_data["opponents_positions"] = msgpack::object(opponents_data, z);
             
             return msgpack::object(oracle_data, z);
         }
@@ -67,9 +81,9 @@ class Oracle : public Sensor {
          * @param robotName The name of the robot
          * @return The position of the robot in the local frame, or nullopt if not found
          */
-        std::optional<Eigen::Vector3d> getRobotLocalPosition(const std::string& robotName) const {
-            auto it = otherRobotsLocalPositions.find(robotName);
-            if (it != otherRobotsLocalPositions.end()) {
+        std::optional<Eigen::Vector3d> getTeammatePosition(const std::string& robotName) const {
+            auto it = teammatesLocalPositions.find(robotName);
+            if (it != teammatesLocalPositions.end()) {
                 return it->second;
             }
             return std::nullopt;
@@ -80,8 +94,8 @@ class Oracle : public Sensor {
          * 
          * @return Map of robot names to their local positions
          */
-        const std::map<std::string, Eigen::Vector3d>& getAllRobotsLocalPositions() const {
-            return otherRobotsLocalPositions;
+        const std::map<std::string, Eigen::Vector3d>& getAllTeammatesLocalPositions() const {
+            return teammatesLocalPositions;
         }
 
 
@@ -128,7 +142,16 @@ class Oracle : public Sensor {
                     
                     // Store the sensor address for this robot
                     int positionAdr = mujModel->sensor_adr[i];
-                    otherRobotSensorAddrs[extractedRobotName] = positionAdr;
+                    
+                    size_t pos = extractedRobotName.find('_');
+                    std::string extractedRobotTeamName = extractedRobotName.substr(0, pos);
+                    
+                    if(extractedRobotTeamName == teamName) {
+                        teammatesSensorAddrs[extractedRobotName] = positionAdr;
+                    }
+                    else {
+                        opponentsSensorAddrs[extractedRobotName] = positionAdr;
+                    } 
                 }
             }
         }
@@ -144,11 +167,11 @@ class Oracle : public Sensor {
          * Iterates through all robots in the world (except the current one) and converts
          * their global positions to local coordinates relative to this robot's pose.
          */
-        void updateOtherRobotsLocalPositions() {
-            otherRobotsLocalPositions.clear();
+        void updateTeammatesLocalPositions() {
+            teammatesLocalPositions.clear();
             
             // Get positions of other robots using their sensor data
-            for (const auto& [otherRobotName, sensorAdr] : otherRobotSensorAddrs) {
+            for (const auto& [teammateName, sensorAdr] : teammatesSensorAddrs) {
                 // Read position from sensor data (3D vector)
                 Eigen::Vector3d robotGlobalPos = Eigen::Vector3d(
                     Eigen::Map<const Eigen::Vector3d>(mujData->sensordata + sensorAdr)
@@ -160,7 +183,28 @@ class Oracle : public Sensor {
                     robotPose->getTransformationMatrix()
                 );
                 
-                otherRobotsLocalPositions[otherRobotName] = robotLocalPos;
+                teammatesLocalPositions[teammateName] = robotLocalPos;
+                
+            }
+        }
+
+        void updateOpponentsLocalPositions() {
+            opponentsLocalPositions.clear();
+            
+            // Get positions of other robots using their sensor data
+            for (const auto& [opponentName, sensorAdr] : opponentsSensorAddrs) {
+                // Read position from sensor data (3D vector)
+                Eigen::Vector3d robotGlobalPos = Eigen::Vector3d(
+                    Eigen::Map<const Eigen::Vector3d>(mujData->sensordata + sensorAdr)
+                );
+                
+                // Convert to local frame
+                Eigen::Vector3d robotLocalPos = globalToLocalPosition(
+                    robotGlobalPos,
+                    robotPose->getTransformationMatrix()
+                );
+                
+                opponentsLocalPositions[opponentName] = robotLocalPos;
                 
             }
         }
@@ -171,10 +215,13 @@ class Oracle : public Sensor {
         mjModel* mujModel;
         mjData* mujData;
         std::string robotName;
+        std::string teamName;
         Pose* robotPose;
-        std::map<std::string, Eigen::Vector3d> otherRobotsLocalPositions;
+        std::map<std::string, Eigen::Vector3d> teammatesLocalPositions;
+        std::map<std::string, Eigen::Vector3d> opponentsLocalPositions;
 
-        std::map<std::string, int> otherRobotSensorAddrs;  // robotName -> sensorAdr
+        std::map<std::string, int> teammatesSensorAddrs;  // robotName -> sensorAdr
+        std::map<std::string, int> opponentsSensorAddrs;  // robotName -> sensorAdr
 
 
 };
