@@ -8,7 +8,6 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
-#include <iostream>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>

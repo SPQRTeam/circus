@@ -5,9 +5,7 @@
 
 #include <QImage>
 #include <QOpenGLFunctions>
-#include <cstring>
 #include <msgpack.hpp>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -16,9 +14,9 @@
 
 namespace spqr {
 
-class Camera : public Sensor {
+class CameraDepth : public Sensor {
     public:
-        Camera(MujocoContext* mujContext, const char* cameraName) : mujContext(mujContext), cameraName_(cameraName) {
+        CameraDepth(MujocoContext* mujContext, const char* cameraName) : mujContext(mujContext), cameraName_(cameraName) {
             cam.type = mjCAMERA_FIXED;
             cam.fixedcamid = mj_name2id(mujContext->model, mjOBJ_CAMERA, cameraName);
 
@@ -27,8 +25,10 @@ class Camera : public Sensor {
 
             w = mujContext->model->cam_resolution[2 * cam.fixedcamid + 0];
             h = mujContext->model->cam_resolution[2 * cam.fixedcamid + 1];
+            fovy_deg = mujContext->model->cam_fovy[cam.fixedcamid];
 
-            image.resize(w * h * 3);
+            depthNormalized.resize(w * h);
+            depth.resize(w * h);
         }
 
         void doUpdate() override {
@@ -75,17 +75,26 @@ class Camera : public Sensor {
             mjr_render(viewport, &tempScene, &mujContext->ctx);
 
             // Read pixels and resize to camera resolution
-            std::vector<uint8_t> tempImage(viewWidth * viewHeight * 3);
-            mjr_readPixels(tempImage.data(), nullptr, viewport, &mujContext->ctx);
+            std::vector<float> tempDepth(viewWidth * viewHeight);
+            mjr_readPixels(nullptr, tempDepth.data(), viewport, &mujContext->ctx);
 
-            // Convert to QImage, flip vertically (OpenGL stores bottom-to-top), and resize to camera resolution
-            QImage qimg(tempImage.data(), viewWidth, viewHeight, viewWidth * 3, QImage::Format_RGB888);
-            QImage flipped = qimg.flipped(Qt::Vertical);
-            QImage resized = flipped.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            float znear = mujContext->model->vis.map.znear;  // 0.0001
+            float zfar = mujContext->model->vis.map.zfar;    // 50.0
+            float max_u16 = static_cast<float>(std::numeric_limits<uint16_t>::max());
 
-            // Copy resized data back to image buffer
-            std::lock_guard<std::mutex> lock(imageMutex_);
-            memcpy(image.data(), resized.constBits(), w * h * 3);
+            // Process depth to match camera resolution
+            for (int y = 0; y < h; y++) {
+                int srcRow = (h - 1 - y) * w;  // flip y-axes
+                int dstRow = y * w;
+                for (int x = 0; x < w; x++) {
+                    float z_raw = tempDepth[srcRow + x];
+                    float z_converted = (znear * zfar) / (zfar - z_raw * (zfar - znear));
+                    depthNormalized[dstRow + x] = z_converted;
+
+                    float clampedDepth = std::min(z_converted / 1.0f, 1.0f);
+                    depth[dstRow + x] = static_cast<uint16_t>(clampedDepth * max_u16);
+                }
+            }
 
             // Restore window buffer
             mjr_setBuffer(mjFB_WINDOW, &mujContext->ctx);
@@ -95,7 +104,7 @@ class Camera : public Sensor {
         }
 
         void saveImage(const std::string& filename) const {
-            QImage qimg(image.data(), w, h, w * 3, QImage::Format_RGB888);
+            QImage qimg(reinterpret_cast<const uchar*>(depth.data()), w, h, w * 2, QImage::Format_Grayscale16);
             qimg.save(QString::fromStdString(filename));
         }
 
@@ -103,9 +112,22 @@ class Camera : public Sensor {
             return cam;
         }
 
-        std::vector<uint8_t> getImage() const {
-            std::lock_guard<std::mutex> lock(imageMutex_);
-            return image;
+        const std::vector<float>& getDepthNormalized() const {
+            return depthNormalized;
+        }
+
+        const std::vector<uint16_t>& getDepth() const {
+            std::lock_guard<std::mutex> lock(depthMutex_);
+            return depth;
+        }
+
+        std::vector<unsigned char> getDepth8bit() const {
+            std::lock_guard<std::mutex> lock(depthMutex_);
+            std::vector<unsigned char> depth8(depth.size());
+            for (size_t i = 0; i < depth.size(); ++i) {
+                depth8[i] = static_cast<unsigned char>(depth[i] >> 8);  // Convert uint16 to uint8
+            }
+            return depth8;
         }
 
         int getWidth() const {
@@ -116,16 +138,23 @@ class Camera : public Sensor {
             return h;
         }
 
+        double getFovyDeg() const {
+            return fovy_deg;
+        }
+
         msgpack::object doSerialize(msgpack::zone& z) override {
-            std::lock_guard<std::mutex> lock(imageMutex_);
-            return msgpack::object(image, z);
+            std::lock_guard<std::mutex> lock(depthMutex_);
+            std::vector<uint16_t> img_copy(depth.begin(), depth.end());
+            return msgpack::object(img_copy, z);
         }
 
     private:
         int w, h;
+        double fovy_deg;
         MujocoContext* mujContext;
-        std::vector<uint8_t> image;
-        mutable std::mutex imageMutex_;
+        mutable std::mutex depthMutex_;
+        std::vector<float> depthNormalized;
+        std::vector<uint16_t> depth;
         mjvCamera cam{};
         std::string cameraName_;
 };

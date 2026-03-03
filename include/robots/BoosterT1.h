@@ -18,8 +18,9 @@
 
 #include "MujocoContext.h"
 #include "robots/Robot.h"
-#include "sensors/Camera.h"
 #include "sensors/ImageSharedMemoryWriter.h"
+#include "sensors/CameraDepth.h"
+#include "sensors/CameraRGB.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
@@ -35,8 +36,9 @@ class BoosterT1 : public Robot {
         Pose* pose = nullptr;
         Imu* imu = nullptr;
         Joints* joints = nullptr;
-        std::array<Camera*, 2> cameras = {};
         Oracle* oracle = nullptr;
+        CameraRGB* rgbCamera;
+        CameraDepth* depthCamera;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::tuple<int, int, int> color, const std::shared_ptr<Team>& team)
@@ -96,15 +98,15 @@ class BoosterT1 : public Robot {
                                   {JointValue::KNEE_RIGHT_PITCH, 0},
                                   {JointValue::ANKLE_RIGHT_PITCH, 0},
                                   {JointValue::ANKLE_RIGHT_ROLL, 0}});
-
-            cameras[0] = new Camera(mujCtx, (name + "_left_cam").c_str());
-            cameras[1] = new Camera(mujCtx, (name + "_right_cam").c_str());
+                                                                    
+            rgbCamera = new CameraRGB(mujCtx, (name + "_rgb_cam").c_str());
+            depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
 
             //Configure the writer for the shared memory file
-            const int width = cameras[0]->getWidth();
-            const int height = cameras[0]->getHeight();
-            left_writer_.configure(shmFilePath_("left"), width, height, 3);
-            right_writer_.configure(shmFilePath_("right"), width, height, 3);
+            const int width = rgbCamera->getWidth();
+            const int height = rgbCamera->getHeight();
+            rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
+            depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
             
 
             // Create Oracle with the pose and all robots
@@ -144,9 +146,8 @@ class BoosterT1 : public Robot {
             msg["oracle"] = oracle->serialize(buffer_zone_);
 
             // Write in the shared file the information 
-            left_writer_.write(cameras[0]->getImage());
-            right_writer_.write(cameras[1]->getImage());
-            
+            rgb_writer_.write(rgbCamera->getImage());
+            depth_writer_.write(depthCamera->getDepth8bit());
 
             return msg;
         }
@@ -156,8 +157,8 @@ class BoosterT1 : public Robot {
             sensors["pose"] = pose;
             sensors["imu"] = imu;
             sensors["joints"] = joints;
-            sensors["rgb_left_camera"] = cameras[0];
-            sensors["rgb_right_camera"] = cameras[1];
+            sensors["rgb_camera"] = rgbCamera;
+            sensors["depth_camera"] = depthCamera;
             return sensors;
         }
 
@@ -165,9 +166,9 @@ class BoosterT1 : public Robot {
             pose->update();
             imu->update();
             joints->update();
-            cameras[0]->update();
-            cameras[1]->update();
             oracle->update();
+            rgbCamera->update();
+            depthCamera->update();
         }
 
         ~BoosterT1() = default;
@@ -179,8 +180,8 @@ class BoosterT1 : public Robot {
 
         std::map<JointValue, std::string> joint_map;
         std::string shm_dir_;
-        ImageSharedMemoryWriter left_writer_;
-        ImageSharedMemoryWriter right_writer_;
+        ImageSharedMemoryWriter rgb_writer_;
+        ImageSharedMemoryWriter depth_writer_;
 };
 
 }  // namespace spqr

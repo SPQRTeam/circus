@@ -76,6 +76,9 @@ void Container::create(const std::string& robot_name, const std::string& image, 
     std::vector<std::string> binds_with_x11 = binds;
     binds_with_x11.push_back("/tmp/.X11-unix:/tmp/.X11-unix:rw");
 
+    std::string xauth_path = envOrDefault("XAUTHORITY", "/root/.Xauthority");
+    binds_with_x11.push_back(xauth_path + ":/root/.Xauthority:rw");
+
     payload["HostConfig"] = {{"Binds", binds_with_x11},
                              {"IpcMode", "host"},
                              {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
@@ -87,6 +90,8 @@ void Container::create(const std::string& robot_name, const std::string& image, 
                       "SERVER_IP=172.17.0.1",
                       "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
                       "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
+                      "XAUTHORITY=/root/.Xauthority",       
+                      "XDG_RUNTIME_DIR=/run/user/0",         
                       "QT_X11_NO_MITSHM=1",
                       "ROBOT_STACK=booster",
                       "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc"};

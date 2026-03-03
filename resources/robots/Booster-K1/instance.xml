@@ -40,10 +40,12 @@
                         material="black" mesh="Booster-K1_Head_2" />
                     <geom type="mesh" material="black" mesh="Booster-K1_Head_2" />
 
-                    <site name="head_left_cam_site" pos="0.05 0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-                    <camera name="left_cam" pos="0.05 0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
-                    <site name="head_right_cam_site" pos="0.05 -0.06 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-                    <camera name="right_cam" pos="0.05 -0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="1920 1080"/>
+                    <site name="head_rgb_cam_site" pos="0.05 0.0 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
+                    <camera name="rgb_cam" pos="0.05 0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
+
+                    <site name="head_depth_cam_site" pos="0.05 0.0 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
+                    <camera name="depth_cam" pos="0.05 0 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
+
                 </body>
             </body>
             <body name="Left_Arm_1" pos="0 0.077 0.1845">

@@ -115,7 +115,7 @@ class RobotManager {
         }
 
         for (std::shared_ptr<Robot> r : robots_) {
-                r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
+            r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
             r->container->create(r->name, image, binds);
             r->container->start();
         }
