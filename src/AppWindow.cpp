@@ -9,6 +9,7 @@
 #include <QMetaObject>
 #include <csignal>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <string>
 
@@ -208,6 +209,14 @@ void AppWindow::loadScene(const QString& yaml_file) {
                 },
                 Qt::QueuedConnection);
         });
+
+        // Ensure the shared memory directory exists and is writable by the current user.
+        // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
+        const std::filesystem::path shmDir("/dev/shm/circus_ipc");
+        if (std::filesystem::exists(shmDir)) {
+            std::filesystem::remove_all(shmDir);
+        }
+        std::filesystem::create_directories(shmDir);
 
         RobotManager::instance().startContainers();
         RobotManager::instance().bindMujoco(mujContext.get());

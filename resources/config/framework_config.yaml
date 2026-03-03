@@ -7,3 +7,4 @@ volumes:
   - "<maximus>/.pixi/envs/default:/app/maximus"
   - "<maximus>/src/app/config:/app/maximus/config"
   - "<maximus>/src/app/behaviors/trees:/app/maximus/behaviors"
+  - "/dev/shm/circus_ipc:/dev/shm/circus_ipc"

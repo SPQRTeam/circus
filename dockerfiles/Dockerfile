@@ -1,4 +1,4 @@
-FROM ros:humble-ros-base
+FROM ros:humble
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install dependencies
@@ -67,5 +67,6 @@ RUN chmod +x /app/delayed_start.sh
 # used to test communication, can be removed at a later date if so desired
 RUN apt install -y iputils-ping netcat net-tools
 
+RUN apt install ros-humble-image-view -y
 
 CMD ["/app/entrypoint.sh"]
