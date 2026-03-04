@@ -76,9 +76,6 @@ void Container::create(const std::string& robot_name, const std::string& image, 
     std::vector<std::string> binds_with_x11 = binds;
     binds_with_x11.push_back("/tmp/.X11-unix:/tmp/.X11-unix:rw");
 
-    std::string xauth_path = envOrDefault("XAUTHORITY", "/root/.Xauthority");
-    binds_with_x11.push_back(xauth_path + ":/root/.Xauthority:rw");
-
     payload["HostConfig"] = {{"Binds", binds_with_x11},
                              {"IpcMode", "host"},
                              {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
@@ -86,15 +83,23 @@ void Container::create(const std::string& robot_name, const std::string& image, 
                              {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
                              {"Privileged", true}};
 
+    payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
+    payload["HostConfig"]["DeviceRequests"].push_back({
+        {"Driver", "nvidia"},
+        {"Count", -1},
+        {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
+    });
+
     payload["Env"] = {"ROBOT_NAME=" + robot_name,
                       "SERVER_IP=172.17.0.1",
                       "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
                       "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
-                      "XAUTHORITY=/root/.Xauthority",       
-                      "XDG_RUNTIME_DIR=/run/user/0",         
                       "QT_X11_NO_MITSHM=1",
+                      "NVIDIA_VISIBLE_DEVICES=all",
+                      "NVIDIA_DRIVER_CAPABILITIES=all",
                       "ROBOT_STACK=booster",
-                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc"};
+                      "CIRCUS_IMAGE_SHM_DIR=" + envOrDefault("CIRCUS_IMAGE_SHM_DIR", "/tmp/circus_ipc"),
+                      };
 
     payload["Entrypoint"] = {"/bin/bash", "-lc"};
     payload["Cmd"] = {"/app/entrypoint.sh"};
