@@ -43,6 +43,8 @@ class Oracle : public Sensor {
             // Update all other robots' local positions
             updateTeammatesLocalPositions();
             updateOpponentsLocalPositions();
+            updateGoalPostsLocalPositions();
+            
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
@@ -65,8 +67,17 @@ class Oracle : public Sensor {
                 opponents_data[robotName] = msgpack::object(robot_pos, z);
             }
 
+            // Serialize goal posts' positions
+            std::map<std::string, msgpack::object> goal_posts_data;
+            for (const auto& [postName, postLocalPos] : goalPostsLocalPositions) {
+                std::vector<double> post_pos = {postLocalPos(0), postLocalPos(1), postLocalPos(2)};
+                goal_posts_data[postName] = msgpack::object(post_pos, z);
+            }
+            
             oracle_data["teammates_positions"] = msgpack::object(teammates_data, z);
             oracle_data["opponents_positions"] = msgpack::object(opponents_data, z);
+            oracle_data["goal_posts_positions"] = msgpack::object(goal_posts_data, z);
+            
             
             return msgpack::object(oracle_data, z);
         }
@@ -97,6 +108,11 @@ class Oracle : public Sensor {
         const std::map<std::string, Eigen::Vector3d>& getAllTeammatesLocalPositions() const {
             return teammatesLocalPositions;
         }
+
+        const std::map<std::string, Eigen::Vector3d>& getGoalPostsLocalPositions() const {
+            return goalPostsLocalPositions;
+        }
+
 
 
     private:
@@ -209,6 +225,33 @@ class Oracle : public Sensor {
             }
         }
 
+        void updateGoalPostsLocalPositions() {
+            goalPostsLocalPositions.clear();
+
+            for (const auto& postName : goalPostNames) {
+                int geomId = mj_name2id(mujModel, mjOBJ_GEOM, postName.c_str());
+                if (geomId < 0) {
+                    continue;
+                }
+                
+                // Get global position from xpos (geom positions in world frame)
+                // For geoms, xpos is indexed by geom ID
+                Eigen::Vector3d goalPostGlobalPos(
+                    mujData->geom_xpos[geomId * 3 + 0],
+                    mujData->geom_xpos[geomId * 3 + 1],
+                    mujData->geom_xpos[geomId * 3 + 2]
+                );
+                
+                // Convert to local frame
+                Eigen::Vector3d goalPostLocalPos = globalToLocalPosition(
+                    goalPostGlobalPos,
+                    robotPose->getTransformationMatrix()
+                );
+                
+                goalPostsLocalPositions[postName] = goalPostLocalPos;
+            }
+        }
+
         Eigen::Vector3d ballPosition;
         int ballId, ballAdr, ballPosAdr, ballVelAdr;
         
@@ -219,10 +262,17 @@ class Oracle : public Sensor {
         Pose* robotPose;
         std::map<std::string, Eigen::Vector3d> teammatesLocalPositions;
         std::map<std::string, Eigen::Vector3d> opponentsLocalPositions;
+        std::map<std::string, Eigen::Vector3d> goalPostsLocalPositions;
+
 
         std::map<std::string, int> teammatesSensorAddrs;  // robotName -> sensorAdr
         std::map<std::string, int> opponentsSensorAddrs;  // robotName -> sensorAdr
-
+        std::vector<std::string> goalPostNames = {
+            "left_goal_left_post",
+            "left_goal_right_post",
+            "right_goal_left_post",
+            "right_goal_right_post",
+        };
 
 };
 } // namespace spqr
