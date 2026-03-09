@@ -4,7 +4,7 @@
 #include "DockerREST.h"
 
 #define CIRCUS_NETWORK_NAME "CIRCUS_network"
-#define UAN_SEVEN_CIU "172.18."  // Per coerenza
+#define UAN_SEVEN_CIU "172.21."  // Per coerenza
 
 namespace spqr {
 

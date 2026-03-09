@@ -83,7 +83,8 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "XAUTHORITY=/root/.Xauthority",
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
-                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc"};
+                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
+                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0")};
 
     payload["Entrypoint"] = {"/bin/bash", "-lc"};
     payload["Cmd"] = {"/app/entrypoint.sh"};
