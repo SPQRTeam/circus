@@ -1,20 +1,19 @@
 #include "Container.h"
 
-#include <cassert>
-#include <string>
-#include <cstdlib>
-
-#include "Constants.h"
-
-#include "robots/Robot.h"
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
+#include <cassert>
+#include <cstdlib>
+#include <string>
+
 #include "CircusNetwork.h"
+#include "Constants.h"
+#include "robots/Robot.h"
 
 // for the forward declarations
-#include "robots/Robot.h"
 #include "Team.h"
+#include "robots/Robot.h"
 
 namespace spqr {
 
@@ -51,15 +50,13 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
     std::string xauth_path = envOrDefault("XAUTHORITY", "/root/.Xauthority");
     binds_with_x11.push_back(xauth_path + ":/root/.Xauthority:rw");
 
-    payload["HostConfig"] = {
-        {"Binds", binds_with_x11},
-        {"IpcMode", "host"},
-        {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
-        {"SecurityOpt", {"seccomp=unconfined"}},
-        {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
-        {"Privileged", true},
-        {"NetworkMode", CIRCUS_NETWORK_NAME}
-    };
+    payload["HostConfig"] = {{"Binds", binds_with_x11},
+                             {"IpcMode", "host"},
+                             {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
+                             {"SecurityOpt", {"seccomp=unconfined"}},
+                             {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
+                             {"Privileged", true},
+                             {"NetworkMode", CIRCUS_NETWORK_NAME}};
 
     payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
     payload["HostConfig"]["DeviceRequests"].push_back({
@@ -67,33 +64,26 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
         {"Count", -1},
         {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
     });
-    
-    payload["NetworkingConfig"] = {
-        {"EndpointsConfig", {
-            {CIRCUS_NETWORK_NAME, {
-                {"IPAMConfig", {
-                    {"IPv4Address", UAN_SEVEN_CIU + std::to_string(robot->team->number) + "." + std::to_string(robot->number + 10)}
-                }}
-            }}
-        }}
-    };
 
-    payload["Env"] = {
-        "ROBOT_NAME=" + robot->name,
-        "SERVER_IP=172.17.0.1",
-        "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
-        "TEAM_NUMBER=" + std::to_string(robot->team->number),
-        "PLAYER_NUMBER=" + std::to_string(robot->number),
-        "TEAM_COLOR=" + robot->colorName,
-        "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
-        "QT_X11_NO_MITSHM=1",
-        "NVIDIA_VISIBLE_DEVICES=all",
-        "NVIDIA_DRIVER_CAPABILITIES=all",
-        "XAUTHORITY=/root/.Xauthority",       
-        "XDG_RUNTIME_DIR=/run/user/0",         
-        "ROBOT_STACK=booster",
-        "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc"
-    };
+    payload["NetworkingConfig"]
+        = {{"EndpointsConfig",
+            {{CIRCUS_NETWORK_NAME,
+              {{"IPAMConfig", {{"IPv4Address", UAN_SEVEN_CIU + std::to_string(robot->team->number) + "." + std::to_string(robot->number + 10)}}}}}}}};
+
+    payload["Env"] = {"ROBOT_NAME=" + robot->name,
+                      "SERVER_IP=172.17.0.1",
+                      "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
+                      "TEAM_NUMBER=" + std::to_string(robot->team->number),
+                      "PLAYER_NUMBER=" + std::to_string(robot->number),
+                      "TEAM_COLOR=" + robot->colorName,
+                      "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
+                      "QT_X11_NO_MITSHM=1",
+                      "NVIDIA_VISIBLE_DEVICES=all",
+                      "NVIDIA_DRIVER_CAPABILITIES=all",
+                      "XAUTHORITY=/root/.Xauthority",
+                      "XDG_RUNTIME_DIR=/run/user/0",
+                      "ROBOT_STACK=booster",
+                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc"};
 
     payload["Entrypoint"] = {"/bin/bash", "-lc"};
     payload["Cmd"] = {"/app/entrypoint.sh"};

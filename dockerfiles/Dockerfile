@@ -28,10 +28,10 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libdecor-0-0 \
     ament-cmake \
-    iputils-ping \ 
+    iputils-ping \
     netcat \
     ros-humble-image-view \
-    net-tools 
+    net-tools
 
 RUN rm -rf /var/lib/apt/lists/*
 # used to test communication, can be removed at a later date if so desired

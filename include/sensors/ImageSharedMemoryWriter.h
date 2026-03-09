@@ -95,14 +95,14 @@ class ImageSharedMemoryWriter {
 
     private:
         struct Header {
-            uint32_t magic = 0;
-            uint32_t version = 0;
-            uint32_t width = 0;
-            uint32_t height = 0;
-            uint32_t channels = 0;
-            uint32_t slot_count = 0;
-            size_t slot_bytes = 0;
-            uint64_t seq = 0;
+                uint32_t magic = 0;
+                uint32_t version = 0;
+                uint32_t width = 0;
+                uint32_t height = 0;
+                uint32_t channels = 0;
+                uint32_t slot_count = 0;
+                size_t slot_bytes = 0;
+                uint64_t seq = 0;
         };
 
         static constexpr uint32_t kMagic = 0x5348514d;  // SHQM

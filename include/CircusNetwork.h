@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <string>
+
 #include "DockerREST.h"
 
 #define CIRCUS_NETWORK_NAME "CIRCUS_network"
@@ -35,17 +36,14 @@ class CircusNetwork {
             std::string subnet = UAN_SEVEN_CIU "0.0/16";
             std::string gateway = UAN_SEVEN_CIU "0.1";
             payload["Name"] = CIRCUS_NETWORK_NAME;
-            payload["IPAM"]["Config"] = {{  // https://docs.docker.com/reference/api/engine/version/v1.53/#tag/Network/operation/NetworkCreate
-                {"Subnet", subnet},
-                {"IPRange", subnet},
-                {"Gateway", gateway}
-            }};
-            payload["Options"] = {
-                {"com.docker.network.bridge.name", "docker-circus"},
-                {"com.docker.network.bridge.enable_ip_masquerade", "false"},
-                {"com.docker.network.driver.mtu", "1500"},
-                {"com.docker.network.container_iface_prefix", "circus"}
-            };
+            payload["IPAM"]["Config"] = {{// https://docs.docker.com/reference/api/engine/version/v1.53/#tag/Network/operation/NetworkCreate
+                                          {"Subnet", subnet},
+                                          {"IPRange", subnet},
+                                          {"Gateway", gateway}}};
+            payload["Options"] = {{"com.docker.network.bridge.name", "docker-circus"},
+                                  {"com.docker.network.bridge.enable_ip_masquerade", "false"},
+                                  {"com.docker.network.driver.mtu", "1500"},
+                                  {"com.docker.network.container_iface_prefix", "circus"}};
 
             std::string resp_raw = curlClient.request(POST, create_network_endpoint, CREATE_OK_RESPONSE, &payload);
 
@@ -57,7 +55,7 @@ class CircusNetwork {
         }
 
     private:
-        CircusNetwork(const std::string& sockPath = "/var/run/docker.sock") : curlClient(sockPath) {};
+        CircusNetwork(const std::string& sockPath = "/var/run/docker.sock") : curlClient(sockPath){};
 
         ~CircusNetwork() {
             if (isUp()) {
@@ -67,11 +65,10 @@ class CircusNetwork {
 
         std::string networkId = "";
         CURLClient curlClient;
-    
+
     public:
         CircusNetwork(CircusNetwork const&) = delete;
         void operator=(CircusNetwork const&) = delete;
-
 };
 
 }  // namespace spqr

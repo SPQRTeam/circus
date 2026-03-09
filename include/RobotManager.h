@@ -27,12 +27,12 @@ namespace spqr {
 class Team;  // Forward declaration
 
 class RobotManager {
-   public:
-    // Singleton class
-    static RobotManager& instance() {
-        static RobotManager mgr;
-        return mgr;
-    }
+    public:
+        // Singleton class
+        static RobotManager& instance() {
+            static RobotManager mgr;
+            return mgr;
+        }
 
         void registerRobot(std::shared_ptr<Robot> robot);
         std::vector<std::shared_ptr<Robot>> getRobots() const;
@@ -52,40 +52,36 @@ class RobotManager {
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
 
-   private:
-    RobotManager() = default;
-    ~RobotManager() = default;
+    private:
+        RobotManager() = default;
+        ~RobotManager() = default;
 
-    RobotManager(const RobotManager&) = delete;
-    RobotManager& operator=(const RobotManager&) = delete;
+        RobotManager(const RobotManager&) = delete;
+        RobotManager& operator=(const RobotManager&) = delete;
 
-    ssize_t send_all(int fd, char *buf, size_t len);
+        ssize_t send_all(int fd, char* buf, size_t len);
 
-    void _serverInternal(int port);
+        void _serverInternal(int port);
 
-    void areAllRobotsReadyWrapper();
-    bool areAllRobotsReady() const;
+        void areAllRobotsReadyWrapper();
+        bool areAllRobotsReady() const;
 
-    std::atomic<bool> serverRunning_ = false;
-    std::thread serverThread_;
+        std::atomic<bool> serverRunning_ = false;
+        std::thread serverThread_;
 
-    mutable std::mutex mutex_;
-    std::vector<std::shared_ptr<Robot>> robots_;
-    std::function<void()> areAllRobotsReadyCallback_;
+        mutable std::mutex mutex_;
+        std::vector<std::shared_ptr<Robot>> robots_;
+        std::function<void()> areAllRobotsReadyCallback_;
 
-        using RobotCreator
-            = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&, const Eigen::Vector3d&,
-                                                   const std::string&, const std::shared_ptr<Team>&)>;
+        using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&,
+                                                                  const Eigen::Vector3d&, const std::string&, const std::shared_ptr<Team>&)>;
 
         std::unordered_map<std::string, RobotCreator> robotFactory
-            = {
-                {"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName, auto&& team) {
-                    return std::make_shared<BoosterK1>(name, type, number, pos, ori, colorName, team);
-                }},
-                {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName, auto&& team) {
-                return std::make_shared<BoosterT1>(name, type, number, pos, ori, colorName, team);
-                }}
-            };
+            = {{"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName,
+                                 auto&& team) { return std::make_shared<BoosterK1>(name, type, number, pos, ori, colorName, team); }},
+               {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName, auto&& team) {
+                    return std::make_shared<BoosterT1>(name, type, number, pos, ori, colorName, team);
+                }}};
 };
 
 }  // namespace spqr

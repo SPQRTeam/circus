@@ -12,7 +12,7 @@ class Team {
     public:
         Team(const std::string& name, int number) : name(name), number(number) {}
         ~Team() {}
-    
+
         std::string name;
         int number;
         std::vector<std::shared_ptr<Robot>> robots;

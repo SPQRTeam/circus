@@ -1,9 +1,8 @@
 #include "RobotManager.h"
 
-#include "Team.h"  // needed for the forward declaration in the .h
 #include "Constants.h"
+#include "Team.h"  // needed for the forward declaration in the .h
 #include "Utils.h"
-
 
 namespace spqr {
 
@@ -108,9 +107,6 @@ void RobotManager::stopCommunicationServer() {
         serverThread_.join();
 }
 
-
-
-
 void RobotManager::_serverInternal(int port) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0)
@@ -119,16 +115,14 @@ void RobotManager::_serverInternal(int port) {
     int opt = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     int send_buf_size = 1 * 1024 * 1024;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF,
-                &send_buf_size, sizeof(send_buf_size)) < 0) {
+    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &send_buf_size, sizeof(send_buf_size)) < 0) {
         perror("setsockopt(SO_SNDBUF)");
     }
     int recv_buf_size = 1 * 1024 * 1024;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF,
-                &recv_buf_size, sizeof(recv_buf_size)) < 0) {
+    if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &recv_buf_size, sizeof(recv_buf_size)) < 0) {
         perror("setsockopt(SO_RCVBUF)");
     }
-    
+
     sockaddr_in address{};
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
@@ -149,7 +143,7 @@ void RobotManager::_serverInternal(int port) {
         int ret = poll(fds.data(), fds.size(), 100);
         if (ret <= 0)
             continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
-                        // still true)
+                       // still true)
 
         for (size_t i = 0; i < fds.size(); ++i) {
             // An event occured for the i-th fd
@@ -272,7 +266,7 @@ void RobotManager::_serverInternal(int port) {
 // Posted by Arun, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-01-12, License - CC BY-SA 3.0
 // TCP Communication, it sends before the size of the message and then the message itself
-ssize_t RobotManager::send_all(int fd, char *buf, size_t len) {
+ssize_t RobotManager::send_all(int fd, char* buf, size_t len) {
     // First, send the size of the message
     uint32_t msg_size = htonl(len);
     ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
@@ -280,22 +274,20 @@ ssize_t RobotManager::send_all(int fd, char *buf, size_t len) {
         return -1;
     }
 
-    ssize_t total = 0; // how many bytes we've sent
-    size_t bytesleft = len; // how many we have left to send
+    ssize_t total = 0;       // how many bytes we've sent
+    size_t bytesleft = len;  // how many we have left to send
     ssize_t n = 0;
-    while(total < len) {
-        n = send(fd, buf+total, bytesleft, 0);
-        if (n == -1) { 
+    while (total < len) {
+        n = send(fd, buf + total, bytesleft, 0);
+        if (n == -1) {
             /* print/log error details */
             return -1;
         }
         total += n;
         bytesleft -= n;
     }
-    return total; 
+    return total;
 }
-
-
 
 void RobotManager::setAreAllRobotsReadyCallback(std::function<void()> cb) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -314,4 +306,4 @@ bool RobotManager::areAllRobotsReady() const {
     return true;
 }
 
-}
+}  // namespace spqr

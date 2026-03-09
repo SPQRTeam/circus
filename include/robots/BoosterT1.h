@@ -18,13 +18,13 @@
 
 #include "MujocoContext.h"
 #include "robots/Robot.h"
-#include "sensors/ImageSharedMemoryWriter.h"
 #include "sensors/CameraDepth.h"
 #include "sensors/CameraRGB.h"
+#include "sensors/ImageSharedMemoryWriter.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
-#include "sensors/Pose.h"
 #include "sensors/Oracle.h"
+#include "sensors/Pose.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -66,7 +66,7 @@ class BoosterT1 : public Robot {
                         {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
                         {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
                         {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {
-            //Where to put the images
+            // Where to put the images
             shm_dir_ = "/dev/shm/circus_ipc";
         }
 
@@ -98,16 +98,15 @@ class BoosterT1 : public Robot {
                                   {JointValue::KNEE_RIGHT_PITCH, 0},
                                   {JointValue::ANKLE_RIGHT_PITCH, 0},
                                   {JointValue::ANKLE_RIGHT_ROLL, 0}});
-                                                                    
+
             rgbCamera = new CameraRGB(mujCtx, (name + "_rgb_cam").c_str());
             depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
 
-            //Configure the writer for the shared memory file
+            // Configure the writer for the shared memory file
             const int width = rgbCamera->getWidth();
             const int height = rgbCamera->getHeight();
             rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
             depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
-            
 
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
@@ -145,7 +144,7 @@ class BoosterT1 : public Robot {
             msg["joints"] = joints->serialize(buffer_zone_);
             msg["oracle"] = oracle->serialize(buffer_zone_);
 
-            // Write in the shared file the information 
+            // Write in the shared file the information
             rgb_writer_.write(rgbCamera->getImage());
             depth_writer_.write(depthCamera->getDepth8bit());
 
