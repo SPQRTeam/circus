@@ -117,7 +117,17 @@ class CameraDepth : public Sensor {
         }
 
         const std::vector<uint16_t>& getDepth() const {
+            std::lock_guard<std::mutex> lock(depthMutex_);
             return depth;
+        }
+
+        std::vector<unsigned char> getDepth8bit() const {
+            std::lock_guard<std::mutex> lock(depthMutex_);
+            std::vector<unsigned char> depth8(depth.size());
+            for (size_t i = 0; i < depth.size(); ++i) {
+                depth8[i] = static_cast<unsigned char>(depth[i] >> 8);  // Convert uint16 to uint8
+            }
+            return depth8;
         }
 
         int getWidth() const {
@@ -133,6 +143,7 @@ class CameraDepth : public Sensor {
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
+            std::lock_guard<std::mutex> lock(depthMutex_);
             std::vector<uint16_t> img_copy(depth.begin(), depth.end());
             return msgpack::object(img_copy, z);
         }
@@ -141,6 +152,7 @@ class CameraDepth : public Sensor {
         int w, h;
         double fovy_deg;
         MujocoContext* mujContext;
+        mutable std::mutex depthMutex_;
         std::vector<float> depthNormalized;
         std::vector<uint16_t> depth;
         mjvCamera cam{};

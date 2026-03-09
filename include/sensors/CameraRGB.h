@@ -7,6 +7,7 @@
 #include <QOpenGLFunctions>
 #include <cstring>
 #include <msgpack.hpp>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -83,6 +84,7 @@ class CameraRGB : public Sensor {
             QImage resized = flipped.scaled(w, h, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
             // Copy resized data back to image buffer
+            std::lock_guard<std::mutex> lock(imageMutex_);
             memcpy(image.data(), resized.constBits(), w * h * 3);
 
             // Restore window buffer
@@ -101,7 +103,8 @@ class CameraRGB : public Sensor {
             return cam;
         }
 
-        const std::vector<uint8_t>& getImage() const {
+        std::vector<uint8_t> getImage() const {
+            std::lock_guard<std::mutex> lock(imageMutex_);
             return image;
         }
 
@@ -114,14 +117,15 @@ class CameraRGB : public Sensor {
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
-            std::vector<uint8_t> img_copy(image.begin(), image.end());
-            return msgpack::object(img_copy, z);
+            std::lock_guard<std::mutex> lock(imageMutex_);
+            return msgpack::object(image, z);
         }
 
     private:
         int w, h;
         MujocoContext* mujContext;
         std::vector<uint8_t> image;
+        mutable std::mutex imageMutex_;
         mjvCamera cam{};
         std::string cameraName_;
 };

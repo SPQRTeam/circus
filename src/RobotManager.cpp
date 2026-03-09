@@ -118,7 +118,17 @@ void RobotManager::_serverInternal(int port) {
 
     int opt = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
+    int send_buf_size = 1 * 1024 * 1024;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF,
+                &send_buf_size, sizeof(send_buf_size)) < 0) {
+        perror("setsockopt(SO_SNDBUF)");
+    }
+    int recv_buf_size = 1 * 1024 * 1024;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF,
+                &recv_buf_size, sizeof(recv_buf_size)) < 0) {
+        perror("setsockopt(SO_RCVBUF)");
+    }
+    
     sockaddr_in address{};
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
@@ -193,7 +203,7 @@ void RobotManager::_serverInternal(int port) {
                             if (sbuf.size() > 0) {
                                 std::cout << "Connected Robot: " << robotName << "\n";
                                 std::cout << "Sending initial message to " << robotName << std::endl;
-                                ssize_t bytes_sent = send(client_fd, sbuf.data(), sbuf.size(), 0);
+                                ssize_t bytes_sent = send_all(client_fd, sbuf.data(), sbuf.size());
                                 if (bytes_sent <= 0) {
                                     perror("Error in sending initial message");
                                 }
@@ -243,9 +253,9 @@ void RobotManager::_serverInternal(int port) {
                     if (answOk) {
                         msgpack::pack(sbuf, answ);
                         if (sbuf.size() > 0) {
-                            ssize_t bytes_sent = send(fds[i].fd, sbuf.data(), sbuf.size(), 0);
+                            ssize_t bytes_sent = send_all(fds[i].fd, sbuf.data(), sbuf.size());
                             if (bytes_sent <= 0) {
-                                perror("Error in sending message");
+                                perror("Sending message");
                             }
                         }
                     }

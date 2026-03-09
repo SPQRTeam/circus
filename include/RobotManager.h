@@ -27,12 +27,12 @@ namespace spqr {
 class Team;  // Forward declaration
 
 class RobotManager {
-    public:
-        // Singleton class
-        static RobotManager& instance() {
-            static RobotManager mgr;
-            return mgr;
-        }
+   public:
+    // Singleton class
+    static RobotManager& instance() {
+        static RobotManager mgr;
+        return mgr;
+    }
 
         void registerRobot(std::shared_ptr<Robot> robot);
         std::vector<std::shared_ptr<Robot>> getRobots() const;
@@ -52,24 +52,52 @@ class RobotManager {
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
 
-    private:
-        RobotManager() = default;
-        ~RobotManager() = default;
+   private:
+    RobotManager() = default;
+    ~RobotManager() = default;
 
-        RobotManager(const RobotManager&) = delete;
-        RobotManager& operator=(const RobotManager&) = delete;
+    RobotManager(const RobotManager&) = delete;
+    RobotManager& operator=(const RobotManager&) = delete;
 
-        void _serverInternal(int port);
+    // Source - https://stackoverflow.com/a
+    // Posted by Arun, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-01-12, License - CC BY-SA 3.0
+    // TCP Communication, it sends before the size of the message and then the message itself
+    ssize_t send_all(int fd, char *buf, size_t len)
+    {
+        // First, send the size of the message
+        uint32_t msg_size = htonl(len);
+        ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
+        if (bytes_sent != sizeof(msg_size)) {
+            return -1;
+        }
 
-        void areAllRobotsReadyWrapper();
-        bool areAllRobotsReady() const;
+        ssize_t total = 0; // how many bytes we've sent
+        size_t bytesleft = len; // how many we have left to send
+        ssize_t n = 0;
+        while(total < len) {
+            n = send(fd, buf+total, bytesleft, 0);
+            if (n == -1) { 
+                /* print/log error details */
+                return -1;
+            }
+            total += n;
+            bytesleft -= n;
+        }
+        return total; 
+    }
 
-        std::atomic<bool> serverRunning_ = false;
-        std::thread serverThread_;
+    void _serverInternal(int port);
 
-        mutable std::mutex mutex_;
-        std::vector<std::shared_ptr<Robot>> robots_;
-        std::function<void()> areAllRobotsReadyCallback_;
+    void areAllRobotsReadyWrapper();
+    bool areAllRobotsReady() const;
+
+    std::atomic<bool> serverRunning_ = false;
+    std::thread serverThread_;
+
+    mutable std::mutex mutex_;
+    std::vector<std::shared_ptr<Robot>> robots_;
+    std::function<void()> areAllRobotsReadyCallback_;
 
         using RobotCreator
             = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&, const Eigen::Vector3d&,

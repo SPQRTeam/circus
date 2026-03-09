@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <string>
+#include <cstdlib>
 
 #include "Constants.h"
 
@@ -36,11 +37,22 @@ Container::~Container() {
 }
 
 void Container::create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds) {
+    auto envOrDefault = [](const char* key, const char* fallback) -> std::string {
+        const char* value = std::getenv(key);
+        return (value && *value) ? std::string(value) : std::string(fallback);
+    };
+
     nlohmann::json payload;
     payload["Image"] = image;
 
+    std::vector<std::string> binds_with_x11 = binds;
+    binds_with_x11.push_back("/tmp/.X11-unix:/tmp/.X11-unix:rw");
+
+    std::string xauth_path = envOrDefault("XAUTHORITY", "/root/.Xauthority");
+    binds_with_x11.push_back(xauth_path + ":/root/.Xauthority:rw");
+
     payload["HostConfig"] = {
-        {"Binds", binds},
+        {"Binds", binds_with_x11},
         {"IpcMode", "host"},
         {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
         {"SecurityOpt", {"seccomp=unconfined"}},
@@ -48,6 +60,13 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
         {"Privileged", true},
         {"NetworkMode", CIRCUS_NETWORK_NAME}
     };
+
+    payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
+    payload["HostConfig"]["DeviceRequests"].push_back({
+        {"Driver", "nvidia"},
+        {"Count", -1},
+        {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
+    });
     
     payload["NetworkingConfig"] = {
         {"EndpointsConfig", {
@@ -65,8 +84,19 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
         "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
         "TEAM_NUMBER=" + std::to_string(robot->team->number),
         "PLAYER_NUMBER=" + std::to_string(robot->number),
-        "TEAM_COLOR=" + robot->colorName
+        "TEAM_COLOR=" + robot->colorName,
+        "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
+        "QT_X11_NO_MITSHM=1",
+        "NVIDIA_VISIBLE_DEVICES=all",
+        "NVIDIA_DRIVER_CAPABILITIES=all",
+        "XAUTHORITY=/root/.Xauthority",       
+        "XDG_RUNTIME_DIR=/run/user/0",         
+        "ROBOT_STACK=booster",
+        "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc"
     };
+
+    payload["Entrypoint"] = {"/bin/bash", "-lc"};
+    payload["Cmd"] = {"/app/entrypoint.sh"};
 
     payload["Tty"] = true;
     payload["OpenStdin"] = true;
