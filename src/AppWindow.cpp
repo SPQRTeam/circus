@@ -18,6 +18,7 @@
 #include <execinfo.h>
 #endif
 
+#include "CircusNetwork.h"
 #include "Constants.h"
 #include "GameController.h"
 #include "MujocoContext.h"
@@ -218,6 +219,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         }
         std::filesystem::create_directories(shmDir);
 
+        CircusNetwork::instance().init();
         RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
         RobotManager::instance().startContainers();
 
