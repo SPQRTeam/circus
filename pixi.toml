@@ -15,7 +15,7 @@ name = "circus"
 version = "0.1.0"
 
 [package.build]
-backend = { name = "pixi-build-cmake", version = "==0.3.5" }
+backend = { name = "pixi-build-cmake", version = "*" }
 
 [package.build-dependencies]
 cmake = ">=3.27,<4"
@@ -42,7 +42,7 @@ libegl-devel = "==1.7.0"
 
 [tasks]
 test = "python -c 'import circuspy; circuspy.test()'"
-clean-containers = "bash clean-containers.sh"
+clean-docker = "bash clean-docker.sh"
 
 [activation]
 # Add DYLD_LIBRARY_PATH on macOS so the MuJoCo dylib is found when running binaries directly

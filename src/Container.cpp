@@ -1,49 +1,23 @@
 #include "Container.h"
 
+#include <yaml-cpp/node/node.h>
+#include <yaml-cpp/yaml.h>
+
 #include <cassert>
 #include <cstdlib>
+#include <string>
 
+#include "CircusNetwork.h"
 #include "Constants.h"
+#include "robots/Robot.h"
 
-#define POST "POST"
-#define GET "GET"
-#define DELETE "DELETE"
-#define PUT "PUT"
-
-/*
-Endpoints and parameters:
-https://docs.docker.com/reference/api/engine/version/v1.39/
-*/
-
-#define CREATE_OK_RESPONSE 201
-#define START_OK_RESPONSE 204
-#define STOP_OK_RESPONSE 204
-#define DELETE_OK_RESPONSE 204
+// for the forward declarations
+#include "Team.h"
+#include "robots/Robot.h"
 
 namespace spqr {
 
-inline std::string create_container_endpoint(const std::string& name) {
-    return "/containers/create?name=" + name;
-}
-
-inline std::string start_container_endpoint(const std::string& id) {
-    return "/containers/" + id + "/start";
-}
-
-inline std::string stop_container_endpoint(const std::string& id) {
-    return "/containers/" + id + "/stop?t=0";  // TODO: forcing a SIGKILL trigger to 0 seconds as workaround. If the application
-                                               // is well behaved, this shouldn't be necessary
-}
-
-inline std::string remove_container_endpoint(const std::string& id) {
-    return "/containers/" + id;
-}
-
-Container::Container(const std::string& name, const std::string& sockPath) : name(name), sockPath(sockPath), state(ContainerState::NONE) {
-    curl_handle = curl_easy_init();
-    if (!curl_handle)
-        throw std::runtime_error("Failed to init curl handle");
-}
+Container::Container(const std::string& name, const std::string& sockPath) : name(name), curlClient(sockPath), state(ContainerState::NONE) {}
 
 Container::~Container() {
     switch (state) {
@@ -59,12 +33,9 @@ Container::~Container() {
         case ContainerState::NONE:
             break;
     }
-
-    if (curl_handle)
-        curl_easy_cleanup(curl_handle);
 }
 
-void Container::create(const std::string& robot_name, const std::string& image, const std::vector<std::string>& binds) {
+void Container::create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds) {
     auto envOrDefault = [](const char* key, const char* fallback) -> std::string {
         const char* value = std::getenv(key);
         return (value && *value) ? std::string(value) : std::string(fallback);
@@ -84,7 +55,8 @@ void Container::create(const std::string& robot_name, const std::string& image, 
                              {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
                              {"SecurityOpt", {"seccomp=unconfined"}},
                              {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
-                             {"Privileged", true}};
+                             {"Privileged", true},
+                             {"NetworkMode", CIRCUS_NETWORK_NAME}};
 
     payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
     payload["HostConfig"]["DeviceRequests"].push_back({
@@ -92,18 +64,27 @@ void Container::create(const std::string& robot_name, const std::string& image, 
         {"Count", -1},
         {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
     });
-    
-    payload["Env"] = {"ROBOT_NAME=" + robot_name,
+
+    payload["NetworkingConfig"]
+        = {{"EndpointsConfig",
+            {{CIRCUS_NETWORK_NAME,
+              {{"IPAMConfig", {{"IPv4Address", UAN_SEVEN_CIU + std::to_string(robot->team->number) + "." + std::to_string(robot->number + 10)}}}}}}}};
+
+    payload["Env"] = {"ROBOT_NAME=" + robot->name,
                       "SERVER_IP=172.17.0.1",
                       "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
+                      "TEAM_NUMBER=" + std::to_string(robot->team->number),
+                      "PLAYER_NUMBER=" + std::to_string(robot->number),
+                      "TEAM_COLOR=" + robot->colorName,
                       "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
                       "QT_X11_NO_MITSHM=1",
                       "NVIDIA_VISIBLE_DEVICES=all",
                       "NVIDIA_DRIVER_CAPABILITIES=all",
-                      "XAUTHORITY=/root/.Xauthority",       
-                      "XDG_RUNTIME_DIR=/run/user/0",         
+                      "XAUTHORITY=/root/.Xauthority",
+                      "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
-                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc"};
+                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
+                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0")};
 
     payload["Entrypoint"] = {"/bin/bash", "-lc"};
     payload["Cmd"] = {"/app/entrypoint.sh"};
@@ -112,7 +93,7 @@ void Container::create(const std::string& robot_name, const std::string& image, 
     payload["OpenStdin"] = true;
 
     std::string endpoint = create_container_endpoint(name);
-    std::string resp_raw = request(POST, endpoint, CREATE_OK_RESPONSE, &payload);
+    std::string resp_raw = curlClient.request(POST, endpoint, CREATE_OK_RESPONSE, &payload);
 
     nlohmann::json resp = nlohmann::json::parse(resp_raw);
     if (!resp.contains("Id"))
@@ -127,7 +108,7 @@ void Container::start() {
         throw std::runtime_error("Failed to start container " + name + " which is not IDLE.");
 
     const std::string endpoint = start_container_endpoint(id);
-    request(POST, endpoint, START_OK_RESPONSE);
+    curlClient.request(POST, endpoint, START_OK_RESPONSE);
     state = ContainerState::RUNNING;
 }
 
@@ -136,7 +117,7 @@ void Container::stop() {
         throw std::runtime_error("Failed to stop container " + name + " which is not RUNNING.");
 
     const std::string endpoint = stop_container_endpoint(id);
-    request(POST, endpoint, 0);
+    curlClient.request(POST, endpoint, 0);
     state = ContainerState::IDLE;
 }
 
@@ -145,51 +126,8 @@ void Container::remove() {
         throw std::runtime_error("Failed to remove container " + name + " which is not IDLE.");
 
     const std::string endpoint = remove_container_endpoint(id);
-    request(DELETE, endpoint, DELETE_OK_RESPONSE);
+    curlClient.request(DELETE, endpoint, DELETE_OK_RESPONSE);
     state = ContainerState::REMOVED;
-}
-
-std::string Container::request(const std::string& method, const std::string& endpoint, const long expected_response, const nlohmann::json* body) {
-    curl_easy_reset(curl_handle);
-    std::string url = "http://localhost" + endpoint;
-
-    curl_easy_setopt(curl_handle, CURLOPT_UNIX_SOCKET_PATH, sockPath.c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, method.c_str());
-
-    struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-
-    const auto write_callback = +[](char* ptr, size_t size, size_t nmemb, void* userdata) -> size_t {
-        std::string* resp = static_cast<std::string*>(userdata);
-        resp->append(ptr, size * nmemb);
-        return size * nmemb;
-    };
-
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_callback);
-    std::string response;
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &response);
-
-    std::string postData;
-    if (body != nullptr) {
-        postData = body->dump();
-        curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, postData.c_str());
-        curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, postData.size());
-    }
-
-    long response_code = 0;
-    CURLcode res = curl_easy_perform(curl_handle);
-    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &response_code);
-    curl_slist_free_all(headers);
-
-    if (res != CURLE_OK)
-        throw std::runtime_error(std::string("Curl error: ") + curl_easy_strerror(res));
-
-    if (expected_response && response_code != expected_response)
-        throw std::runtime_error("Docker API request to " + endpoint + " failed: HTTP " + std::to_string(response_code) + ". " + response);
-
-    return response;
 }
 
 }  // namespace spqr

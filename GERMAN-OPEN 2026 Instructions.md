@@ -88,4 +88,3 @@ Starting simulation!
 - Per vedere i log di maximus, lancia il comando `cat /var/log/maximus.log` (oppure `maximus.err` per i log di errore)
 - Per vedere i log di simbridge, lancia il comando `cat /var/log/simbridge.log` (oppure `simbridge.err` per i log di errore)
 - Per vedere i log di booster-motion, lancia il comando `cat /var/log/booster-motion.log` (oppure `booster-motion.err` per i log di errore). Nel file `booster-motion.err`, non vi preoccupate se c'è `msgget: No such file or directory`
-
