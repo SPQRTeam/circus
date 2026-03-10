@@ -100,7 +100,9 @@ class BoosterT1 : public Robot {
                                   {JointValue::ANKLE_RIGHT_ROLL, 0}});
                                                                     
             rgbCamera = new CameraRGB(mujCtx, (name + "_rgb_cam").c_str());
-            depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
+            // Use RGB viewpoint for simulated depth to provide aligned depth-to-color.
+            // This avoids parallax between rgb_cam and depth_cam when unprojecting RGB detections.
+            depthCamera = new CameraDepth(mujCtx, (name + "_rgb_cam").c_str());
 
             //Configure the writer for the shared memory file
             const int width = rgbCamera->getWidth();

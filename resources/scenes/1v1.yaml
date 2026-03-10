@@ -3,10 +3,8 @@ teams:
   red:
     - type: Booster-T1
       number: 3
-      position: [-1.0, 0.0, 0.68]
+      position: [-6.8, 0.0, 0.68]
       orientation: [0.0, 0.0, 0.0]
-  blue:
-    - type: Booster-T1
-      number: 3
-      position: [1.0, 1.0, 0.68]
-      orientation: [0.0, 0.0, 3.14]
+
+
+
