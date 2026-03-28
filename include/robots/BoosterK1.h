@@ -102,7 +102,9 @@ class BoosterK1 : public Robot {
             sensors["depth_camera"] = depthCamera;
             return sensors;
         }
-
+        void applyCommands() override {
+            return;
+        }
         void update() override {
             pose->update();
             imu->update();

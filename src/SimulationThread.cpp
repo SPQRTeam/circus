@@ -19,9 +19,13 @@ void SimulationThread::run() {
     auto next_step_time = clock::now();
     while (running_) {
         if (!paused_) {
-            mj_step(model_, data_);
+            mj_step1(model_, data_);
+            RobotManager::instance().applyCommands();
+            mj_step2(model_, data_);
             RobotManager::instance().update();
             GameController::instance().update();
+            
+            std::memset(data_->xfrc_applied, 0, model_->nbody * 6 * sizeof(mjtNum));
 
             if (maxSimulationTime_ > 0 && data_->time >= maxSimulationTime_) {
                 running_ = false;

@@ -6,6 +6,12 @@
 
 namespace spqr {
 
+void RobotManager::applyCommands() {
+    for (std::shared_ptr<Robot> r : robots_) {
+        r->applyCommands();
+    }
+}
+
 void RobotManager::registerRobot(std::shared_ptr<Robot> robot) {
     std::lock_guard<std::mutex> lock(mutex_);
 

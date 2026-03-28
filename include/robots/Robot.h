@@ -11,7 +11,9 @@
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
+#include <mutex>
 #include <string>
+ 
 
 #include "Container.h"
 #include "MujocoContext.h"
@@ -41,7 +43,8 @@ class Robot {
         virtual void receiveMessage(const std::map<std::string, msgpack::object>& message) = 0;
         virtual std::map<std::string, msgpack::object> sendMessage() = 0;
         virtual std::map<std::string, Sensor*> getSensors() = 0;
-
+        virtual void applyCommands() = 0;
+        
         std::string name;
         std::string type;
         uint8_t number;
@@ -53,6 +56,7 @@ class Robot {
         std::shared_ptr<Team> team;
 
         msgpack::zone buffer_zone_;
+        mutable std::mutex mutex_;
 
         bool isConnected = false;
         bool isReady = false;

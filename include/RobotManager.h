@@ -51,6 +51,7 @@ class RobotManager {
         void stopCommunicationServer();
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
+        void applyCommands();
 
     private:
         RobotManager() = default;

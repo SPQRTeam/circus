@@ -128,13 +128,13 @@ class BoosterT1 : public Robot {
                                          + std::to_string(joint_map.size()) + ")");
             }
 
-            std::unordered_map<JointValue, mjtNum> torque_map;
             size_t i = 0;
-            for (const auto& [joint_value, joint_name] : joint_map) {
-                torque_map[joint_value] = joint_torques[i++];
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                for (const auto& [joint_value, joint_name] : joint_map) {
+                    latestTorques[joint_value] = joint_torques[i++];
+                }
             }
-
-            joints->set_torque(torque_map);
         }
 
         std::map<std::string, msgpack::object> sendMessage() override {
@@ -163,6 +163,11 @@ class BoosterT1 : public Robot {
             return sensors;
         }
 
+        void applyCommands() override {
+            std::lock_guard<std::mutex> lock(mutex_);
+            joints->set_torque(latestTorques);
+        }
+
         void update() override {
             pose->update();
             imu->update();
@@ -180,9 +185,12 @@ class BoosterT1 : public Robot {
         }
 
         std::map<JointValue, std::string> joint_map;
+        std::unordered_map<JointValue, mjtNum> latestTorques;
+        
         std::string shm_dir_;
         ImageSharedMemoryWriter rgb_writer_;
         ImageSharedMemoryWriter depth_writer_;
+
 };
 
 }  // namespace spqr
