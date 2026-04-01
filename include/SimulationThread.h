@@ -24,13 +24,14 @@ class SimulationThread : public QThread {
         bool isPaused();
         void setMaxSimulationTime(int maxTime);
         void initializeSocket(int port);
-        void waitInitialMessages();
+        void waitRobotConnections();
+        void receiveCommandMessages();
 
 
     signals:
         void stepCompleted();
         void maxSimulationTimeReached();
-        void allRobotsReady();
+        void allRobotsReadySignal();
 
     private:
         const mjModel* model_;
@@ -47,12 +48,13 @@ class SimulationThread : public QThread {
         std::vector<std::shared_ptr<Robot>> robots_;
         std::vector<pollfd> fds;
         mutable std::mutex mutex_;
+
         ssize_t send_all(int fd, char* buf, size_t len);
 
         void areAllRobotsReadyWrapper();
         bool areAllRobotsReady() const;
+        bool areAllRobotsConnected() const;
 
-        void receiveCommandMessages();
 
 
 };

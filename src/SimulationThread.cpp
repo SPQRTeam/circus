@@ -71,13 +71,12 @@ void SimulationThread::initializeSocket(int port) {
 
 void SimulationThread::receiveCommandMessages() {
     int robot_size = robots_.size();
-    bool ready = false;
     int done = 0;
     while (done < robot_size) {
         int ret = poll(fds.data(), fds.size(), 100);
         if (ret <= 0)
             continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
-    
+        
         for (size_t i = 0; i < fds.size(); ++i) {
             // An event occured for the i-th fd
             if (fds[i].revents & POLLIN) {
@@ -89,7 +88,7 @@ void SimulationThread::receiveCommandMessages() {
                     --i;
                     continue;
                 }
-
+        
                 msgpack::object_handle oh = msgpack::unpack(buffer, n);
                 auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
                 auto it = data_map.find("robot_name");
@@ -97,12 +96,20 @@ void SimulationThread::receiveCommandMessages() {
                     continue;
 
                 std::string messageRecipient = it->second.as<std::string>();
-
+        
                 msgpack::sbuffer sbuf;
                 {
                     std::unique_lock lock(mutex_);
                     for (auto& r : robots_) {
                         if (r->name == messageRecipient) {
+                            if (!r->isReady) {
+                                r->isReady = true;
+                                std::cout << "Robot ready: " << r->name << std::endl;
+                                if(areAllRobotsReady()){
+                                    emit allRobotsReadySignal();
+                                }
+                            }
+
                             r->receiveMessage(data_map);
                             ++done;
                             break;
@@ -114,10 +121,9 @@ void SimulationThread::receiveCommandMessages() {
     }
 }
 
-
-void SimulationThread::waitInitialMessages() {
-    bool ready = false;
-    while (!ready) {
+void SimulationThread::waitRobotConnections() {
+    bool areAllConnected = false;
+    while (!areAllConnected) {
         int ret = poll(fds.data(), fds.size(), 100);
         if (ret <= 0)
             continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
@@ -155,6 +161,7 @@ void SimulationThread::waitInitialMessages() {
                         }
 
                         std::string robotName = obj.as<std::string>();
+                        entity_fd_map[robotName] = client_fd;
 
                         // Send message with initial state
                         msgpack::sbuffer sbuf;
@@ -183,59 +190,30 @@ void SimulationThread::waitInitialMessages() {
                                 }
                             }
                         }
-                    }
-                } 
-                else {
-                    // The events for other fds indicate either an incoming message or a closed connection
-                    // the read call disambiguates the two cases
-                    char buffer[MAX_MSG_SIZE];
-                    int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
-                    if (n <= 0) {
-                        close(fds[i].fd);
-                        fds.erase(fds.begin() + i);
-                        --i;
-                        continue;
-                    }
-
-                    msgpack::object_handle oh = msgpack::unpack(buffer, n);
-                    auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
-                    auto it = data_map.find("robot_name");
-                    if (it == data_map.end())
-                        continue;
-
-                    std::string messageRecipient = it->second.as<std::string>();
-
-                    msgpack::sbuffer sbuf;
-                    {
-                        std::unique_lock lock(mutex_);
-                        for (auto& r : robots_) {
-                            if (r->name == messageRecipient) {
-                                // TODO: metti dentro una map nome del robot con suo fd
-                                if (!r->isReady) {
-                                    r->isReady = true;
-                                    // Save robot_name <---> fd
-                                    // LA POSSO SPOSTARE SU
-                                    entity_fd_map[messageRecipient] = fds[i].fd;
-                                    std::cout << "Robot ready: " << r->name << std::endl;
-                                    r->receiveMessage(data_map);
-                                }
-                                if(areAllRobotsReady()){
-                                    ready = true;
-                                    emit allRobotsReady();
-                                }
-                                // TODO: vedere se va bene cosi o se va cambiato
-                            }
+                        if(areAllRobotsConnected()){
+                            areAllConnected = true;
+                            std::cout << "All Robots are connected!" << std::endl;
+                            break;
                         }
                     }
-                }
+                } 
             }
         }
     }
+} 
+
+bool SimulationThread::areAllRobotsConnected() const{
+    for (auto& r : robots_) {
+        if(!r->isConnected){
+            return false;
+        }
+    }
+    return true;
 }
 
 void SimulationThread::areAllRobotsReadyWrapper() {
     if (areAllRobotsReady()) {
-        emit allRobotsReady();
+        emit allRobotsReadySignal();
     }
 }
 bool SimulationThread::areAllRobotsReady() const {
@@ -264,7 +242,6 @@ void SimulationThread::run() {
     if (!model_)
         throw std::runtime_error("Cannot start simulation without mujoco model");
 
-    std::cout << "RUNNNNNN" << std::endl;
     double sim_dt = model_->opt.timestep;
 
     using clock = std::chrono::steady_clock;

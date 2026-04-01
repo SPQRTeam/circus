@@ -197,7 +197,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         sim->setMaxSimulationTime(parser.getSceneInfo().simulationConfig.simulation.max_simulation_time);
         connect(sim.get(), &SimulationThread::maxSimulationTimeReached, this, &AppWindow::close);
 
-        connect(sim.get(), &SimulationThread::allRobotsReady,
+        connect(sim.get(), &SimulationThread::allRobotsReadySignal,
             this,
             [this]() {
                 if (sim) {
@@ -206,20 +206,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
                 }
             },
         Qt::QueuedConnection);
-        // Callback to start the simulation
-        // Simulation starts when the all the robots are ready
-        // RobotManager::instance().setAreAllRobotsReadyCallback([this]() {
-        //     QMetaObject::invokeMethod(
-        //         this,
-        //         [this]() {
-        //             if (sim) {
-        //                 std::cout << "Starting simulation!" << std::endl;
-        //                 sim->start();
-        //             }
-        //         },
-        //         Qt::QueuedConnection);
-        // });
-
+        
         // Ensure the shared memory directory exists and is writable by the current user.
         // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
         const std::filesystem::path shmDir("/dev/shm/circus_ipc");
@@ -232,19 +219,14 @@ void AppWindow::loadScene(const QString& yaml_file) {
         RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
         sim->initializeSocket(frameworkCommunicationPort);
 
-        std::cout << "STEP 0" << std::endl;
+        std::cout << "Starting containers..." << std::endl;
         RobotManager::instance().startContainers();
-        std::cout << "FINALMENTE 1" << std::endl;
-        sim->waitInitialMessages();
-        std::cout << "FINALMENTE 2" << std::endl;
 
-        /*
-        // Pseudocode
-        // Può essere aggiunta una logica di tentare la connessione appena il server diventa disponibile
-        start_server();  // bind + listen
-        spawn_containers();
-        accept_connections();
-        */
+        std::cout << "Connecting Robots..." << std::endl;
+        sim->waitRobotConnections();
+
+        std::cout << "Waiting Robots are Ready..." << std::endl;
+        sim->receiveCommandMessages();
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);

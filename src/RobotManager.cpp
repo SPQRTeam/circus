@@ -59,6 +59,7 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
 }
 
 void RobotManager::startContainers() {
+    // TODO: remove
     // startCommunicationServer(frameworkCommunicationPort);
 
     YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
@@ -93,6 +94,7 @@ void RobotManager::startContainers() {
         r->container->create(r, image, binds);
         r->container->start();
     }
+    std::cout << "Containers started successfully!" << std::endl;
 }
 
 void RobotManager::startCommunicationServer(int port) {
