@@ -9,10 +9,262 @@ namespace spqr {
 
 SimulationThread::SimulationThread(const mjModel* model, mjData* data) : model_(model), data_(data), running_(true), paused_(false) {}
 
+
+// Source - https://stackoverflow.com/a
+// Posted by Arun, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-01-12, License - CC BY-SA 3.0
+// TCP Communication, it sends before the size of the message and then the message itself
+ssize_t SimulationThread::send_all(int fd, char* buf, size_t len) {
+    // First, send the size of the message
+    uint32_t msg_size = htonl(len);
+    ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
+    if (bytes_sent != sizeof(msg_size)) {
+        return -1;
+    }
+
+    ssize_t total = 0;       // how many bytes we've sent
+    size_t bytesleft = len;  // how many we have left to send
+    ssize_t n = 0;
+    while (total < len) {
+        n = send(fd, buf + total, bytesleft, 0);
+        if (n == -1) {
+            /* print/log error details */
+            return -1;
+        }
+        total += n;
+        bytesleft -= n;
+    }
+    return total;
+}
+
+void SimulationThread::initializeSocket(int port) {
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0)
+        throw std::runtime_error("Failed to create socket");
+
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    int send_buf_size = 1 * 1024 * 1024;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_SNDBUF, &send_buf_size, sizeof(send_buf_size)) < 0) {
+        perror("setsockopt(SO_SNDBUF)");
+    }
+    int recv_buf_size = 1 * 1024 * 1024;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_RCVBUF, &recv_buf_size, sizeof(recv_buf_size)) < 0) {
+        perror("setsockopt(SO_RCVBUF)");
+    }
+
+    sockaddr_in address{};
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(port);
+
+    robots_ = RobotManager::instance().getRobots();
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0){
+        perror("bind");
+        throw std::runtime_error("Socket bind failed");
+    }
+    if (listen(server_fd, robots_.size()) < 0)
+        throw std::runtime_error("Listen failed");
+  
+    fds.push_back({server_fd, POLLIN, 0});
+}
+
+void SimulationThread::receiveCommandMessages() {
+    int robot_size = robots_.size();
+    bool ready = false;
+    int done = 0;
+    while (done < robot_size) {
+        int ret = poll(fds.data(), fds.size(), 100);
+        if (ret <= 0)
+            continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
+    
+        for (size_t i = 0; i < fds.size(); ++i) {
+            // An event occured for the i-th fd
+            if (fds[i].revents & POLLIN) {
+                char buffer[MAX_MSG_SIZE];
+                int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                if (n <= 0) {
+                    close(fds[i].fd);
+                    fds.erase(fds.begin() + i);
+                    --i;
+                    continue;
+                }
+
+                msgpack::object_handle oh = msgpack::unpack(buffer, n);
+                auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
+                auto it = data_map.find("robot_name");
+                if (it == data_map.end())
+                    continue;
+
+                std::string messageRecipient = it->second.as<std::string>();
+
+                msgpack::sbuffer sbuf;
+                {
+                    std::unique_lock lock(mutex_);
+                    for (auto& r : robots_) {
+                        if (r->name == messageRecipient) {
+                            r->receiveMessage(data_map);
+                            ++done;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void SimulationThread::waitInitialMessages() {
+    bool ready = false;
+    while (!ready) {
+        int ret = poll(fds.data(), fds.size(), 100);
+        if (ret <= 0)
+            continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
+    
+        for (size_t i = 0; i < fds.size(); ++i) {
+            // An event occured for the i-th fd
+            if (fds[i].revents & POLLIN) {
+                if (fds[i].fd == server_fd) {
+                    if(!entity_fd_map["server"]){
+                        entity_fd_map["server"] = server_fd;
+                    }
+                    // The only event for the server is someone knocking
+                    int client_fd = accept(server_fd, nullptr, nullptr);
+                    if (client_fd >= 0) {
+                        fds.push_back({client_fd, POLLIN, 0});
+
+                        // Receive initial message with robot name
+                        char buffer[MAX_MSG_SIZE];
+                        int n = read(client_fd, buffer, sizeof(buffer) - 1);
+
+                        if (n <= 0) {
+                            std::cerr << "Error reading the initial message.\n";
+                            // close(client_fd);
+                            continue;
+                        }
+
+                        // unpack of the MsgPack message
+                        msgpack::object_handle oh = msgpack::unpack(buffer, n);
+                        msgpack::object obj = oh.get();
+
+                        // First message is the robot name as a string
+                        if (obj.type != msgpack::type::STR) {
+                            std::cerr << "First message must be a string. Ignore it...\n";
+                            continue;
+                        }
+
+                        std::string robotName = obj.as<std::string>();
+
+                        // Send message with initial state
+                        msgpack::sbuffer sbuf;
+                        std::map<std::string, msgpack::object> answ;
+                        bool answOk = false;
+                        // Pack initial message
+                        {
+                            std::lock_guard<std::mutex> lock(mutex_);
+                            for (auto& r : robots_) {
+                                if (r->name == robotName) {
+                                    r->isConnected = true;
+                                    answ = r->sendMessage();
+                                    answOk = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (answOk) {
+                            msgpack::pack(sbuf, answ);
+                            if (sbuf.size() > 0) {
+                                std::cout << "Connected Robot: " << robotName << "\n";
+                                std::cout << "Sending initial message to " << robotName << std::endl;
+                                ssize_t bytes_sent = send_all(client_fd, sbuf.data(), sbuf.size());
+                                if (bytes_sent <= 0) {
+                                    perror("Error in sending initial message");
+                                }
+                            }
+                        }
+                    }
+                } 
+                else {
+                    // The events for other fds indicate either an incoming message or a closed connection
+                    // the read call disambiguates the two cases
+                    char buffer[MAX_MSG_SIZE];
+                    int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                    if (n <= 0) {
+                        close(fds[i].fd);
+                        fds.erase(fds.begin() + i);
+                        --i;
+                        continue;
+                    }
+
+                    msgpack::object_handle oh = msgpack::unpack(buffer, n);
+                    auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
+                    auto it = data_map.find("robot_name");
+                    if (it == data_map.end())
+                        continue;
+
+                    std::string messageRecipient = it->second.as<std::string>();
+
+                    msgpack::sbuffer sbuf;
+                    {
+                        std::unique_lock lock(mutex_);
+                        for (auto& r : robots_) {
+                            if (r->name == messageRecipient) {
+                                // TODO: metti dentro una map nome del robot con suo fd
+                                if (!r->isReady) {
+                                    r->isReady = true;
+                                    // Save robot_name <---> fd
+                                    // LA POSSO SPOSTARE SU
+                                    entity_fd_map[messageRecipient] = fds[i].fd;
+                                    std::cout << "Robot ready: " << r->name << std::endl;
+                                    r->receiveMessage(data_map);
+                                }
+                                if(areAllRobotsReady()){
+                                    ready = true;
+                                    emit allRobotsReady();
+                                }
+                                // TODO: vedere se va bene cosi o se va cambiato
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void SimulationThread::areAllRobotsReadyWrapper() {
+    if (areAllRobotsReady()) {
+        emit allRobotsReady();
+    }
+}
+bool SimulationThread::areAllRobotsReady() const {
+    for (const auto& r : robots_)
+        if (!r->isReady)
+            return false;
+    std::cout << "All robots are ready!" << std::endl;
+    return true;
+}
+
+
+
+/*
+//  SimulationThread IDEA
+    mj_step1();
+    applyCommands();
+    mj_step2();
+    update();
+    // ogni N step (per matchare ~100Hz):
+    for each robot:
+        send(state)       // non-blocking
+        recv(torques)     // bloccante o con timeout
+*/
+
 void SimulationThread::run() {
     if (!model_)
         throw std::runtime_error("Cannot start simulation without mujoco model");
 
+    std::cout << "RUNNNNNN" << std::endl;
     double sim_dt = model_->opt.timestep;
 
     using clock = std::chrono::steady_clock;
@@ -33,11 +285,40 @@ void SimulationThread::run() {
                 break;
             }
 
-            next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
-            std::this_thread::sleep_until(next_step_time);
+            // for each robot:
+            //      send(state)       // non-blocking
+            //      recv(torques)     // bloccante o con timeout
 
-            if (clock::now() > next_step_time)
-                next_step_time = clock::now();
+            for(auto& r : robots_){
+                msgpack::sbuffer sbuf;
+                std::map<std::string, msgpack::object> answ;
+                bool answOk = false;
+                {
+                    std::unique_lock lock(mutex_);
+                    answ = r->sendMessage();
+                    answOk = true;
+                }
+
+                if (answOk) {
+                    msgpack::pack(sbuf, answ);
+                    if (sbuf.size() > 0) {
+                        int fd = entity_fd_map[r->name];
+                        if(!fd) 
+                            perror("file descriptor not existing");
+                        ssize_t bytes_sent = send_all(fd, sbuf.data(), sbuf.size());
+                        if (bytes_sent <= 0) {
+                            perror("Sending message");
+                        }
+                    }
+                }
+            }
+            receiveCommandMessages();
+
+            next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
+            // std::this_thread::sleep_until(next_step_time);
+
+            // if (clock::now() > next_step_time)
+            //     next_step_time = clock::now();
         } else {
             // When paused, sleep briefly to avoid busy-waiting
             std::this_thread::sleep_for(std::chrono::milliseconds(10));

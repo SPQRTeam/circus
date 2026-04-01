@@ -59,7 +59,7 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
 }
 
 void RobotManager::startContainers() {
-    startCommunicationServer(frameworkCommunicationPort);
+    // startCommunicationServer(frameworkCommunicationPort);
 
     YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
     YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
@@ -88,7 +88,6 @@ void RobotManager::startContainers() {
         }
         binds.push_back(v2);
     }
-
     for (std::shared_ptr<Robot> r : robots_) {
         r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
         r->container->create(r, image, binds);
@@ -111,6 +110,10 @@ void RobotManager::stopCommunicationServer() {
 
     if (serverThread_.joinable())
         serverThread_.join();
+}
+
+std::vector<std::shared_ptr<Robot>> RobotManager::getRobots() {
+    return robots_;
 }
 
 void RobotManager::_serverInternal(int port) {

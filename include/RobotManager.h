@@ -52,6 +52,8 @@ class RobotManager {
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
         void applyCommands();
+        std::vector<std::shared_ptr<Robot>> getRobots();
+
 
     private:
         RobotManager() = default;
