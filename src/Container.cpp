@@ -56,6 +56,9 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                              {"SecurityOpt", {"seccomp=unconfined"}},
                              {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
                              {"Privileged", true},
+                             // {"Devices", nlohmann::json::array({
+                             //     {{"PathOnHost", "/dev/input"}, {"PathInContainer", "/dev/input"}, {"CgroupPermissions", "rwm"}}
+                             // })},
                              {"NetworkMode", CIRCUS_NETWORK_NAME}};
 
     payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
@@ -84,13 +87,16 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
                       "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
-                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0")};
+                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js2")};
 
     payload["Entrypoint"] = {"/bin/bash", "-lc"};
     payload["Cmd"] = {"/app/entrypoint.sh"};
 
     payload["Tty"] = true;
     payload["OpenStdin"] = true;
+
+    // Remove any leftover container with the same name (e.g. from a previous crash)
+    curlClient.request(DELETE, force_remove_container_endpoint(name), 0);
 
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = curlClient.request(POST, endpoint, CREATE_OK_RESPONSE, &payload);

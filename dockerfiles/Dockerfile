@@ -31,7 +31,8 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     netcat \
     ros-humble-image-view \
-    net-tools
+    net-tools \
+    gdb
 
 RUN rm -rf /var/lib/apt/lists/*
 # used to test communication, can be removed at a later date if so desired

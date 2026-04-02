@@ -32,6 +32,14 @@ class CircusNetwork {
                 throw std::runtime_error("Attempted to initialize the network when it is already up.");
             }
 
+            // Check if the network already exists (e.g. leftover from a previous crash)
+            std::string inspect_raw = curlClient.request(GET, inspect_network_endpoint(CIRCUS_NETWORK_NAME), 0);
+            nlohmann::json inspect = nlohmann::json::parse(inspect_raw);
+            if (inspect.contains("Id")) {
+                networkId = inspect["Id"];
+                return;
+            }
+
             nlohmann::json payload;
             std::string subnet = UAN_SEVEN_CIU "0.0/16";
             std::string gateway = UAN_SEVEN_CIU "0.1";

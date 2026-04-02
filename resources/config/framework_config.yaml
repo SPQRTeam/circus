@@ -8,4 +8,5 @@ volumes:
   - "<maximus>/tools/vision:/app/maximus/tools/vision"
   - "<maximus>/src/app/config:/app/maximus/config"
   - "<maximus>/src/app/behaviors/trees:/app/maximus/behaviors"
+  - "<colosseum>/src/sim2sim/.pixi/envs/default:/app/colosseum"
   - "/dev/shm/circus_ipc:/dev/shm/circus_ipc"

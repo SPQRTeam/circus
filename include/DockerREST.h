@@ -18,6 +18,7 @@ https://docs.docker.com/reference/api/engine/version/v1.39/
 */
 
 #define CREATE_OK_RESPONSE 201
+#define GET_OK_RESPONSE 200
 #define START_OK_RESPONSE 204
 #define STOP_OK_RESPONSE 204
 #define DELETE_OK_RESPONSE 204
@@ -43,7 +44,15 @@ inline std::string remove_container_endpoint(const std::string& id) {
     return "/containers/" + id;
 }
 
+inline std::string force_remove_container_endpoint(const std::string& name) {
+    return "/containers/" + name + "?force=1";
+}
+
 const std::string create_network_endpoint = "/networks/create";
+
+inline std::string inspect_network_endpoint(const std::string& name) {
+    return "/networks/" + name;
+}
 
 inline std::string connect_network_endpoint(const std::string& id) {
     return "/networks/" + id + "/connect";
