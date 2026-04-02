@@ -1,5 +1,6 @@
 #include "SimulationThread.h"
 
+#include <set>
 #include <stdexcept>
 
 #include "GameController.h"
@@ -72,11 +73,39 @@ void SimulationThread::initializeSocket(int port) {
 void SimulationThread::receiveCommandMessages() {
     int robot_size = robots_.size();
     int done = 0;
+    // Track which robots have not yet replied this step
+    std::set<std::string> pendingRobots;
+    for (auto& r : robots_)
+        pendingRobots.insert(r->name);
+
+    int timeoutCount = 0;
     while (done < robot_size) {
-        int ret = poll(fds.data(), fds.size(), 100);
-        if (ret <= 0)
-            continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
-        
+        int ret = poll(fds.data(), fds.size(), 500);
+        if (ret <= 0) {
+            ++timeoutCount;
+            // Resend state only every 5 timeouts (2.5s) to avoid flooding the TCP buffer
+            if (timeoutCount % 5 != 0)
+                continue;
+            std::unique_lock lock(mutex_);
+            for (auto& r : robots_) {
+                if (pendingRobots.count(r->name)) {
+                    std::cout << "[receiveCommandMessages] Timeout, resending state to: " << r->name << std::endl;
+                    msgpack::sbuffer sbuf;
+                    auto answ = r->sendMessage();
+                    msgpack::pack(sbuf, answ);
+                    if (sbuf.size() > 0) {
+                        int fd = entity_fd_map[r->name];
+                        if (fd)
+                            send_all(fd, sbuf.data(), sbuf.size());
+                        else
+                            std::cerr << "[receiveCommandMessages] No fd for: " << r->name << std::endl;
+                    }
+                }
+            }
+            continue;
+        }
+        timeoutCount = 0;
+
         for (size_t i = 0; i < fds.size(); ++i) {
             // An event occured for the i-th fd
             if (fds[i].revents & POLLIN) {
@@ -88,7 +117,7 @@ void SimulationThread::receiveCommandMessages() {
                     --i;
                     continue;
                 }
-        
+
                 msgpack::object_handle oh = msgpack::unpack(buffer, n);
                 auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
                 auto it = data_map.find("robot_name");
@@ -96,8 +125,7 @@ void SimulationThread::receiveCommandMessages() {
                     continue;
 
                 std::string messageRecipient = it->second.as<std::string>();
-        
-                msgpack::sbuffer sbuf;
+
                 {
                     std::unique_lock lock(mutex_);
                     for (auto& r : robots_) {
@@ -111,6 +139,7 @@ void SimulationThread::receiveCommandMessages() {
                             }
 
                             r->receiveMessage(data_map);
+                            pendingRobots.erase(messageRecipient);
                             ++done;
                             break;
                         }
