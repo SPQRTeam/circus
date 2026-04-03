@@ -39,6 +39,10 @@ class RobotManager {
         size_t count() const;
         void update();
         void clear();
+        
+        void areAllRobotsReadyWrapper();
+        bool areAllRobotsReady() const;
+        bool areAllRobotsConnected() const;
 
         void bindMujoco(MujocoContext* mujContext);
 
@@ -52,8 +56,10 @@ class RobotManager {
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
         void applyCommands();
-        std::vector<std::shared_ptr<Robot>> getRobots();
 
+        
+    signals:
+        void allRobotsReadySignal();
 
     private:
         RobotManager() = default;
@@ -65,9 +71,6 @@ class RobotManager {
         ssize_t send_all(int fd, char* buf, size_t len);
 
         void _serverInternal(int port);
-
-        void areAllRobotsReadyWrapper();
-        bool areAllRobotsReady() const;
 
         std::atomic<bool> serverRunning_ = false;
         std::thread serverThread_;

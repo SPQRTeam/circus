@@ -31,7 +31,6 @@ class SimulationThread : public QThread {
     signals:
         void stepCompleted();
         void maxSimulationTimeReached();
-        void allRobotsReadySignal();
 
     private:
         const mjModel* model_;
@@ -51,12 +50,7 @@ class SimulationThread : public QThread {
 
         ssize_t send_all(int fd, char* buf, size_t len);
 
-        void areAllRobotsReadyWrapper();
-        bool areAllRobotsReady() const;
-        bool areAllRobotsConnected() const;
-
-
-
+        void sendStateMessages();
 };
 
 }  // namespace spqr

@@ -300,13 +300,18 @@ ssize_t RobotManager::send_all(int fd, char* buf, size_t len) {
     return total;
 }
 
-void RobotManager::setAreAllRobotsReadyCallback(std::function<void()> cb) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    areAllRobotsReadyCallback_ = std::move(cb);
+bool RobotManager::areAllRobotsConnected() const{
+    for (auto& r : robots_) {
+        if(!r->isConnected){
+            return false;
+        }
+    }
+    return true;
 }
+
 void RobotManager::areAllRobotsReadyWrapper() {
-    if (areAllRobotsReady() && areAllRobotsReadyCallback_) {
-        areAllRobotsReadyCallback_();
+    if (areAllRobotsReady()) {
+        emit allRobotsReadySignal();
     }
 }
 bool RobotManager::areAllRobotsReady() const {

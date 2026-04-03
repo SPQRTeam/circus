@@ -105,8 +105,8 @@ void SimulationThread::receiveCommandMessages() {
                             if (!r->isReady) {
                                 r->isReady = true;
                                 std::cout << "Robot ready: " << r->name << std::endl;
-                                if(areAllRobotsReady()){
-                                    emit allRobotsReadySignal();
+                                if(RobotManager::instance().areAllRobotsReady()){
+                                    emit RobotManager::instance().allRobotsReadySignal();
                                 }
                             }
 
@@ -190,7 +190,7 @@ void SimulationThread::waitRobotConnections() {
                                 }
                             }
                         }
-                        if(areAllRobotsConnected()){
+                        if(RobotManager::instance().areAllRobotsConnected()){
                             areAllConnected = true;
                             std::cout << "All Robots are connected!" << std::endl;
                             break;
@@ -201,29 +201,6 @@ void SimulationThread::waitRobotConnections() {
         }
     }
 } 
-
-bool SimulationThread::areAllRobotsConnected() const{
-    for (auto& r : robots_) {
-        if(!r->isConnected){
-            return false;
-        }
-    }
-    return true;
-}
-
-void SimulationThread::areAllRobotsReadyWrapper() {
-    if (areAllRobotsReady()) {
-        emit allRobotsReadySignal();
-    }
-}
-bool SimulationThread::areAllRobotsReady() const {
-    for (const auto& r : robots_)
-        if (!r->isReady)
-            return false;
-    std::cout << "All robots are ready!" << std::endl;
-    return true;
-}
-
 
 
 /*
@@ -266,29 +243,7 @@ void SimulationThread::run() {
             //      send(state)       // non-blocking
             //      recv(torques)     // bloccante o con timeout
 
-            for(auto& r : robots_){
-                msgpack::sbuffer sbuf;
-                std::map<std::string, msgpack::object> answ;
-                bool answOk = false;
-                {
-                    std::unique_lock lock(mutex_);
-                    answ = r->sendMessage();
-                    answOk = true;
-                }
-
-                if (answOk) {
-                    msgpack::pack(sbuf, answ);
-                    if (sbuf.size() > 0) {
-                        int fd = entity_fd_map[r->name];
-                        if(!fd) 
-                            perror("file descriptor not existing");
-                        ssize_t bytes_sent = send_all(fd, sbuf.data(), sbuf.size());
-                        if (bytes_sent <= 0) {
-                            perror("Sending message");
-                        }
-                    }
-                }
-            }
+            sendStateMessages();
             receiveCommandMessages();
 
             next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
@@ -303,6 +258,33 @@ void SimulationThread::run() {
             next_step_time = clock::now();
         }
     }
+}
+
+void SimulationThread::sendStateMessages() {
+    for(auto& r : robots_){
+        msgpack::sbuffer sbuf;
+        std::map<std::string, msgpack::object> answ;
+        bool answOk = false;
+        {
+            std::unique_lock lock(mutex_);
+            answ = r->sendMessage();
+            answOk = true;
+        }
+
+        if (answOk) {
+            msgpack::pack(sbuf, answ);
+            if (sbuf.size() > 0) {
+                int fd = entity_fd_map[r->name];
+                if(!fd) 
+                    perror("file descriptor not existing");
+                ssize_t bytes_sent = send_all(fd, sbuf.data(), sbuf.size());
+                if (bytes_sent <= 0) {
+                    perror("Sending message");
+                }
+            }
+        }
+    }
+    
 }
 
 void SimulationThread::stop() {
