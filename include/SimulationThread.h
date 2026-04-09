@@ -31,6 +31,7 @@ class SimulationThread : public QThread {
     signals:
         void stepCompleted();
         void maxSimulationTimeReached();
+        void allRobotsReadySignal();
 
     private:
         const mjModel* model_;

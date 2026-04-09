@@ -112,7 +112,6 @@ void AppWindow::openScene() {
 void AppWindow::loadScene(const QString& yaml_file) {
     try {
         TeamManager::instance().clear();
-        RobotManager::instance().stopCommunicationServer();
 
         if (sim) {
             sim->stop();
@@ -336,7 +335,6 @@ void AppWindow::signalHandler(int signal) {
     std::cerr.flush();
 
     TeamManager::instance().clear();
-    RobotManager::instance().stopCommunicationServer();
 
     std::cerr << "Cleanup complete. Re-raising signal." << std::endl;
     std::cerr.flush();
@@ -349,7 +347,6 @@ AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
     TeamManager::instance().clear();
-    RobotManager::instance().stopCommunicationServer();
 }
 
 }  // namespace spqr

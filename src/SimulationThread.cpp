@@ -106,7 +106,7 @@ void SimulationThread::receiveCommandMessages() {
                                 r->isReady = true;
                                 std::cout << "Robot ready: " << r->name << std::endl;
                                 if(RobotManager::instance().areAllRobotsReady()){
-                                    emit RobotManager::instance().allRobotsReadySignal();
+                                    emit allRobotsReadySignal();
                                 }
                             }
 

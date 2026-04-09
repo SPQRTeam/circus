@@ -58,13 +58,6 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                              {"Privileged", true},
                              {"NetworkMode", CIRCUS_NETWORK_NAME}};
 
-    payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
-    payload["HostConfig"]["DeviceRequests"].push_back({
-        {"Driver", "nvidia"},
-        {"Count", -1},
-        {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
-    });
-
     payload["NetworkingConfig"]
         = {{"EndpointsConfig",
             {{CIRCUS_NETWORK_NAME,
@@ -78,8 +71,6 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "TEAM_COLOR=" + robot->colorName,
                       "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
                       "QT_X11_NO_MITSHM=1",
-                      "NVIDIA_VISIBLE_DEVICES=all",
-                      "NVIDIA_DRIVER_CAPABILITIES=all",
                       "XAUTHORITY=/root/.Xauthority",
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",

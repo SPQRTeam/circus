@@ -40,7 +40,6 @@ class RobotManager {
         void update();
         void clear();
         
-        void areAllRobotsReadyWrapper();
         bool areAllRobotsReady() const;
         bool areAllRobotsConnected() const;
 
@@ -51,15 +50,8 @@ class RobotManager {
 
         void startContainers();
 
-        void startCommunicationServer(int port);
-        void stopCommunicationServer();
-
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
         void applyCommands();
-
-        
-    signals:
-        void allRobotsReadySignal();
 
     private:
         RobotManager() = default;
@@ -69,8 +61,6 @@ class RobotManager {
         RobotManager& operator=(const RobotManager&) = delete;
 
         ssize_t send_all(int fd, char* buf, size_t len);
-
-        void _serverInternal(int port);
 
         std::atomic<bool> serverRunning_ = false;
         std::thread serverThread_;
