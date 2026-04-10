@@ -9,6 +9,7 @@
 #include <QMetaObject>
 #include <csignal>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <string>
 
@@ -17,6 +18,7 @@
 #include <execinfo.h>
 #endif
 
+#include "CircusNetwork.h"
 #include "Constants.h"
 #include "GameController.h"
 #include "MujocoContext.h"
@@ -110,7 +112,6 @@ void AppWindow::openScene() {
 void AppWindow::loadScene(const QString& yaml_file) {
     try {
         TeamManager::instance().clear();
-        RobotManager::instance().stopCommunicationServer();
 
         if (sim) {
             sim->stop();
@@ -195,22 +196,36 @@ void AppWindow::loadScene(const QString& yaml_file) {
         sim->setMaxSimulationTime(parser.getSceneInfo().simulationConfig.simulation.max_simulation_time);
         connect(sim.get(), &SimulationThread::maxSimulationTimeReached, this, &AppWindow::close);
 
-        // Callback to start the simulation
-        // Simulation starts when the all the robots are ready
-        RobotManager::instance().setAreAllRobotsReadyCallback([this]() {
-            QMetaObject::invokeMethod(
-                this,
-                [this]() {
-                    if (sim) {
-                        std::cout << "Starting simulation!" << std::endl;
-                        sim->start();
-                    }
-                },
-                Qt::QueuedConnection);
-        });
+        connect(
+            sim.get(), &SimulationThread::allRobotsReadySignal, this,
+            [this]() {
+                if (sim) {
+                    std::cout << "Starting simulation!" << std::endl;
+                    sim->start();
+                }
+            },
+            Qt::QueuedConnection);
 
+        // Ensure the shared memory directory exists and is writable by the current user.
+        // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
+        const std::filesystem::path shmDir("/dev/shm/circus_ipc");
+        if (std::filesystem::exists(shmDir)) {
+            std::filesystem::remove_all(shmDir);
+        }
+        std::filesystem::create_directories(shmDir);
+
+        CircusNetwork::instance().init();
         RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
+        sim->initializeSocket(frameworkCommunicationPort);
+
+        std::cout << "Starting containers..." << std::endl;
         RobotManager::instance().startContainers();
+
+        std::cout << "Connecting Robots..." << std::endl;
+        sim->waitRobotConnections();
+
+        std::cout << "Waiting Robots are Ready..." << std::endl;
+        sim->receiveCommandMessages();
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);
@@ -320,7 +335,6 @@ void AppWindow::signalHandler(int signal) {
     std::cerr.flush();
 
     TeamManager::instance().clear();
-    RobotManager::instance().stopCommunicationServer();
 
     std::cerr << "Cleanup complete. Re-raising signal." << std::endl;
     std::cerr.flush();
@@ -333,7 +347,6 @@ AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
     TeamManager::instance().clear();
-    RobotManager::instance().stopCommunicationServer();
 }
 
 }  // namespace spqr

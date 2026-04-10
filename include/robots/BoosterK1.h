@@ -26,7 +26,7 @@
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
 
-struct Team;  // Forward declaration
+class Team;  // Forward declaration
 
 class BoosterK1 : public Robot {
     public:
@@ -37,8 +37,8 @@ class BoosterK1 : public Robot {
         CameraDepth* depthCamera;
 
         BoosterK1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
-                  const Eigen::Vector3d& initOrientation, const std::tuple<int, int, int> color, const std::shared_ptr<Team>& team)
-            : Robot(name, type, number, initPosition, initOrientation, color, team),
+                  const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team)
+            : Robot(name, type, number, initPosition, initOrientation, colorName, team),
               joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                         {JointValue::HEAD_PITCH, name + "_Head_pitch"},
                         {JointValue::SHOULDER_LEFT_PITCH, name + "_ALeft_Shoulder_Pitch"},
@@ -102,7 +102,9 @@ class BoosterK1 : public Robot {
             sensors["depth_camera"] = depthCamera;
             return sensors;
         }
-
+        void applyCommands() override {
+            return;
+        }
         void update() override {
             pose->update();
             imu->update();

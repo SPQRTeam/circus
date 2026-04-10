@@ -3,4 +3,9 @@
 image: spqr:booster
 volumes:
   - "<simbridge>/tools/booster_motion:/app/booster_motion"
-  - "<simbridge>/build:/app/bridge"
+  - "<simbridge>/.pixi/envs/default:/app/bridge"
+  - "<maximus>/.pixi/envs/default:/app/maximus"
+  - "<maximus>/tools/vision:/app/maximus/tools/vision"
+  - "<maximus>/src/app/config:/app/maximus/config"
+  - "<maximus>/src/app/behaviors/trees:/app/maximus/behaviors"
+  - "/dev/shm/circus_ipc:/dev/shm/circus_ipc"

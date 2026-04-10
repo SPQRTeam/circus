@@ -1,45 +1,49 @@
 simulation_config: default
 teams:
   red:
-    - type: Booster-T1
-      number: 1
-      position: [-7.0, 0.0, 0.68]
-      orientation: [0.0, 0.0, 0.0]
-    - type: Booster-T1
-      number: 2
-      position: [-5.0, 1.5, 0.68]
-      orientation: [0.0, 0.0, 0.0]
-    - type: Booster-T1
-      number: 3
-      position: [-5.0, -1.5, 0.68]
-      orientation: [0.0, 0.0, 0.0]
-    - type: Booster-T1
-      number: 4
-      position: [-3.0, 0.0, 0.68]
-      orientation: [0.0, 0.0, 0.0]
-    - type: Booster-T1
-      number: 5
-      position: [-1.0, 0.0, 0.68]
-      orientation: [0.0, 0.0, 0.0]
+    number: 8
+    players:
+      - type: Booster-T1
+        number: 1
+        position: [-7.0, 0.0, 0.68]
+        orientation: [0.0, 0.0, 0.0]
+      - type: Booster-T1
+        number: 2
+        position: [-5.0, 1.5, 0.68]
+        orientation: [0.0, 0.0, 0.0]
+      - type: Booster-T1
+        number: 3
+        position: [-5.0, -1.5, 0.68]
+        orientation: [0.0, 0.0, 0.0]
+      - type: Booster-T1
+        number: 4
+        position: [-3.0, 0.0, 0.68]
+        orientation: [0.0, 0.0, 0.0]
+      - type: Booster-T1
+        number: 5
+        position: [-1.0, 0.0, 0.68]
+        orientation: [0.0, 0.0, 0.0]
 
   blue:
-    - type: Booster-T1
-      number: 1
-      position: [7.0, 0.0, 0.68]
-      orientation: [0.0, 0.0, 3.14]
-    - type: Booster-T1
-      number: 2
-      position: [5.0, 1.5, 0.68]
-      orientation: [0.0, 0.0, 3.14]
-    - type: Booster-T1
-      number: 3
-      position: [5.0, -1.5, 0.68]
-      orientation: [0.0, 0.0, 3.14]
-    - type: Booster-T1
-      number: 4
-      position: [3.0, 0.0, 0.68]
-      orientation: [0.0, 0.0, 3.14]
-    - type: Booster-T1
-      number: 5
-      position: [1.0, 0.0, 0.68]
-      orientation: [0.0, 0.0, 3.14]
+    number: 51
+    players:
+      - type: Booster-T1
+        number: 1
+        position: [7.0, 0.0, 0.68]
+        orientation: [0.0, 0.0, 3.14]
+      - type: Booster-T1
+        number: 2
+        position: [5.0, 1.5, 0.68]
+        orientation: [0.0, 0.0, 3.14]
+      - type: Booster-T1
+        number: 3
+        position: [5.0, -1.5, 0.68]
+        orientation: [0.0, 0.0, 3.14]
+      - type: Booster-T1
+        number: 4
+        position: [3.0, 0.0, 0.68]
+        orientation: [0.0, 0.0, 3.14]
+      - type: Booster-T1
+        number: 5
+        position: [1.0, 0.0, 0.68]
+        orientation: [0.0, 0.0, 3.14]

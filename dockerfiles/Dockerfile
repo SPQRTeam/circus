@@ -1,4 +1,4 @@
-FROM ros:humble-ros-base
+FROM ros:humble
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install dependencies
@@ -28,13 +28,17 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libdecor-0-0 \
     ament-cmake \
-    && rm -rf /var/lib/apt/lists/*
+    iputils-ping \
+    netcat \
+    ros-humble-image-view \
+    net-tools
+
+RUN rm -rf /var/lib/apt/lists/*
+# used to test communication, can be removed at a later date if so desired
 
 # copy configs
 RUN mkdir /opt/booster
 RUN mkdir /opt/booster/configs
-COPY configs/system_settings_config.yaml /opt/booster/configs
-COPY booster.conf /etc/supervisor/conf.d/
 
 # copy and install booster sdk
 COPY booster_robotics_sdk /opt/booster/sdk
@@ -53,12 +57,19 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash; cd /opt/booster/sdk_ros2 &&
 COPY LocoApiPackage /opt/booster/LocoApiPackage
 # RUN /bin/bash -c "source /opt/ros/humble/setup.bash; cd /opt/booster/LocoApiPackage && colcon build --packages-select booster_msgs
 
+RUN mkdir /app
+COPY entrypoint.sh /app
+RUN chmod +x /app/entrypoint.sh
+
+COPY delayed_start.sh /app
+RUN chmod +x /app/delayed_start.sh
+
 # add custom bashrc
 COPY configs/bashrc /root/.bashrc_addendum
 RUN echo ". ~/.bashrc_addendum" >> ~/.bashrc
 
-RUN mkdir /app
-COPY entrypoint.sh /app
-RUN chmod +x /app/entrypoint.sh
+COPY configs/system_settings_config.yaml /opt/booster/configs
+COPY booster.conf /etc/supervisor/conf.d/
+
 
 CMD ["/app/entrypoint.sh"]

@@ -5,6 +5,8 @@
 
 #include <QImage>
 #include <QOpenGLFunctions>
+#include <algorithm>
+#include <limits>
 #include <msgpack.hpp>
 #include <string>
 #include <vector>
@@ -78,21 +80,32 @@ class CameraDepth : public Sensor {
             std::vector<float> tempDepth(viewWidth * viewHeight);
             mjr_readPixels(nullptr, tempDepth.data(), viewport, &mujContext->ctx);
 
-            float znear = mujContext->model->vis.map.znear;  // 0.0001
-            float zfar = mujContext->model->vis.map.zfar;    // 50.0
+            // MuJoCo map.znear/zfar are expressed relative to model extent.
+            // DEPTH FIX - MICHELE : Verify.
+            // MuJoCo stores vis.map.znear/zfar as fractions of model->stat.extent, not absolute meters.
+            // Multiply by stat.extent to convert them to metric near/far distances used by depth linearization.
+
+            const float extent = static_cast<float>(mujContext->model->stat.extent);
+            const float znear = static_cast<float>(mujContext->model->vis.map.znear) * extent;
+            const float zfar = static_cast<float>(mujContext->model->vis.map.zfar) * extent;
+            constexpr float kDepthMaxMeters = 10.0f;  // Keep in sync with SimBridge mono8 decoding.
             float max_u16 = static_cast<float>(std::numeric_limits<uint16_t>::max());
 
-            // Process depth to match camera resolution
+            // Resample offscreen depth to camera resolution and convert to metric depth.
             for (int y = 0; y < h; y++) {
-                int srcRow = (h - 1 - y) * w;  // flip y-axes
+                int srcY = static_cast<int>((static_cast<float>(y) / static_cast<float>(h)) * static_cast<float>(viewHeight));
+                srcY = std::clamp(srcY, 0, viewHeight - 1);
+                int srcRow = (viewHeight - 1 - srcY) * viewWidth;  // flip y-axis
                 int dstRow = y * w;
                 for (int x = 0; x < w; x++) {
-                    float z_raw = tempDepth[srcRow + x];
+                    int srcX = static_cast<int>((static_cast<float>(x) / static_cast<float>(w)) * static_cast<float>(viewWidth));
+                    srcX = std::clamp(srcX, 0, viewWidth - 1);
+                    float z_raw = tempDepth[srcRow + srcX];
                     float z_converted = (znear * zfar) / (zfar - z_raw * (zfar - znear));
                     depthNormalized[dstRow + x] = z_converted;
 
-                    float clampedDepth = std::min(z_converted / 1.0f, 1.0f);
-                    depth[dstRow + x] = static_cast<uint16_t>(clampedDepth * max_u16);
+                    float normalizedDepth = std::clamp(z_converted / kDepthMaxMeters, 0.0f, 1.0f);
+                    depth[dstRow + x] = static_cast<uint16_t>(normalizedDepth * max_u16);
                 }
             }
 
@@ -117,7 +130,17 @@ class CameraDepth : public Sensor {
         }
 
         const std::vector<uint16_t>& getDepth() const {
+            std::lock_guard<std::mutex> lock(depthMutex_);
             return depth;
+        }
+
+        std::vector<unsigned char> getDepth8bit() const {
+            std::lock_guard<std::mutex> lock(depthMutex_);
+            std::vector<unsigned char> depth8(depth.size());
+            for (size_t i = 0; i < depth.size(); ++i) {
+                depth8[i] = static_cast<unsigned char>(depth[i] >> 8);  // Convert uint16 to uint8
+            }
+            return depth8;
         }
 
         int getWidth() const {
@@ -133,6 +156,7 @@ class CameraDepth : public Sensor {
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
+            std::lock_guard<std::mutex> lock(depthMutex_);
             std::vector<uint16_t> img_copy(depth.begin(), depth.end());
             return msgpack::object(img_copy, z);
         }
@@ -141,6 +165,7 @@ class CameraDepth : public Sensor {
         int w, h;
         double fovy_deg;
         MujocoContext* mujContext;
+        mutable std::mutex depthMutex_;
         std::vector<float> depthNormalized;
         std::vector<uint16_t> depth;
         mjvCamera cam{};

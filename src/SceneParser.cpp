@@ -89,13 +89,15 @@ SceneParser::SceneParser(const string& yamlPath) {
 
     for (const auto& team : teamsNode) {
         const string& teamName = team.first.as<string>();
-        const YAML::Node& robotsNode = team.second;
+        const YAML::Node& theTeamNode = team.second;
+
+        const int& teamNumber = theTeamNode["number"].as<int>();
+        const YAML::Node& robotsNode = theTeamNode["players"];
 
         if (!robotsNode.IsSequence())
             throw runtime_error("Each team must be a sequence of robots.");
 
-        shared_ptr<Team> teamSpec = std::make_shared<Team>();
-        teamSpec->name = teamName;
+        shared_ptr<Team> teamSpec = std::make_shared<Team>(teamName, teamNumber);
 
         uint8_t typeIndex = 0;
         for (const YAML::Node& robotNode : robotsNode) {
@@ -120,14 +122,7 @@ SceneParser::SceneParser(const string& yamlPath) {
                     ori[i] = robotNode["orientation"][i].as<double>();
             }
 
-            std::tuple<int, int, int> teamColor = {255, 255, 255};  // Default to white
-            if (teamName == "red") {
-                teamColor = {130, 36, 51};
-            } else if (teamName == "blue") {
-                teamColor = {0, 103, 120};
-            }
-
-            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamColor, teamSpec);
+            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamName, teamSpec);
 
             robotTypes.insert(robotType);
             teamSpec->robots.push_back(std::move(robot));
@@ -145,7 +140,7 @@ string SceneParser::buildMuJoCoXml() {
 
     // TODO: The simulation options can be parametrized. I don't know if we may want to change the parameters.
     xml_node option = mujoco.append_child("option");
-    option.append_attribute("timestep") = "0.0001";
+    option.append_attribute("timestep") = "0.002";
     option.append_attribute("iterations") = "50";
     option.append_attribute("tolerance") = "1e-10";
     option.append_attribute("solver") = "Newton";

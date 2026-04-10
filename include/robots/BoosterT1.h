@@ -8,6 +8,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
+#include <cstdlib>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -19,26 +20,29 @@
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
 #include "sensors/CameraRGB.h"
+#include "sensors/ImageSharedMemoryWriter.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
+#include "sensors/Oracle.h"
 #include "sensors/Pose.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
 
-struct Team;  // Forward declaration
+class Team;  // Forward declaration
 
 class BoosterT1 : public Robot {
     public:
         Pose* pose = nullptr;
         Imu* imu = nullptr;
         Joints* joints = nullptr;
+        Oracle* oracle = nullptr;
         CameraRGB* rgbCamera;
         CameraDepth* depthCamera;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
-                  const Eigen::Vector3d& initOrientation, const std::tuple<int, int, int> color, const std::shared_ptr<Team>& team)
-            : Robot(name, type, number, initPosition, initOrientation, color, team),
+                  const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team)
+            : Robot(name, type, number, initPosition, initOrientation, colorName, team),
               joint_map{{JointValue::HEAD_YAW, name + "_AAHead_yaw"},
                         {JointValue::HEAD_PITCH, name + "_Head_pitch"},
                         {JointValue::SHOULDER_LEFT_PITCH, name + "_Left_Shoulder_Pitch"},
@@ -61,7 +65,10 @@ class BoosterT1 : public Robot {
                         {JointValue::HIP_RIGHT_YAW, name + "_Right_Hip_Yaw"},
                         {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
                         {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
-                        {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
+                        {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {
+            // Where to put the images
+            shm_dir_ = "/dev/shm/circus_ipc";
+        }
 
         void bindMujoco(MujocoContext* mujCtx) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
@@ -93,7 +100,18 @@ class BoosterT1 : public Robot {
                                   {JointValue::ANKLE_RIGHT_ROLL, 0}});
 
             rgbCamera = new CameraRGB(mujCtx, (name + "_rgb_cam").c_str());
-            depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
+            // Use RGB viewpoint for simulated depth to provide aligned depth-to-color.
+            // This avoids parallax between rgb_cam and depth_cam when unprojecting RGB detections.
+            depthCamera = new CameraDepth(mujCtx, (name + "_rgb_cam").c_str());
+
+            // Configure the writer for the shared memory file
+            const int width = rgbCamera->getWidth();
+            const int height = rgbCamera->getHeight();
+            rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
+            depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
+
+            // Create Oracle with the pose and all robots
+            oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
@@ -110,13 +128,13 @@ class BoosterT1 : public Robot {
                                          + std::to_string(joint_map.size()) + ")");
             }
 
-            std::unordered_map<JointValue, mjtNum> torque_map;
             size_t i = 0;
-            for (const auto& [joint_value, joint_name] : joint_map) {
-                torque_map[joint_value] = joint_torques[i++];
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                for (const auto& [joint_value, joint_name] : joint_map) {
+                    latestTorques[joint_value] = joint_torques[i++];
+                }
             }
-
-            joints->set_torque(torque_map);
         }
 
         std::map<std::string, msgpack::object> sendMessage() override {
@@ -126,6 +144,11 @@ class BoosterT1 : public Robot {
             msg["pose"] = pose->serialize(buffer_zone_);
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
+            msg["oracle"] = oracle->serialize(buffer_zone_);
+
+            // Write in the shared file the information
+            rgb_writer_.write(rgbCamera->getImage());
+            depth_writer_.write(depthCamera->getDepth8bit());
 
             return msg;
         }
@@ -140,10 +163,16 @@ class BoosterT1 : public Robot {
             return sensors;
         }
 
+        void applyCommands() override {
+            std::lock_guard<std::mutex> lock(mutex_);
+            joints->set_torque(latestTorques);
+        }
+
         void update() override {
             pose->update();
             imu->update();
             joints->update();
+            oracle->update();
             rgbCamera->update();
             depthCamera->update();
         }
@@ -151,7 +180,16 @@ class BoosterT1 : public Robot {
         ~BoosterT1() = default;
 
     private:
+        std::string shmFilePath_(const std::string& camera) const {
+            return shm_dir_ + "/" + name + "_" + camera + ".shm";
+        }
+
         std::map<JointValue, std::string> joint_map;
+        std::unordered_map<JointValue, mjtNum> latestTorques;
+
+        std::string shm_dir_;
+        ImageSharedMemoryWriter rgb_writer_;
+        ImageSharedMemoryWriter depth_writer_;
 };
 
 }  // namespace spqr

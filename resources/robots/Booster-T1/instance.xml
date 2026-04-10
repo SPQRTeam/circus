@@ -35,7 +35,7 @@
 
                     <!-- RGB Camera -->
                     <site name="head_rgb_cam_site" pos="0.05 0.0 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-                    <camera name="rgb_cam" pos="0.05 0.06 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
+                    <camera name="rgb_cam" pos="0.05 0 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
 
                     <!-- Depth Camera -->
                     <site name="head_depth_cam_site" pos="0.05 0.0 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
