@@ -47,6 +47,10 @@ class SimulationThread : public QThread {
         std::vector<pollfd> fds;
         mutable std::mutex mutex_;
 
+        std::vector<std::thread> receiver_threads;
+        std::unordered_map<int, Robot*> fd_to_robot;
+        void robotReceiver(int fd, Robot* r);
+
         ssize_t send_all(int fd, char* buf, size_t len);
 
         void sendStateMessages();

@@ -70,119 +70,56 @@ void SimulationThread::initializeSocket(int port) {
 }
 
 void SimulationThread::receiveCommandMessages() {
-    int robot_size = robots_.size();
-    int done = 0;
-    // Track which robots have not yet replied this step
-    std::set<std::string> pendingRobots;
-    for (auto& r : robots_)
-        pendingRobots.insert(r->name);
+    for (auto& r : robots_) {
+        std::unique_lock<std::mutex> lock(r->comm.mtx);
 
-    int timeoutCount = 0;
-    while (done < robot_size) {
-        int ret = poll(fds.data(), fds.size(), 500);
-        if (ret <= 0) {
-            ++timeoutCount;
-            // Resend state only every 5 timeouts (2.5s) to avoid flooding the TCP buffer
-            if (timeoutCount % 5 != 0)
-                continue;
-            std::unique_lock lock(mutex_);
-            for (auto& r : robots_) {
-                if (pendingRobots.count(r->name)) {
-                    std::cout << "[receiveCommandMessages] Timeout, resending state to: " << r->name << std::endl;
-                    msgpack::sbuffer sbuf;
-                    auto answ = r->sendMessage();
-                    msgpack::pack(sbuf, answ);
-                    if (sbuf.size() > 0) {
-                        int fd = entity_fd_map[r->name];
-                        if (fd)
-                            send_all(fd, sbuf.data(), sbuf.size());
-                        else
-                            std::cerr << "[receiveCommandMessages] No fd for: " << r->name << std::endl;
-                    }
-                }
-            }
-            continue;
-        }
-        timeoutCount = 0;
+        r->comm.cv.wait(lock, [&] {
+            return r->comm.has_new_command;
+        });
 
-        for (size_t i = 0; i < fds.size(); ++i) {
-            // An event occured for the i-th fd
-            if (fds[i].revents & POLLIN) {
-                char buffer[MAX_MSG_SIZE];
-                int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
-                if (n <= 0) {
-                    close(fds[i].fd);
-                    fds.erase(fds.begin() + i);
-                    --i;
-                    continue;
-                }
+        if (!r->isReady) {
+            r->isReady = true;
+            std::cout << "Robot ready: " << r->name << std::endl;
 
-                msgpack::object_handle oh = msgpack::unpack(buffer, n);
-                auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
-                auto it = data_map.find("robot_name");
-                if (it == data_map.end())
-                    continue;
-
-                std::string messageRecipient = it->second.as<std::string>();
-
-                {
-                    std::unique_lock lock(mutex_);
-                    for (auto& r : robots_) {
-                        if (r->name == messageRecipient) {
-                            if (!r->isReady) {
-                                r->isReady = true;
-                                std::cout << "Robot ready: " << r->name << std::endl;
-                                if (RobotManager::instance().areAllRobotsReady()) {
-                                    emit allRobotsReadySignal();
-                                }
-                            }
-
-                            r->receiveMessage(data_map);
-                            pendingRobots.erase(messageRecipient);
-                            ++done;
-                            break;
-                        }
-                    }
-                }
+            if (RobotManager::instance().areAllRobotsReady()) {
+                emit allRobotsReadySignal();
             }
         }
+
+        r->receiveMessage(r->comm.last_msg);
+        r->comm.has_new_command = false;
     }
 }
-
 void SimulationThread::waitRobotConnections() {
     bool areAllConnected = false;
+
     while (!areAllConnected) {
         int ret = poll(fds.data(), fds.size(), 100);
         if (ret <= 0)
-            continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
+            continue;
 
         for (size_t i = 0; i < fds.size(); ++i) {
-            // An event occured for the i-th fd
             if (fds[i].revents & POLLIN) {
                 if (fds[i].fd == server_fd) {
                     if (!entity_fd_map["server"]) {
                         entity_fd_map["server"] = server_fd;
                     }
-                    // The only event for the server is someone knocking
+
                     int client_fd = accept(server_fd, nullptr, nullptr);
                     if (client_fd >= 0) {
                         fds.push_back({client_fd, POLLIN, 0});
 
-                        // Receive initial message with robot name
                         char buffer[MAX_MSG_SIZE];
                         int n = read(client_fd, buffer, sizeof(buffer) - 1);
 
                         if (n <= 0) {
                             std::cerr << "Error reading the initial message.\n";
-                            // close(client_fd);
                             continue;
                         }
 
-                        // unpack of the MsgPack message
                         msgpack::object_handle oh = msgpack::unpack(buffer, n);
                         msgpack::object obj = oh.get();
 
-                        // First message is the robot name as a string
                         if (obj.type != msgpack::type::STR) {
                             std::cerr << "First message must be a string. Ignore it...\n";
                             continue;
@@ -191,11 +128,12 @@ void SimulationThread::waitRobotConnections() {
                         std::string robotName = obj.as<std::string>();
                         entity_fd_map[robotName] = client_fd;
 
-                        // Send message with initial state
+                        Robot* robot_ptr = nullptr;
+
                         msgpack::sbuffer sbuf;
                         std::map<std::string, msgpack::object> answ;
                         bool answOk = false;
-                        // Pack initial message
+
                         {
                             std::lock_guard<std::mutex> lock(mutex_);
                             for (auto& r : robots_) {
@@ -203,10 +141,16 @@ void SimulationThread::waitRobotConnections() {
                                     r->isConnected = true;
                                     answ = r->sendMessage();
                                     answOk = true;
+                                    robot_ptr = r.get();
                                     break;
                                 }
                             }
                         }
+
+                        if (robot_ptr) {
+                            fd_to_robot[client_fd] = robot_ptr;
+                        }
+
                         if (answOk) {
                             msgpack::pack(sbuf, answ);
                             if (sbuf.size() > 0) {
@@ -218,6 +162,7 @@ void SimulationThread::waitRobotConnections() {
                                 }
                             }
                         }
+
                         if (RobotManager::instance().areAllRobotsConnected()) {
                             areAllConnected = true;
                             std::cout << "All Robots are connected!" << std::endl;
@@ -228,8 +173,38 @@ void SimulationThread::waitRobotConnections() {
             }
         }
     }
-}
 
+    // Start receiver threads (one per robot)
+    for (auto& [name, fd] : entity_fd_map) {
+        if (name == "server") continue;
+
+        Robot* r = fd_to_robot[fd];
+        receiver_threads.emplace_back(&SimulationThread::robotReceiver, this, fd, r);
+    }
+}
+void SimulationThread::robotReceiver(int fd, Robot* r) {
+    while (running_) {
+        char buffer[MAX_MSG_SIZE];
+        int n = read(fd, buffer, sizeof(buffer) - 1);
+
+        if (n <= 0) {
+            close(fd);
+            std::cerr << "Connection closed for robot: " << r->name << std::endl;
+            return;
+        }
+
+        msgpack::object_handle oh = msgpack::unpack(buffer, n);
+        auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
+
+        {
+            std::lock_guard<std::mutex> lock(r->comm.mtx);
+            r->comm.last_msg = std::move(data_map);
+            r->comm.has_new_command = true;
+        }
+
+        r->comm.cv.notify_one();
+    }
+}
 /*
 //  SimulationThread IDEA
     mj_step1();
@@ -315,6 +290,12 @@ void SimulationThread::sendStateMessages() {
 
 void SimulationThread::stop() {
     running_ = false;
+
+    for (auto& t : receiver_threads) {
+        if (t.joinable())
+            t.join();
+    }
+
     wait();
 }
 

@@ -13,6 +13,7 @@
 #include <msgpack/v3/object_fwd_decl.hpp>
 #include <mutex>
 #include <string>
+#include <condition_variable>
 
 #include "Container.h"
 #include "MujocoContext.h"
@@ -44,6 +45,14 @@ class Robot {
         virtual std::map<std::string, Sensor*> getSensors() = 0;
         virtual void applyCommands() = 0;
 
+        struct RobotCommState {
+            std::mutex mtx;
+            std::condition_variable cv;
+            bool has_new_command = false;
+            std::map<std::string, msgpack::object> last_msg;
+        };
+
+        RobotCommState comm;
         std::string name;
         std::string type;
         uint8_t number;
