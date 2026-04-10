@@ -196,15 +196,15 @@ void AppWindow::loadScene(const QString& yaml_file) {
         sim->setMaxSimulationTime(parser.getSceneInfo().simulationConfig.simulation.max_simulation_time);
         connect(sim.get(), &SimulationThread::maxSimulationTimeReached, this, &AppWindow::close);
 
-        connect(sim.get(), &SimulationThread::allRobotsReadySignal,
-            this,
+        connect(
+            sim.get(), &SimulationThread::allRobotsReadySignal, this,
             [this]() {
                 if (sim) {
                     std::cout << "Starting simulation!" << std::endl;
                     sim->start();
                 }
             },
-        Qt::QueuedConnection);
+            Qt::QueuedConnection);
 
         // Ensure the shared memory directory exists and is writable by the current user.
         // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.

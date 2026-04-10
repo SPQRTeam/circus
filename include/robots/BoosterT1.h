@@ -190,7 +190,6 @@ class BoosterT1 : public Robot {
         std::string shm_dir_;
         ImageSharedMemoryWriter rgb_writer_;
         ImageSharedMemoryWriter depth_writer_;
-
 };
 
 }  // namespace spqr

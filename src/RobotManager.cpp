@@ -59,7 +59,6 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
 }
 
 void RobotManager::startContainers() {
-
     YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
     YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
 
@@ -95,9 +94,9 @@ void RobotManager::startContainers() {
     std::cout << "Containers started successfully!" << std::endl;
 }
 
-bool RobotManager::areAllRobotsConnected() const{
+bool RobotManager::areAllRobotsConnected() const {
     for (auto& r : robots_) {
-        if(!r->isConnected){
+        if (!r->isConnected) {
             return false;
         }
     }
