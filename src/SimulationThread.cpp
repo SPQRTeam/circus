@@ -10,7 +10,6 @@ namespace spqr {
 
 SimulationThread::SimulationThread(const mjModel* model, mjData* data) : model_(model), data_(data), running_(true), paused_(false) {}
 
-
 // Source - https://stackoverflow.com/a
 // Posted by Arun, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-01-12, License - CC BY-SA 3.0
@@ -60,13 +59,13 @@ void SimulationThread::initializeSocket(int port) {
     address.sin_port = htons(port);
 
     robots_ = RobotManager::instance().getRobots();
-    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0){
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
         perror("bind");
         throw std::runtime_error("Socket bind failed");
     }
     if (listen(server_fd, robots_.size()) < 0)
         throw std::runtime_error("Listen failed");
-  
+
     fds.push_back({server_fd, POLLIN, 0});
 }
 
@@ -133,7 +132,7 @@ void SimulationThread::receiveCommandMessages() {
                             if (!r->isReady) {
                                 r->isReady = true;
                                 std::cout << "Robot ready: " << r->name << std::endl;
-                                if(RobotManager::instance().areAllRobotsReady()){
+                                if (RobotManager::instance().areAllRobotsReady()) {
                                     emit allRobotsReadySignal();
                                 }
                             }
@@ -156,12 +155,12 @@ void SimulationThread::waitRobotConnections() {
         int ret = poll(fds.data(), fds.size(), 100);
         if (ret <= 0)
             continue;  // Timeout, skip iteration (timeout necessary to check whether serverRunning_ is
-    
+
         for (size_t i = 0; i < fds.size(); ++i) {
             // An event occured for the i-th fd
             if (fds[i].revents & POLLIN) {
                 if (fds[i].fd == server_fd) {
-                    if(!entity_fd_map["server"]){
+                    if (!entity_fd_map["server"]) {
                         entity_fd_map["server"] = server_fd;
                     }
                     // The only event for the server is someone knocking
@@ -219,18 +218,17 @@ void SimulationThread::waitRobotConnections() {
                                 }
                             }
                         }
-                        if(RobotManager::instance().areAllRobotsConnected()){
+                        if (RobotManager::instance().areAllRobotsConnected()) {
                             areAllConnected = true;
                             std::cout << "All Robots are connected!" << std::endl;
                             break;
                         }
                     }
-                } 
+                }
             }
         }
     }
-} 
-
+}
 
 /*
 //  SimulationThread IDEA
@@ -259,7 +257,7 @@ void SimulationThread::run() {
             mj_step2(model_, data_);
             RobotManager::instance().update();
             GameController::instance().update();
-            
+
             std::memset(data_->xfrc_applied, 0, model_->nbody * 6 * sizeof(mjtNum));
 
             if (maxSimulationTime_ > 0 && data_->time >= maxSimulationTime_) {
@@ -290,7 +288,7 @@ void SimulationThread::run() {
 }
 
 void SimulationThread::sendStateMessages() {
-    for(auto& r : robots_){
+    for (auto& r : robots_) {
         msgpack::sbuffer sbuf;
         std::map<std::string, msgpack::object> answ;
         bool answOk = false;
@@ -304,7 +302,7 @@ void SimulationThread::sendStateMessages() {
             msgpack::pack(sbuf, answ);
             if (sbuf.size() > 0) {
                 int fd = entity_fd_map[r->name];
-                if(!fd) 
+                if (!fd)
                     perror("file descriptor not existing");
                 ssize_t bytes_sent = send_all(fd, sbuf.data(), sbuf.size());
                 if (bytes_sent <= 0) {
@@ -313,7 +311,6 @@ void SimulationThread::sendStateMessages() {
             }
         }
     }
-    
 }
 
 void SimulationThread::stop() {

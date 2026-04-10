@@ -186,7 +186,7 @@ class BoosterT1 : public Robot {
 
         std::map<JointValue, std::string> joint_map;
         std::unordered_map<JointValue, mjtNum> latestTorques;
-        
+
         std::string shm_dir_;
         ImageSharedMemoryWriter rgb_writer_;
         ImageSharedMemoryWriter depth_writer_;

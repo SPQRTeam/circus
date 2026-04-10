@@ -3,12 +3,11 @@
 #include <mujoco/mujoco.h>
 
 #include <QThread>
-#include <vector>
-#include <mutex>
 #include <map>
+#include <mutex>
+#include <vector>
 
 #include "robots/Robot.h"
-
 
 namespace spqr {
 
@@ -26,7 +25,6 @@ class SimulationThread : public QThread {
         void initializeSocket(int port);
         void waitRobotConnections();
         void receiveCommandMessages();
-
 
     signals:
         void stepCompleted();

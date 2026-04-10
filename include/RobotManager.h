@@ -39,7 +39,7 @@ class RobotManager {
         size_t count() const;
         void update();
         void clear();
-        
+
         bool areAllRobotsReady() const;
         bool areAllRobotsConnected() const;
 

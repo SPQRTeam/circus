@@ -13,7 +13,6 @@
 #include <msgpack/v3/object_fwd_decl.hpp>
 #include <mutex>
 #include <string>
- 
 
 #include "Container.h"
 #include "MujocoContext.h"
@@ -44,7 +43,7 @@ class Robot {
         virtual std::map<std::string, msgpack::object> sendMessage() = 0;
         virtual std::map<std::string, Sensor*> getSensors() = 0;
         virtual void applyCommands() = 0;
-        
+
         std::string name;
         std::string type;
         uint8_t number;

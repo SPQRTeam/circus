@@ -5,9 +5,9 @@
 
 #include <QImage>
 #include <QOpenGLFunctions>
-#include <msgpack.hpp>
 #include <algorithm>
 #include <limits>
+#include <msgpack.hpp>
 #include <string>
 #include <vector>
 
@@ -81,7 +81,7 @@ class CameraDepth : public Sensor {
             mjr_readPixels(nullptr, tempDepth.data(), viewport, &mujContext->ctx);
 
             // MuJoCo map.znear/zfar are expressed relative to model extent.
-            //DEPTH FIX - MICHELE : Verify.
+            // DEPTH FIX - MICHELE : Verify.
             // MuJoCo stores vis.map.znear/zfar as fractions of model->stat.extent, not absolute meters.
             // Multiply by stat.extent to convert them to metric near/far distances used by depth linearization.
 
