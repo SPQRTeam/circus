@@ -30,7 +30,6 @@ class Oracle : public Sensor {
             ballPosAdr = mujModel->jnt_qposadr[ballAdr];
             ballVelAdr = mujModel->jnt_dofadr[ballAdr];
 
-            // AGGIUNGERE TUTTI I CAMPI CHE CI INTERESSANO SAPERE COME ORACLE
             discoverOtherRobotSensors();
         }
 
@@ -42,6 +41,9 @@ class Oracle : public Sensor {
             updateTeammatesLocalPositions();
             updateOpponentsLocalPositions();
             updateGoalPostsLocalPositions();
+
+            // Contact forces of the robot
+            updateContactForces();
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {
@@ -71,9 +73,17 @@ class Oracle : public Sensor {
                 goal_posts_data[postName] = msgpack::object(post_pos, z);
             }
 
-            oracle_data["teammates_positions"] = msgpack::object(teammates_data, z);
-            oracle_data["opponents_positions"] = msgpack::object(opponents_data, z);
+            // Serialize contact forces
+            std::map<std::string, msgpack::object> contact_forces_data;
+            for (const auto& [name, contactForce] : contactForces) {
+                std::vector<double> contact_force = {contactForce[0], contactForce[1], contactForce[2]};
+                contact_forces_data[name] = msgpack::object(contact_force, z);
+            }
+
+            oracle_data["teammates_positions"]  = msgpack::object(teammates_data, z);
+            oracle_data["opponents_positions"]  = msgpack::object(opponents_data, z);
             oracle_data["goal_posts_positions"] = msgpack::object(goal_posts_data, z);
+            oracle_data["contact_forces"]       = msgpack::object(contact_forces_data, z);
 
             return msgpack::object(oracle_data, z);
         }
@@ -225,6 +235,14 @@ class Oracle : public Sensor {
             }
         }
 
+        void updateContactForces() {
+            contactForces.clear();
+
+            // TODO: mettere le forze di contatto del robot
+            contactForces["left_foot"] = Eigen::Vector3d(0.f, 0.f, 0.f);
+            contactForces["right_foot"] = Eigen::Vector3d(1.f, 1.f, 1.f);
+        }
+
         Eigen::Vector3d ballPosition;
         int ballId, ballAdr, ballPosAdr, ballVelAdr;
 
@@ -236,6 +254,7 @@ class Oracle : public Sensor {
         std::map<std::string, Eigen::Vector3d> teammatesLocalPositions;
         std::map<std::string, Eigen::Vector3d> opponentsLocalPositions;
         std::map<std::string, Eigen::Vector3d> goalPostsLocalPositions;
+        std::map<std::string, Eigen::Vector3d> contactForces;
 
         std::map<std::string, int> teammatesSensorAddrs;  // robotName -> sensorAdr
         std::map<std::string, int> opponentsSensorAddrs;  // robotName -> sensorAdr
