@@ -1,26 +1,10 @@
 [workspace]
 channels = [
-  "https://prefix.dev/pixi-build-backends",
   "https://prefix.dev/conda-forge",
 ]
 platforms = ["osx-arm64", "linux-64"]
-preview = ["pixi-build"]
 
 [dependencies]
-circus = { path = "." }
-python = "3.12.*"
-
-[package]
-name = "circus"
-version = "0.1.0"
-
-[package.build]
-backend = { name = "pixi-build-cmake", version = "*" }
-
-[package.build-dependencies]
-cmake = ">=3.27,<4"
-
-[package.host-dependencies]
 python = "3.12.*"
 nanobind = "2.8.*"
 eigen = "==3.4.0"
@@ -33,17 +17,19 @@ qt6-charts = "==6.9.2"
 libmujoco = "==3.3.3"
 msgpack-cxx = "==7.0.0"
 libboost-devel = "==1.88.0"
+cmake = ">=3.27,<4"
 
-[package.target.linux-64.host-dependencies]
+[target.linux-64.dependencies]
 libgl-devel = "==1.7.0"
 libegl-devel = "==1.7.0"
 
-[package.target.osx-arm64.host-dependencies]
-
 [tasks]
-test = "python -c 'import circuspy; circuspy.test()'"
-clean-docker = "bash clean-docker.sh"
+configure = { cmd = "cmake -S $PIXI_PROJECT_ROOT -B $PIXI_PROJECT_ROOT/build -DCMAKE_PREFIX_PATH=$PIXI_PROJECT_ROOT/.pixi/envs/default -DCMAKE_INSTALL_PREFIX=$PIXI_PROJECT_ROOT/.pixi/envs/default" }
+compile = { cmd = "sh -c 'cmake --build $PIXI_PROJECT_ROOT/build -j${JOBS:-4}'", depends-on = ["configure"] }
+install = { cmd = "cmake --install $PIXI_PROJECT_ROOT/build", depends-on = ["compile"] }
+clear = { cmd = "rm -rf $PIXI_PROJECT_ROOT/build" }
+test = { cmd = "python -c 'import circuspy; circuspy.test()'", depends-on = ["install"] }
+circus = { cmd = "$PIXI_PROJECT_ROOT/build/circus", depends-on = ["compile"] }
 
 [activation]
-# Add DYLD_LIBRARY_PATH on macOS so the MuJoCo dylib is found when running binaries directly
-env = { DYLD_LIBRARY_PATH = "$DYLD_LIBRARY_PATH:$CONDA_PREFIX/lib", PATH = "$CONDA_PREFIX/bin:$PATH"}
+env = {DYLD_LIBRARY_PATH = "$DYLD_LIBRARY_PATH:$CONDA_PREFIX/lib", LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib", PATH = "$CONDA_PREFIX/bin:$PATH"}
