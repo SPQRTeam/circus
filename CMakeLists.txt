@@ -1,6 +1,21 @@
 # ============================= PROJECT SETUP =================================================
 cmake_minimum_required(VERSION 3.16)
 project(circus VERSION 0.1.0 LANGUAGES CXX)
+
+# At the top, after project(), add the Linux sysroot rpath block:
+if(DEFINED ENV{CONDA_PREFIX} AND NOT CMAKE_CROSSCOMPILING)
+    if(UNIX AND NOT APPLE)
+        set(_sysroot "$ENV{CONDA_PREFIX}/x86_64-conda-linux-gnu/sysroot")
+        if(EXISTS "${_sysroot}/lib64/ld-linux-x86-64.so.2")
+            set(CMAKE_BUILD_RPATH "${_sysroot}/lib64;$ENV{CONDA_PREFIX}/lib")
+            string(APPEND CMAKE_EXE_LINKER_FLAGS
+                " -Wl,-dynamic-linker,${_sysroot}/lib64/ld-linux-x86-64.so.2")
+        endif()
+    elseif(APPLE)
+        set(CMAKE_BUILD_RPATH "$ENV{CONDA_PREFIX}/lib")
+    endif()
+endif()
+
 add_compile_definitions(_LIBCPP_DISABLE_AVAILABILITY)
 
 set(LIBRARY ${PROJECT_NAME}-lib)
