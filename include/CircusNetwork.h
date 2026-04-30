@@ -5,6 +5,7 @@
 
 #define CIRCUS_NETWORK_NAME "CIRCUS_network"
 #define UAN_SEVEN_CIU "172.21."  // Per coerenza
+#define CIRCUS_NETWORK_GATEWAY "172.21.0.1"
 
 namespace spqr {
 

@@ -71,23 +71,21 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
               {{"IPAMConfig", {{"IPv4Address", UAN_SEVEN_CIU + std::to_string(robot->team->number) + "." + std::to_string(robot->number + 10)}}}}}}}};
 
     payload["Env"] = {"ROBOT_NAME=" + robot->name,
-                      "SERVER_IP=172.17.0.1",
-                      "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
+                       "SERVER_IP=" CIRCUS_NETWORK_GATEWAY,
+                       "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
                       "TEAM_NUMBER=" + std::to_string(robot->team->number),
                       "PLAYER_NUMBER=" + std::to_string(robot->number),
                       "TEAM_COLOR=" + robot->colorName,
                       "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
                       "QT_X11_NO_MITSHM=1",
-                      "NVIDIA_VISIBLE_DEVICES=all",
-                      "NVIDIA_DRIVER_CAPABILITIES=all",
                       "XAUTHORITY=/root/.Xauthority",
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
                       "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
-                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0")};
+                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js2")};
 
-    payload["Entrypoint"] = {"/bin/bash", "-lc"};
-    payload["Cmd"] = {"/app/entrypoint.sh"};
+    // payload["Entrypoint"] = {"/bin/bash", "-lc"};
+    // payload["Cmd"] = {"/app/entrypoint.sh"};
 
     payload["Tty"] = true;
     payload["OpenStdin"] = true;
