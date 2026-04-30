@@ -37,8 +37,11 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     std::signal(SIGABRT, signalHandler);
 
     std::optional<std::string> scenePath;
-    if (argc >= 2 && std::string(argv[1]).ends_with(".yaml")) {
-        scenePath = argv[1];
+    for (int i = 1; i < argc; ++i) {
+        std::string arg(argv[i]);
+        if      (arg == "--scene"     && i + 1 < argc) scenePath            = argv[++i];
+        else if (arg == "--framework" && i + 1 < argc) frameworkConfigPath_ = argv[++i];
+        else if (arg == "--paths"     && i + 1 < argc) pathsConfigPath_     = argv[++i];
     }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
@@ -219,7 +222,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         sim->initializeSocket(frameworkCommunicationPort);
 
         std::cout << "Starting containers..." << std::endl;
-        RobotManager::instance().startContainers();
+        RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_);
 
         std::cout << "Connecting Robots..." << std::endl;
         sim->waitRobotConnections();

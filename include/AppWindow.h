@@ -13,12 +13,15 @@
 #include <QVariantMap>
 #include <memory>
 
+#include "Constants.h"
 #include "MujocoContext.h"
 #include "SimulationThread.h"
 #include "SimulationViewport.h"
 #include "frontend/game_controller_panel_column/GameControllerPanelColumnContainer.h"
 #include "frontend/game_controller_panel_header/GameControllerPanelHeaderContainer.h"
 #include "frontend/tools_panel/ToolsPanel.h"
+
+#include <string>
 
 namespace spqr {
 
@@ -50,6 +53,9 @@ class AppWindow : public QMainWindow {
         std::unique_ptr<MujocoContext> mujContext;
         std::unique_ptr<SimulationViewport> viewport;
         std::unique_ptr<SimulationThread> sim;
+
+        std::string frameworkConfigPath_ = spqr::frameworkConfigPath;
+        std::string pathsConfigPath_     = spqr::pathsConfigPath;
 };
 
 }  // namespace spqr

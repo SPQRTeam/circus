@@ -16,6 +16,7 @@
 #include <thread>
 #include <vector>
 
+#include "Constants.h"
 #include "MujocoContext.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
@@ -48,7 +49,8 @@ class RobotManager {
         std::shared_ptr<Robot> create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
                                       const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team);
 
-        void startContainers();
+        void startContainers(const std::string& fwkCfgPath  = spqr::frameworkConfigPath,
+                             const std::string& pathsCfgPath = spqr::pathsConfigPath);
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
         void applyCommands();

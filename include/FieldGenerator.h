@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <pugixml.hpp>
 #include <string>
 #include <vector>

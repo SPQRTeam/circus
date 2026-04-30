@@ -20,6 +20,8 @@ libboost-devel = "==1.88.0"
 cmake = ">=3.27,<4"
 
 [target.linux-64.dependencies]
+gcc_linux-64 = ">=14.3.0,<15"
+gxx_linux-64 = ">=14.3.0,<15"
 libgl-devel = "==1.7.0"
 libegl-devel = "==1.7.0"
 

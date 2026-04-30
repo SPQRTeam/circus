@@ -58,9 +58,9 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
     return nullptr;
 }
 
-void RobotManager::startContainers() {
-    YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
-    YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
+void RobotManager::startContainers(const std::string& fwkCfgPath,
+                                   const std::string& pathsCfgPath) {
+    YAML::Node configRoot = loadYamlFile(fwkCfgPath.c_str());
 
     if (!configRoot["image"])
         throw std::runtime_error("Missing 'image' key in YAML file");
@@ -71,17 +71,19 @@ void RobotManager::startContainers() {
         throw std::runtime_error("'volumes' key missing or not a sequence");
 
     std::vector<std::string> binds;
+    std::optional<YAML::Node> pathsRoot;
     for (const auto& v : configRoot["volumes"]) {
         std::string v2 = tryString(v, "Volume entry must be a string: ");
         if (v2.starts_with("<")) {
+            if (!pathsRoot) pathsRoot = loadYamlFile(pathsCfgPath.c_str());
             int end = v2.find('>');
             std::string name = v2.substr(1, end - 1);
 
-            if (!pathsRoot[name]) {
+            if (!(*pathsRoot)[name]) {
                 throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
             }
 
-            std::string name_str = tryString(pathsRoot[name], "path_constants entries must be strings: ");
+            std::string name_str = tryString((*pathsRoot)[name], "path_constants entries must be strings: ");
             v2.replace(0, end + 1, name_str);
         }
         binds.push_back(v2);
