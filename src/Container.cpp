@@ -54,7 +54,10 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                              {"IpcMode", "host"},
                              {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
                              {"SecurityOpt", {"seccomp=unconfined"}},
-                             {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}})},
+                             {"Ulimits", nlohmann::json::array({
+                                 {{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}},
+                                 {{"Name", "rtprio"}, {"Soft", 99}, {"Hard", 99}}
+                             })},
                              {"Privileged", true},
                              {"NetworkMode", CIRCUS_NETWORK_NAME}};
 
@@ -84,10 +87,7 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
                       "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
-                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0")};
-
-    payload["Entrypoint"] = {"/bin/bash", "-lc"};
-    payload["Cmd"] = {"/app/entrypoint.sh"};
+                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0")};    
 
     payload["Tty"] = true;
     payload["OpenStdin"] = true;

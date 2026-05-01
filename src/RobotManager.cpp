@@ -1,5 +1,7 @@
 #include "RobotManager.h"
 
+#include <filesystem>
+
 #include "Constants.h"
 #include "Team.h"  // needed for the forward declaration in the .h
 #include "Utils.h"
@@ -59,7 +61,6 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
 }
 
 void RobotManager::startContainers() {
-    YAML::Node pathsRoot = loadYamlFile(pathsConfigPath);
     YAML::Node configRoot = loadYamlFile(frameworkConfigPath);
 
     if (!configRoot["image"])
@@ -70,27 +71,40 @@ void RobotManager::startContainers() {
     if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
         throw std::runtime_error("'volumes' key missing or not a sequence");
 
+    // Paths in framework_config.yaml are relative to PIXI_PROJECT_ROOT.
+    const char* pixi_project_root = std::getenv("PIXI_PROJECT_ROOT");
+    if (!pixi_project_root)
+        throw std::runtime_error("PIXI_PROJECT_ROOT environment variable is not set");
+
+    namespace fs = std::filesystem;
+    fs::path projectRoot(pixi_project_root);
+
     std::vector<std::string> binds;
     for (const auto& v : configRoot["volumes"]) {
-        std::string v2 = tryString(v, "Volume entry must be a string: ");
-        if (v2.starts_with("<")) {
-            int end = v2.find('>');
-            std::string name = v2.substr(1, end - 1);
+        std::string entry = tryString(v, "Volume entry must be a string: ");
 
-            if (!pathsRoot[name]) {
-                throw std::runtime_error("Entry doesn't exist in path_constants: " + name);
+        // Split "host_path:container_path[:options]"
+        auto firstColon = entry.find(':');
+        if (firstColon != std::string::npos) {
+            std::string hostPath = entry.substr(0, firstColon);
+            std::string rest     = entry.substr(firstColon);  // includes the colon
+
+            if (hostPath.empty() || hostPath[0] != '/') {
+                // Relative path: resolve against project root
+                fs::path hp = fs::weakly_canonical(projectRoot / hostPath);
+                entry = hp.string() + rest;
             }
-
-            std::string name_str = tryString(pathsRoot[name], "path_constants entries must be strings: ");
-            v2.replace(0, end + 1, name_str);
         }
-        binds.push_back(v2);
+
+        binds.push_back(entry);
     }
+
     for (std::shared_ptr<Robot> r : robots_) {
         r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
         r->container->create(r, image, binds);
         r->container->start();
     }
+
     std::cout << "Containers started successfully!" << std::endl;
 }
 

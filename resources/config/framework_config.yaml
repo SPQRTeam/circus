@@ -1,11 +1,17 @@
 # advice: NO FINAL SLASH in the path_constants paths.
+# The paths here are referred w.r.t. PIXI_PROJECT_ROOT env variable
 
-image: spqr:booster
+image: spqr_maximus_bridge:latest
 volumes:
-  - "<simbridge>/tools/booster_motion:/app/booster_motion"
-  - "<simbridge>/.pixi/envs/default:/app/bridge"
-  - "<maximus>/.pixi/envs/default:/app/maximus"
-  - "<maximus>/tools/vision:/app/maximus/tools/vision"
-  - "<maximus>/src/app/config:/app/maximus/config"
-  - "<maximus>/src/app/behaviors/trees:/app/maximus/behaviors"
+  # - "<simbridge>/tools/booster_motion:/app/booster_motion"
+  # - "<simbridge>/.pixi/envs/default:/app/bridge"
+  # - "<maximus>/.pixi/envs/default:/app/maximus"
+  # - "<maximus>/tools/vision:/app/maximus/tools/vision"
+  # - "<maximus>/src/app/config:/app/maximus/config"
+  # - "<maximus>/src/app/behaviors/trees:/app/maximus/behaviors"
+  # - "scripts:/workspace/scripts"
+  # - ".pixi:/workspace/.pixi"
+  # # - "external/TensorRT:/workspace/external/TensorRT"
+  # - "build/x86:/workspace/build/x86"
+  - ":/workspace"
   - "/dev/shm/circus_ipc:/dev/shm/circus_ipc"
