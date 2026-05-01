@@ -70,27 +70,30 @@ void RobotManager::startContainers() {
 
     if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
         throw std::runtime_error("'volumes' key missing or not a sequence");
-
-    // Paths in framework_config.yaml are relative to PIXI_PROJECT_ROOT.
-    const char* pixi_project_root = std::getenv("PIXI_PROJECT_ROOT");
-    if (!pixi_project_root)
-        throw std::runtime_error("PIXI_PROJECT_ROOT environment variable is not set");
-
-    namespace fs = std::filesystem;
-    fs::path projectRoot(pixi_project_root);
-
+    
     std::vector<std::string> binds;
     for (const auto& v : configRoot["volumes"]) {
         std::string entry = tryString(v, "Volume entry must be a string: ");
 
-        // Split "host_path:container_path[:options]"
+        // Split "host_path:container_path"
         auto firstColon = entry.find(':');
         if (firstColon != std::string::npos) {
             std::string hostPath = entry.substr(0, firstColon);
-            std::string rest     = entry.substr(firstColon);  // includes the colon
+            std::string rest = entry.substr(firstColon);
 
+            // If path is empty or does not start with /, it must be resolved
+            // against framework path
             if (hostPath.empty() || hostPath[0] != '/') {
-                // Relative path: resolve against project root
+                // Framework path or pixi project root
+                const char* framework_path = std::getenv("FRAMEWORK_PATH") ? 
+                                 std::getenv("FRAMEWORK_PATH") : std::getenv("PIXI_PROJECT_ROOT");
+
+                if (!framework_path)
+                    throw std::runtime_error("FRAMEWORK_PATH and PIXI_PROJECT_ROOT not found. \
+                                              Check if you want relative path or specify FRAMEWORK_PATH");
+                namespace fs = std::filesystem;
+                fs::path projectRoot(framework_path);
+
                 fs::path hp = fs::weakly_canonical(projectRoot / hostPath);
                 entry = hp.string() + rest;
             }
