@@ -1,5 +1,7 @@
 #include "RobotManager.h"
 
+#include <filesystem>
+
 #include "Constants.h"
 #include "Team.h"  // needed for the forward declaration in the .h
 #include "Utils.h"
@@ -70,6 +72,10 @@ void RobotManager::startContainers(const std::string& fwkCfgPath,
     if (!configRoot["volumes"] || !configRoot["volumes"].IsSequence())
         throw std::runtime_error("'volumes' key missing or not a sequence");
 
+    // Paths in framework config can be relative to PIXI_PROJECT_ROOT.
+    const char* pixi_project_root = std::getenv("FRAMEWORK_PATH") ?
+        std::getenv("FRAMEWORK_PATH") : std::getenv("PIXI_PROJECT_ROOT");
+
     std::vector<std::string> binds;
     std::optional<YAML::Node> pathsRoot;
     for (const auto& v : configRoot["volumes"]) {
@@ -85,6 +91,19 @@ void RobotManager::startContainers(const std::string& fwkCfgPath,
 
             std::string name_str = tryString((*pathsRoot)[name], "path_constants entries must be strings: ");
             v2.replace(0, end + 1, name_str);
+        } else {
+            // Resolve relative / empty host paths against PIXI_PROJECT_ROOT.
+            auto colon = v2.find(':');
+            if (colon != std::string::npos) {
+                std::string host = v2.substr(0, colon);
+                if (host.empty() || host[0] != '/') {
+                    if (!pixi_project_root)
+                        throw std::runtime_error("PIXI_PROJECT_ROOT and FRAMEWORK_PATH environment variables are not set");
+                    namespace fs = std::filesystem;
+                    fs::path hp = fs::weakly_canonical(fs::path(pixi_project_root) / host);
+                    v2 = hp.string() + v2.substr(colon);
+                }
+            }
         }
         binds.push_back(v2);
     }
