@@ -22,6 +22,7 @@ cmake = ">=3.27,<4"
 [target.linux-64.dependencies]
 gcc_linux-64 = ">=14.3.0,<15"
 gxx_linux-64 = ">=14.3.0,<15"
+sysroot_linux-64 = ">=2.35"
 libgl-devel = "==1.7.0"
 libegl-devel = "==1.7.0"
 
@@ -32,6 +33,9 @@ install = { cmd = "cmake --install $PIXI_PROJECT_ROOT/build", depends-on = ["com
 clear = { cmd = "rm -rf $PIXI_PROJECT_ROOT/build" }
 test = { cmd = "python -c 'import circuspy; circuspy.test()'", depends-on = ["install"] }
 circus = { cmd = "$PIXI_PROJECT_ROOT/build/circus", depends-on = ["compile"] }
+
+[system-requirements]
+libc = "2.35"
 
 [activation]
 env = {DYLD_LIBRARY_PATH = "$DYLD_LIBRARY_PATH:$CONDA_PREFIX/lib", LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib", PATH = "$CONDA_PREFIX/bin:$PATH"}
