@@ -87,7 +87,10 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
                       "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
-                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0")};
+                      "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0"),
+                      "INFERENCE_BACKEND=" + envOrDefault("INFERENCE_BACKEND", "trt"),
+                      "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity-flat"),
+                      "BACKEND=" + envOrDefault("BACKEND", "booster")};
 
 
 
