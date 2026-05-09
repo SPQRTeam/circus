@@ -89,8 +89,8 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
                       "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0"),
                       "INFERENCE_BACKEND=" + envOrDefault("INFERENCE_BACKEND", "trt"),
-                      "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity-flat"),
-                      "BACKEND=" + envOrDefault("BACKEND", "booster")};
+                      "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity"),
+                       "BACKEND=" + envOrDefault("BACKEND", "booster")};
 
 
 
