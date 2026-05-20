@@ -21,6 +21,14 @@ struct BallSpec {
         Vector3d position;
 };
 
+struct ObstacleSpec {
+        std::string type;           // "box", "cylinder", "sphere", etc.
+        Vector3d position;          // [x, y, z]
+        Vector3d orientation;       // [roll, pitch, yaw] in radians
+        Vector3d size;              // Dimensions depending on type
+        std::string name = "";      // Optional name for the obstacle
+};
+
 struct FieldConfig {
         float width = 14.0f;
         float height = 9.0f;
@@ -78,6 +86,7 @@ struct GuiConfig {
 struct SceneSpec {
         SimulationConfig simulationConfig;
         std::vector<std::shared_ptr<Team>> teams;
+        std::vector<ObstacleSpec> obstacles;
         GuiConfig guiConfig;
 };
 
@@ -93,6 +102,7 @@ class SceneParser {
         void buildRobotCommon(const string& robotType, xml_node& mujoco);
         void buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor);
         void prefixSubtree(xml_node& root, const std::string& robotName);
+        void addObstaclesToMuJoCo(xml_node& worldbody);
 
         unordered_set<string> robotTypes;
         YAML::Node sceneRoot;
