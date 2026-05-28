@@ -90,7 +90,11 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0"),
                       "INFERENCE_BACKEND=" + envOrDefault("INFERENCE_BACKEND", "trt"),
                       "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity"),
-                       "BACKEND=" + envOrDefault("BACKEND", "booster")};
+                      "BACKEND=" + envOrDefault("BACKEND", "booster")};
+
+    payload["Env"].push_back("SPAWN_X=" + std::to_string(robot->initPosition.x()));
+    payload["Env"].push_back("SPAWN_Y=" + std::to_string(robot->initPosition.y()));
+    payload["Env"].push_back("SPAWN_THETA=" + std::to_string(robot->initOrientation.z()));
 
 
 
