@@ -22,11 +22,11 @@ struct BallSpec {
 };
 
 struct ObstacleSpec {
-        std::string type;           // "box", "cylinder", "sphere", etc.
-        Vector3d position;          // [x, y, z]
-        Vector3d orientation;       // [roll, pitch, yaw] in radians
-        Vector3d size;              // Dimensions depending on type
-        std::string name = "";      // Optional name for the obstacle
+        std::string type;       // "box", "cylinder", "sphere", etc.
+        Vector3d position;      // [x, y, z]
+        Vector3d orientation;   // [roll, pitch, yaw] in radians
+        Vector3d size;          // Dimensions depending on type
+        std::string name = "";  // Optional name for the obstacle
 };
 
 struct FieldConfig {

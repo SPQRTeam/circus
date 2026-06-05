@@ -60,8 +60,7 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
     return nullptr;
 }
 
-void RobotManager::startContainers(const std::string& fwkCfgPath,
-                                   const std::string& pathsCfgPath) {
+void RobotManager::startContainers(const std::string& fwkCfgPath, const std::string& pathsCfgPath) {
     YAML::Node configRoot = loadYamlFile(fwkCfgPath.c_str());
 
     if (!configRoot["image"])
@@ -73,15 +72,15 @@ void RobotManager::startContainers(const std::string& fwkCfgPath,
         throw std::runtime_error("'volumes' key missing or not a sequence");
 
     // Paths in framework config can be relative to PIXI_PROJECT_ROOT.
-    const char* pixi_project_root = std::getenv("FRAMEWORK_PATH") ?
-        std::getenv("FRAMEWORK_PATH") : std::getenv("PIXI_PROJECT_ROOT");
+    const char* pixi_project_root = std::getenv("FRAMEWORK_PATH") ? std::getenv("FRAMEWORK_PATH") : std::getenv("PIXI_PROJECT_ROOT");
 
     std::vector<std::string> binds;
     std::optional<YAML::Node> pathsRoot;
     for (const auto& v : configRoot["volumes"]) {
         std::string v2 = tryString(v, "Volume entry must be a string: ");
         if (v2.starts_with("<")) {
-            if (!pathsRoot) pathsRoot = loadYamlFile(pathsCfgPath.c_str());
+            if (!pathsRoot)
+                pathsRoot = loadYamlFile(pathsCfgPath.c_str());
             int end = v2.find('>');
             std::string name = v2.substr(1, end - 1);
 

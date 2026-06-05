@@ -39,9 +39,12 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     std::optional<std::string> scenePath;
     for (int i = 1; i < argc; ++i) {
         std::string arg(argv[i]);
-        if      (arg == "--scene"     && i + 1 < argc) scenePath            = argv[++i];
-        else if (arg == "--framework" && i + 1 < argc) frameworkConfigPath_ = argv[++i];
-        else if (arg == "--paths"     && i + 1 < argc) pathsConfigPath_     = argv[++i];
+        if (arg == "--scene" && i + 1 < argc)
+            scenePath = argv[++i];
+        else if (arg == "--framework" && i + 1 < argc)
+            frameworkConfigPath_ = argv[++i];
+        else if (arg == "--paths" && i + 1 < argc)
+            pathsConfigPath_ = argv[++i];
     }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);

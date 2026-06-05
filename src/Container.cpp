@@ -50,16 +50,14 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
     std::string xauth_path = envOrDefault("XAUTHORITY", "/root/.Xauthority");
     binds_with_x11.push_back(xauth_path + ":/root/.Xauthority:rw");
 
-    payload["HostConfig"] = {{"Binds", binds_with_x11},
-                             {"IpcMode", "host"},
-                             {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
-                             {"SecurityOpt", {"seccomp=unconfined"}},
-                             {"Ulimits", nlohmann::json::array({
-                                 {{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}},
-                                 {{"Name", "rtprio"}, {"Soft", 99}, {"Hard", 99}}
-                             })},
-                             {"Privileged", true},
-                             {"NetworkMode", CIRCUS_NETWORK_NAME}};
+    payload["HostConfig"]
+        = {{"Binds", binds_with_x11},
+           {"IpcMode", "host"},
+           {"CapAdd", {"SYS_NICE", "IPC_LOCK"}},
+           {"SecurityOpt", {"seccomp=unconfined"}},
+           {"Ulimits", nlohmann::json::array({{{"Name", "memlock"}, {"Soft", -1}, {"Hard", -1}}, {{"Name", "rtprio"}, {"Soft", 99}, {"Hard", 99}}})},
+           {"Privileged", true},
+           {"NetworkMode", CIRCUS_NETWORK_NAME}};
 
     payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
     payload["HostConfig"]["DeviceRequests"].push_back({
@@ -95,8 +93,6 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
     payload["Env"].push_back("SPAWN_X=" + std::to_string(robot->initPosition.x()));
     payload["Env"].push_back("SPAWN_Y=" + std::to_string(robot->initPosition.y()));
     payload["Env"].push_back("SPAWN_THETA=" + std::to_string(robot->initOrientation.z()));
-
-
 
     payload["Tty"] = true;
     payload["OpenStdin"] = true;
