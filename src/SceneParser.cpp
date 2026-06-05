@@ -131,6 +131,51 @@ SceneParser::SceneParser(const string& yamlPath) {
         scene.teams.push_back(teamSpec);
         TeamManager::instance().registerTeam(teamSpec);
     }
+
+    // Parse obstacles if present
+    if (sceneRoot["obstacles"]) {
+        const YAML::Node& obstaclesNode = sceneRoot["obstacles"];
+        if (obstaclesNode.IsSequence()) {
+            uint8_t obstacleIndex = 0;
+            for (const YAML::Node& obstacleNode : obstaclesNode) {
+                if (!obstacleNode["type"]) {
+                    throw runtime_error("Obstacle missing 'type' field.");
+                }
+
+                ObstacleSpec obstacle;
+                obstacle.type = obstacleNode["type"].as<string>();
+                obstacle.name = obstacleNode["name"] ? obstacleNode["name"].as<string>() : ("obstacle_" + to_string(obstacleIndex));
+
+                // Parse position [x, y, z]
+                if (obstacleNode["position"]) {
+                    obstacle.position = Vector3d::Zero();
+                    for (int i = 0; i < 3; ++i) {
+                        obstacle.position[i] = obstacleNode["position"][i].as<double>();
+                    }
+                }
+
+                // Parse orientation [roll, pitch, yaw] in radians
+                if (obstacleNode["orientation"]) {
+                    obstacle.orientation = Vector3d::Zero();
+                    for (int i = 0; i < 3; ++i) {
+                        obstacle.orientation[i] = obstacleNode["orientation"][i].as<double>();
+                    }
+                }
+
+                // Parse size (meaning depends on shape type)
+                if (obstacleNode["size"]) {
+                    obstacle.size = Vector3d::Zero();
+                    for (size_t i = 0; i < obstacleNode["size"].size(); ++i) {
+                        if (i < 3)
+                            obstacle.size[i] = obstacleNode["size"][i].as<double>();
+                    }
+                }
+
+                scene.obstacles.push_back(obstacle);
+                obstacleIndex++;
+            }
+        }
+    }
 }
 
 string SceneParser::buildMuJoCoXml() {
@@ -185,6 +230,9 @@ string SceneParser::buildMuJoCoXml() {
     light.append_attribute("pos") = "0 0 50";
     light.append_attribute("dir") = "0 0 -1";
     light.append_attribute("castshadow") = "false";
+
+    // Add obstacles to the scene
+    addObstaclesToMuJoCo(worldbody);
 
     for (const shared_ptr<Team>& team : scene.teams) {
         for (const shared_ptr<Robot>& robot : team->robots) {
@@ -372,6 +420,51 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
 
     for (xml_node child : actuatorModel.children()) {
         actuator.append_copy(child);
+    }
+}
+
+void SceneParser::addObstaclesToMuJoCo(xml_node& worldbody) {
+    for (const auto& obstacle : scene.obstacles) {
+        xml_node body = worldbody.append_child("body");
+        body.append_attribute("name") = obstacle.name.c_str();
+
+        std::ostringstream posStream;
+        posStream << obstacle.position.x() << " " << obstacle.position.y() << " " << obstacle.position.z();
+        body.append_attribute("pos") = posStream.str().c_str();
+
+        std::ostringstream eulerStream;
+        eulerStream << obstacle.orientation.x() << " " << obstacle.orientation.y() << " " << obstacle.orientation.z();
+        body.append_attribute("euler") = eulerStream.str().c_str();
+
+        xml_node geom = body.append_child("geom");
+        geom.append_attribute("name") = (obstacle.name + "_geom").c_str();
+        geom.append_attribute("type") = obstacle.type.c_str();
+        geom.append_attribute("mass") = "0";  // Static obstacle
+
+        // Set dimensions based on type
+        if (obstacle.type == "box") {
+            std::ostringstream sizeStream;
+            sizeStream << obstacle.size.x() / 2.0 << " " << obstacle.size.y() / 2.0 << " " << obstacle.size.z() / 2.0;
+            geom.append_attribute("size") = sizeStream.str().c_str();
+            geom.append_attribute("rgba") = "0.5 0.5 0.5 1.0";
+        } else if (obstacle.type == "sphere") {
+            std::ostringstream sizeStream;
+            sizeStream << obstacle.size.x();
+            geom.append_attribute("size") = sizeStream.str().c_str();
+            geom.append_attribute("rgba") = "0.5 0.5 0.5 1.0";
+        } else if (obstacle.type == "cylinder") {
+            // For cylinder: size[0] = radius, size[1] = height
+            std::ostringstream sizeStream;
+            sizeStream << obstacle.size.x() << " " << obstacle.size.y() / 2.0;
+            geom.append_attribute("size") = sizeStream.str().c_str();
+            geom.append_attribute("rgba") = "0.5 0.5 0.5 1.0";
+        } else if (obstacle.type == "capsule") {
+            // For capsule: size[0] = radius, size[1] = height
+            std::ostringstream sizeStream;
+            sizeStream << obstacle.size.x() << " " << obstacle.size.y() / 2.0;
+            geom.append_attribute("size") = sizeStream.str().c_str();
+            geom.append_attribute("rgba") = "0.5 0.5 0.5 1.0";
+        }
     }
 }
 
