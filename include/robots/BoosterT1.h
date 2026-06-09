@@ -20,6 +20,7 @@
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
 #include "sensors/CameraRGB.h"
+#include "sensors/ContactForce.h"
 #include "sensors/ImageSharedMemoryWriter.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
@@ -37,6 +38,7 @@ class BoosterT1 : public Robot {
         Imu* imu = nullptr;
         Joints* joints = nullptr;
         Oracle* oracle = nullptr;
+        ContactForce* contactForce = nullptr;
         CameraRGB* rgbCamera;
         CameraDepth* depthCamera;
 
@@ -112,6 +114,9 @@ class BoosterT1 : public Robot {
 
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
+
+            // Ground-truth ground reaction forces on the two foot bodies (prefixed with the robot name by the SceneParser)
+            contactForce = new ContactForce(mujCtx->model, mujCtx->data, (name + "_left_foot_link").c_str(), (name + "_right_foot_link").c_str());
         }
 
         void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
@@ -145,6 +150,7 @@ class BoosterT1 : public Robot {
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
             msg["oracle"] = oracle->serialize(buffer_zone_);
+            msg["contact_forces"] = contactForce->serialize(buffer_zone_);
 
             // Write in the shared file the information
             rgb_writer_.write(rgbCamera->getImage());
@@ -173,6 +179,7 @@ class BoosterT1 : public Robot {
             imu->update();
             joints->update();
             oracle->update();
+            contactForce->update();
             rgbCamera->update();
             depthCamera->update();
         }
