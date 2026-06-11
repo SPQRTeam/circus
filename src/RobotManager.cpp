@@ -53,10 +53,14 @@ void RobotManager::bindMujoco(MujocoContext* mujContext) {
 }
 
 std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
-                                            const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team) {
+                                            const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team,
+                                            const std::string& role) {
     auto it = robotFactory.find(type);
-    if (it != robotFactory.end())
-        return it->second(name, type, number, pos, ori, colorName, team);
+    if (it != robotFactory.end()) {
+        auto robot = it->second(name, type, number, pos, ori, colorName, team);
+        if (robot) robot->role = role;
+        return robot;
+    }
     return nullptr;
 }
 
