@@ -76,6 +76,7 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "CIRCUS_PORT=" + std::to_string(frameworkCommunicationPort),
                       "TEAM_NUMBER=" + std::to_string(robot->team->number),
                       "PLAYER_NUMBER=" + std::to_string(robot->number),
+                      "PLAYER_ROLE=" + robot->role,
                       "TEAM_COLOR=" + robot->colorName,
                       "DISPLAY=" + envOrDefault("DISPLAY", ":0"),
                       "QT_X11_NO_MITSHM=1",

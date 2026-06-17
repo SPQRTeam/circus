@@ -28,8 +28,20 @@ SceneParser::SceneParser(const string& yamlPath) {
     if (!sceneRoot["simulation_config"])
         throw runtime_error("Scene missing 'simulation_config' entry.");
 
+    // Simulation configs are owned by maximus (src/app/sim/simulation_configs). Resolve them from
+    // the framework tree (FRAMEWORK_PATH / PIXI_PROJECT_ROOT) so circus and maximus stay in sync,
+    // falling back to circus' own resources for standalone use.
     string simConfigName = sceneRoot["simulation_config"].as<string>();
-    filesystem::path simConfigPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "simulation_configs" / (simConfigName + ".yaml");
+    const string simConfigFileName = simConfigName + ".yaml";
+    filesystem::path simConfigPath;
+    const char* fwkRoot = std::getenv("FRAMEWORK_PATH") ? std::getenv("FRAMEWORK_PATH") : std::getenv("PIXI_PROJECT_ROOT");
+    if (fwkRoot) {
+        filesystem::path maximusSimConfigPath = filesystem::path(fwkRoot) / "src" / "app" / "sim" / "simulation_configs" / simConfigFileName;
+        if (filesystem::exists(maximusSimConfigPath))
+            simConfigPath = maximusSimConfigPath;
+    }
+    if (simConfigPath.empty())
+        simConfigPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "simulation_configs" / simConfigFileName;
 
     if (!filesystem::exists(simConfigPath))
         throw runtime_error("Simulation config file does not exist: " + simConfigPath.string());
@@ -60,7 +72,18 @@ SceneParser::SceneParser(const string& yamlPath) {
         scene.simulationConfig.game.penalty_duration = gameNode["penalty_duration"].as<int>(45);
     }
 
-    filesystem::path fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "fields" / (scene.simulationConfig.game.field + ".yaml");
+    // Field configs are owned by maximus (src/app/config/fields). Resolve them from the
+    // framework tree (FRAMEWORK_PATH / PIXI_PROJECT_ROOT) so circus and maximus stay in sync,
+    // falling back to circus' own resources for standalone use.
+    const string fieldFileName = scene.simulationConfig.game.field + ".yaml";
+    filesystem::path fieldPath;
+    if (fwkRoot) {
+        filesystem::path maximusFieldPath = filesystem::path(fwkRoot) / "src" / "app" / "config" / "fields" / fieldFileName;
+        if (filesystem::exists(maximusFieldPath))
+            fieldPath = maximusFieldPath;
+    }
+    if (fieldPath.empty())
+        fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "fields" / fieldFileName;
     if (!filesystem::exists(fieldPath))
         throw runtime_error("Field config file does not exist: " + fieldPath.string());
 
@@ -109,6 +132,10 @@ SceneParser::SceneParser(const string& yamlPath) {
             string robotType = robotNode["type"].as<string>();  // complete name <Brand>-<Model>
             uint8_t robotNumber = robotNode["number"].as<uint8_t>();
             string robotName = robotNode["name"] ? robotNode["name"].as<string>() : teamName + "_" + robotType + "_" + to_string(typeIndex++);
+            // Role is taken from the scene if present; otherwise fall back to a number-based default.
+            string robotRole = robotNode["role"]
+                                   ? robotNode["role"].as<string>()
+                                   : (robotNumber == 1) ? "Goalkeeper" : (robotNumber == 2) ? "Defender" : "Striker";
             Vector3d pos = Vector3d::Zero();
             Vector3d ori = Vector3d::Zero();
 
@@ -122,7 +149,7 @@ SceneParser::SceneParser(const string& yamlPath) {
                     ori[i] = robotNode["orientation"][i].as<double>();
             }
 
-            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamName, teamSpec);
+            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamName, teamSpec, robotRole);
 
             robotTypes.insert(robotType);
             teamSpec->robots.push_back(std::move(robot));
