@@ -9,6 +9,7 @@
 
 #include <Eigen/Eigen>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -24,6 +25,7 @@
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Oracle.h"
+#include "sensors/GroundRelativePose.h"
 #include "sensors/Pose.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
@@ -34,6 +36,7 @@ class Team;  // Forward declaration
 class BoosterT1 : public Robot {
     public:
         Pose* pose = nullptr;
+        GroundRelativePose* headPose = nullptr;
         Imu* imu = nullptr;
         Joints* joints = nullptr;
         Oracle* oracle = nullptr;
@@ -72,6 +75,7 @@ class BoosterT1 : public Robot {
 
         void bindMujoco(MujocoContext* mujCtx) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
+            headPose = new GroundRelativePose(mujCtx->model, mujCtx->data, (name + "_H2").c_str(), pose);
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
 
@@ -142,6 +146,7 @@ class BoosterT1 : public Robot {
             std::map<std::string, msgpack::object> msg;
             msg["robot_name"] = msgpack::object(name, buffer_zone_);
             msg["pose"] = pose->serialize(buffer_zone_);
+            msg["head_pose"] = headPose->serialize(buffer_zone_);
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
             msg["oracle"] = oracle->serialize(buffer_zone_);
@@ -156,6 +161,7 @@ class BoosterT1 : public Robot {
         std::map<std::string, Sensor*> getSensors() override {
             std::map<std::string, Sensor*> sensors;
             sensors["pose"] = pose;
+            sensors["head_pose"] = headPose;
             sensors["imu"] = imu;
             sensors["joints"] = joints;
             sensors["rgb_camera"] = rgbCamera;
@@ -170,6 +176,10 @@ class BoosterT1 : public Robot {
 
         void update() override {
             pose->update();
+            headPose->update();
+            std::cout << name << " head_pose position: " << headPose->getPosition().transpose()
+                      << " orientation (rpy): " << headPose->getEulerOrientation().transpose()
+                      << " quat (wxyz): " << headPose->getQuatOrientation().transpose() << std::endl;
             imu->update();
             joints->update();
             oracle->update();
