@@ -75,7 +75,7 @@ class BoosterT1 : public Robot {
 
         void bindMujoco(MujocoContext* mujCtx) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
-            headPose = new GroundRelativePose(mujCtx->model, mujCtx->data, (name + "_H2").c_str(), pose);
+            headPose = new GroundRelativePose(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(), GroundRelativePose::TargetType::Site, pose);
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
 

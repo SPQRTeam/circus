@@ -10,19 +10,33 @@
 
 namespace spqr {
 
-// Pose of a body relative to the ground projection of a reference Pose.
+// Pose of a body or site relative to the ground projection of a reference Pose.
 // Reference frame: (trunk_x, trunk_y, 0) with yaw-only rotation of the trunk.
 class GroundRelativePose : public Sensor {
    public:
-    GroundRelativePose(mjModel* mujModel, mjData* mujData, const char* bodyName, Pose* referencePose)
-        : mujData_(mujData), referencePose_(referencePose) {
-        bodyId_ = mj_name2id(mujModel, mjOBJ_BODY, bodyName);
+    enum class TargetType { Body, Site };
+
+    GroundRelativePose(mjModel* mujModel, mjData* mujData, const char* name, TargetType type, Pose* referencePose)
+        : mujData_(mujData), type_(type), referencePose_(referencePose) {
+        if (type_ == TargetType::Site)
+            targetId_ = mj_name2id(mujModel, mjOBJ_SITE, name);
+        else
+            targetId_ = mj_name2id(mujModel, mjOBJ_BODY, name);
     }
 
     void doUpdate() override {
-        Eigen::Vector3d bodyPos(mujData_->xpos[3 * bodyId_], mujData_->xpos[3 * bodyId_ + 1], mujData_->xpos[3 * bodyId_ + 2]);
-        Eigen::Quaterniond bodyQuat(mujData_->xquat[4 * bodyId_], mujData_->xquat[4 * bodyId_ + 1],
-                                    mujData_->xquat[4 * bodyId_ + 2], mujData_->xquat[4 * bodyId_ + 3]);
+        Eigen::Vector3d bodyPos;
+        Eigen::Quaterniond bodyQuat;
+
+        if (type_ == TargetType::Site) {
+            bodyPos = Eigen::Vector3d(mujData_->site_xpos[3 * targetId_], mujData_->site_xpos[3 * targetId_ + 1], mujData_->site_xpos[3 * targetId_ + 2]);
+            Eigen::Matrix3d siteMat = Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>>(mujData_->site_xmat + 9 * targetId_);
+            bodyQuat = Eigen::Quaterniond(siteMat);
+        } else {
+            bodyPos = Eigen::Vector3d(mujData_->xpos[3 * targetId_], mujData_->xpos[3 * targetId_ + 1], mujData_->xpos[3 * targetId_ + 2]);
+            bodyQuat = Eigen::Quaterniond(mujData_->xquat[4 * targetId_], mujData_->xquat[4 * targetId_ + 1],
+                                          mujData_->xquat[4 * targetId_ + 2], mujData_->xquat[4 * targetId_ + 3]);
+        }
 
         Eigen::Vector4d refQuatVec = referencePose_->getQuatOrientation();
         Eigen::Quaterniond refQuat(refQuatVec(0), refQuatVec(1), refQuatVec(2), refQuatVec(3));
@@ -80,7 +94,8 @@ class GroundRelativePose : public Sensor {
 
    private:
     mjData* mujData_;
-    int bodyId_;
+    int targetId_;
+    TargetType type_;
     Pose* referencePose_;
 
     Eigen::Vector3d position_;
