@@ -58,7 +58,8 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
     auto it = robotFactory.find(type);
     if (it != robotFactory.end()) {
         auto robot = it->second(name, type, number, pos, ori, colorName, team);
-        if (robot) robot->role = role;
+        if (robot)
+            robot->role = role;
         return robot;
     }
     return nullptr;
