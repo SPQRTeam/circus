@@ -25,7 +25,7 @@
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Oracle.h"
-#include "sensors/GroundRelativePose.h"
+#include "sensors/GroundRelativePosition.h"
 #include "sensors/Pose.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
@@ -36,7 +36,7 @@ class Team;  // Forward declaration
 class BoosterT1 : public Robot {
     public:
         Pose* pose = nullptr;
-        GroundRelativePose* headPose = nullptr;
+        GroundRelativePosition* headPose = nullptr;
         Imu* imu = nullptr;
         Joints* joints = nullptr;
         Oracle* oracle = nullptr;
@@ -75,7 +75,7 @@ class BoosterT1 : public Robot {
 
         void bindMujoco(MujocoContext* mujCtx) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
-            headPose = new GroundRelativePose(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(), GroundRelativePose::TargetType::Site, pose);
+            headPose = new GroundRelativePosition(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(), GroundRelativePosition::TargetType::Site, pose);
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
 
@@ -177,9 +177,6 @@ class BoosterT1 : public Robot {
         void update() override {
             pose->update();
             headPose->update();
-            std::cout << name << " head_pose position: " << headPose->getPosition().transpose()
-                      << " orientation (rpy): " << headPose->getEulerOrientation().transpose()
-                      << " quat (wxyz): " << headPose->getQuatOrientation().transpose() << std::endl;
             imu->update();
             joints->update();
             oracle->update();
