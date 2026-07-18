@@ -35,12 +35,12 @@
                     <geom size="0.08" pos="0.01 0 0.11" class="collision" name="head"/>
 
                     <!-- RGB Camera -->
-                    <site name="head_rgb_cam_site" pos="0.05 0.0 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-                    <camera name="rgb_cam" pos="0.05 0 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
+                    <site name="head_rgb_cam_site" pos="0.05 0.0 0.1933" size="0.008" rgba="0.1 0.8 0.1 1"/>
+                    <camera name="rgb_cam" pos="0.05 0 0.193" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
 
                     <!-- Depth Camera -->
-                    <site name="head_depth_cam_site" pos="0.05 0.0 0.0833" size="0.008" rgba="0.1 0.8 0.1 1"/>
-                    <camera name="depth_cam" pos="0.05 0 0.083" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
+                    <site name="head_depth_cam_site" pos="0.05 0.0 0.1933" size="0.008" rgba="0.1 0.8 0.1 1"/>
+                    <camera name="depth_cam" pos="0.05 0 0.193" quat="-0.5 -0.5 0.5 0.5" fovy="70" resolution="640 480"/>
 
                 </body>
             </body>
@@ -164,7 +164,7 @@
                     <geom class="visual" material="black" mesh="Booster-T1_Hip_Pitch_Right"/>
 
                     <!-- Right Hip Roll -->
-                    <body name="Hip_Roll_Right" pos="0 0 -0.02">
+                    <body name="Hip_Roll_Right" pos="0 0 -0.02">true
                         <inertial pos="0.001099 2.4e-05 -0.053748" quat="0.707081 -0.00599604 -0.00599604 0.707081" mass="0.385" diaginertia="0.001743 0.00151729 0.000514712"/>
                         <joint name="Right_Hip_Roll" pos="0 0 0" axis="1 0 0" range="-1.57 0.2" actuatorfrcrange="-25 25"/>
                         <geom class="visual" material="black" mesh="Booster-T1_Hip_Roll_Right"/>
