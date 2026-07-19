@@ -20,6 +20,7 @@
 #include "MujocoContext.h"
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
+#include "sensors/CameraInfo.h"
 #include "sensors/CameraRGB.h"
 #include "sensors/GroundRelativePosition.h"
 #include "sensors/ImageSharedMemoryWriter.h"
@@ -42,6 +43,7 @@ class BoosterT1 : public Robot {
         Oracle* oracle = nullptr;
         CameraRGB* rgbCamera;
         CameraDepth* depthCamera;
+        CameraInfo* rgbCameraInfo = nullptr;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team)
@@ -108,6 +110,7 @@ class BoosterT1 : public Robot {
             // Use RGB viewpoint for simulated depth to provide aligned depth-to-color.
             // This avoids parallax between rgb_cam and depth_cam when unprojecting RGB detections.
             depthCamera = new CameraDepth(mujCtx, (name + "_rgb_cam").c_str());
+            rgbCameraInfo = new CameraInfo(mujCtx->model, (name + "_rgb_cam").c_str());
 
             // Configure the writer for the shared memory file
             const int width = rgbCamera->getWidth();
@@ -151,6 +154,7 @@ class BoosterT1 : public Robot {
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
             msg["oracle"] = oracle->serialize(buffer_zone_);
+            msg["camera_info"] = rgbCameraInfo->serialize(buffer_zone_);
 
             // Write in the shared file the information
             rgb_writer_.write(rgbCamera->getImage());
@@ -167,6 +171,7 @@ class BoosterT1 : public Robot {
             sensors["joints"] = joints;
             sensors["rgb_camera"] = rgbCamera;
             sensors["depth_camera"] = depthCamera;
+            sensors["camera_info"] = rgbCameraInfo;
             return sensors;
         }
 
@@ -183,6 +188,8 @@ class BoosterT1 : public Robot {
             oracle->update();
             rgbCamera->update();
             depthCamera->update();
+            rgbCameraInfo->update();
+
         }
 
         ~BoosterT1() = default;
