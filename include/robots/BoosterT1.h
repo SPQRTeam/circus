@@ -41,8 +41,8 @@ class BoosterT1 : public Robot {
         Imu* imu = nullptr;
         Joints* joints = nullptr;
         Oracle* oracle = nullptr;
-        CameraRGB* rgbCamera;
-        CameraDepth* depthCamera;
+        CameraRGB* rgbCamera = nullptr;
+        CameraDepth* depthCamera = nullptr;
         CameraInfo* rgbCameraInfo = nullptr;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,

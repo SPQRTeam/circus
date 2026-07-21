@@ -14,6 +14,7 @@ alias mp="loco"
 alias echocmd="ros2 topic echo /booster/ros2_k2_joint_cmd"
 alias echostate="ros2 topic echo /booster/ros2_k2_joint_states"
 alias echolow="ros2 topic echo /low_state"
+alias rvizt1="ros2 run rviz2 rviz2"
 
 alias bmlog="cat /var/log/booster-motion.log"
 alias bmerr="cat /var/log/booster-motion.err"

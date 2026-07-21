@@ -24,7 +24,7 @@ class SimulationThread : public QThread {
         void setMaxSimulationTime(int maxTime);
         void initializeSocket(int port);
         void waitRobotConnections();
-        void receiveCommandMessages();
+        void receiveCommandMessages(bool requireAll = true);
 
     signals:
         void stepCompleted();

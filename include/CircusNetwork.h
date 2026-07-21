@@ -46,13 +46,27 @@ class CircusNetwork {
                                   {"com.docker.network.driver.mtu", "1500"},
                                   {"com.docker.network.container_iface_prefix", "circus"}};
 
-            std::string resp_raw = curlClient.request(POST, create_network_endpoint, CREATE_OK_RESPONSE, &payload);
+            try {
+                std::string resp_raw = curlClient.request(POST, create_network_endpoint, CREATE_OK_RESPONSE, &payload);
+                nlohmann::json resp = nlohmann::json::parse(resp_raw);
+                if (!resp.contains("Id"))
+                    throw std::runtime_error("Docker subnet create failed");
+                networkId = resp["Id"];
+            } catch (const std::runtime_error& e) {
+                // Previous circus crash can leave CIRCUS_network behind (HTTP 409).
+                // Reuse it instead of failing scene load.
+                const std::string msg = e.what();
+                if (msg.find("HTTP 409") == std::string::npos)
+                    throw;
 
-            nlohmann::json resp = nlohmann::json::parse(resp_raw);
-            if (!resp.contains("Id"))
-                throw std::runtime_error("Docker subnet create failed");
-
-            networkId = resp["Id"];
+                std::string inspect_raw =
+                    curlClient.request(GET, std::string("/networks/") + CIRCUS_NETWORK_NAME, 200);
+                nlohmann::json inspect = nlohmann::json::parse(inspect_raw);
+                if (!inspect.contains("Id"))
+                    throw std::runtime_error("Docker network already exists but inspect failed");
+                networkId = inspect["Id"];
+                std::cout << "Reusing existing Docker network " << CIRCUS_NETWORK_NAME << std::endl;
+            }
         }
 
     private:

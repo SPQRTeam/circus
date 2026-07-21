@@ -69,7 +69,7 @@ void SimulationThread::initializeSocket(int port) {
     fds.push_back({server_fd, POLLIN, 0});
 }
 
-void SimulationThread::receiveCommandMessages() {
+void SimulationThread::receiveCommandMessages(bool requireAll) {
     int robot_size = robots_.size();
     int done = 0;
     // Track which robots have not yet replied this step
@@ -79,8 +79,14 @@ void SimulationThread::receiveCommandMessages() {
 
     int timeoutCount = 0;
     while (done < robot_size) {
-        int ret = poll(fds.data(), fds.size(), 500);
+        // Handshake (requireAll): wait with retries.
+        // Sim loop (!requireAll): non-blocking poll so physics keeps running even if
+        // the framework does not stream joint torques every step (e.g. no Maximus).
+        int ret = poll(fds.data(), fds.size(), requireAll ? 500 : 0);
         if (ret <= 0) {
+            if (!requireAll)
+                return;
+
             ++timeoutCount;
             // Resend state only every 5 timeouts (2.5s) to avoid flooding the TCP buffer
             if (timeoutCount % 5 != 0)
@@ -271,7 +277,7 @@ void SimulationThread::run() {
             //      recv(torques)     // bloccante o con timeout
 
             sendStateMessages();
-            receiveCommandMessages();
+            receiveCommandMessages(/*requireAll=*/false);
 
             next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
             // std::this_thread::sleep_until(next_step_time);

@@ -139,6 +139,19 @@ void AppWindow::loadScene(const QString& yaml_file) {
         std::string xmlScene = parser.buildMuJoCoXml();
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
+
+        // Reset IPC dir BEFORE bindMujoco: camera writers mmap files under here during bind.
+        // Clearing afterwards unlinks those files; the host keeps writing to orphaned inodes
+        // while containers see an empty mount — RViz gets no /boostercamera images.
+        const std::filesystem::path shmDir("/dev/shm/circus_ipc");
+        if (std::filesystem::exists(shmDir)) {
+            std::filesystem::remove_all(shmDir);
+        }
+        std::filesystem::create_directories(shmDir);
+
+        // Bind sensors before creating the OpenGL viewport: its timer can paint immediately
+        // and would otherwise dynamic_cast uninitialized camera pointers.
+        RobotManager::instance().bindMujoco(mujContext.get());
         viewport = std::make_unique<SimulationViewport>(*mujContext);
 
         // Configure and bind GameController
@@ -212,16 +225,8 @@ void AppWindow::loadScene(const QString& yaml_file) {
             },
             Qt::QueuedConnection);
 
-        // Ensure the shared memory directory exists and is writable by the current user.
-        // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
-        const std::filesystem::path shmDir("/dev/shm/circus_ipc");
-        if (std::filesystem::exists(shmDir)) {
-            std::filesystem::remove_all(shmDir);
-        }
-        std::filesystem::create_directories(shmDir);
-
         CircusNetwork::instance().init();
-        RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
+        // Sensors already bound above, before the viewport was shown.
         sim->initializeSocket(frameworkCommunicationPort);
 
         std::cout << "Starting containers..." << std::endl;

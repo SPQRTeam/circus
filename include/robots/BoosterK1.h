@@ -31,10 +31,10 @@ class Team;  // Forward declaration
 class BoosterK1 : public Robot {
     public:
         Pose* pose = nullptr;
-        Imu* imu;
+        Imu* imu = nullptr;
         Joints* joints = nullptr;
-        CameraRGB* rgbCamera;
-        CameraDepth* depthCamera;
+        CameraRGB* rgbCamera = nullptr;
+        CameraDepth* depthCamera = nullptr;
 
         BoosterK1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team)

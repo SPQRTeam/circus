@@ -1,9 +1,10 @@
 #!/bin/bash
-# Wait for 5 seconds
+# Wait for booster-motion to settle, then start bridge + TF publisher.
 sleep 3
 
-# Start simbridge and maximus in parallel
-# This substitute the timer of 5 seconds inside the bridge.
-# In this way the bridge (or maximus) does not need to have the
-# check on the timer if the code is run on the robot or on simulator
-supervisorctl -c /etc/supervisor/conf.d/booster.conf start simbridge maximus
+# Start simbridge (maximus disabled here: needs TensorRT libs not present on this host tree).
+# SimBridge alone is enough for Circus to accept the robot connection and run the sim loop.
+supervisorctl -c /etc/supervisor/conf.d/booster.conf start simbridge
+
+# Publish /tf from t1.urdf + /booster/ros2_k2_joint_states
+supervisorctl -c /etc/supervisor/conf.d/booster.conf start robot_state_publisher

@@ -4,7 +4,10 @@ image: spqr:booster
 volumes:
   - "<simbridge>/tools/booster_motion:/app/booster_motion"
   - "<simbridge>/.pixi/envs/default:/app/bridge"
+  # Identity mounts: pixi binaries embed absolute host RPATH/interpreter paths.
+  - "/home/rum/John/SPQR/spqrbooster2026/external/simbridge/.pixi/envs/default:/home/rum/John/SPQR/spqrbooster2026/external/simbridge/.pixi/envs/default"
   - "<maximus>/.pixi/envs/default:/app/maximus"
+  - "/home/rum/John/SPQR/spqrbooster2026/.pixi/envs/default:/home/rum/John/SPQR/spqrbooster2026/.pixi/envs/default"
   - "<maximus>/tools/vision:/app/maximus/tools/vision"
   - "<maximus>/src/app/config:/app/maximus/config"
   - "<maximus>/src/app/behaviors/trees:/app/maximus/behaviors"

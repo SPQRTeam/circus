@@ -22,7 +22,9 @@
 #include "MujocoContext.h"
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
+#include "sensors/CameraInfo.h"
 #include "sensors/CameraRGB.h"
+#include "sensors/GroundRelativePosition.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
@@ -161,7 +163,20 @@ class GridCell : public QWidget {
                 case ToolType::PLOT:
                     newTool = new Plot(this);
 
-                    if (selectedItem_.contains("/position")) {
+                    if (selectedItem_.contains("/head_pose")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("X", QColor(255, 0, 0));
+                        plot->addTimeSeries("Y", QColor(0, 255, 0));
+                        plot->addTimeSeries("Z", QColor(0, 0, 255));
+                    } else if (selectedItem_.contains("/camera_info")) {
+                        Plot* plot = dynamic_cast<Plot*>(newTool);
+                        plot->addTimeSeries("fx", QColor(255, 0, 0));
+                        plot->addTimeSeries("fy", QColor(0, 255, 0));
+                        plot->addTimeSeries("cx", QColor(0, 0, 255));
+                        plot->addTimeSeries("cy", QColor(255, 165, 0));
+                        plot->addTimeSeries("width", QColor(128, 0, 128));
+                        plot->addTimeSeries("height", QColor(0, 128, 128));
+                    } else if (selectedItem_.contains("/position")) {
                         Plot* plot = dynamic_cast<Plot*>(newTool);
                         plot->addTimeSeries("X", QColor(255, 0, 0));
                         plot->addTimeSeries("Y", QColor(0, 255, 0));
@@ -461,7 +476,31 @@ class ToolsPanelGrid : public QWidget {
                                 double simTime = mujContext_.data->time;
 
                                 // Add data based on sensor type
-                                if (sensorType == "position") {
+                                if (sensorType == "head_pose") {
+                                    auto it = sensors.find("head_pose");
+                                    if (it != sensors.end() && it->second) {
+                                        auto* headPose = dynamic_cast<GroundRelativePosition*>(it->second);
+                                        if (headPose) {
+                                            Eigen::Vector3d position = headPose->getPosition();
+                                            plot->addDataPoint("X", position(0), simTime);
+                                            plot->addDataPoint("Y", position(1), simTime);
+                                            plot->addDataPoint("Z", position(2), simTime);
+                                        }
+                                    }
+                                } else if (sensorType == "camera_info") {
+                                    auto it = sensors.find("camera_info");
+                                    if (it != sensors.end() && it->second) {
+                                        auto* camInfo = dynamic_cast<CameraInfo*>(it->second);
+                                        if (camInfo) {
+                                            plot->addDataPoint("fx", camInfo->getFx(), simTime);
+                                            plot->addDataPoint("fy", camInfo->getFy(), simTime);
+                                            plot->addDataPoint("cx", camInfo->getCx(), simTime);
+                                            plot->addDataPoint("cy", camInfo->getCy(), simTime);
+                                            plot->addDataPoint("width", camInfo->getWidth(), simTime);
+                                            plot->addDataPoint("height", camInfo->getHeight(), simTime);
+                                        }
+                                    }
+                                } else if (sensorType == "position") {
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
                                         Sensor* poseSensor = it->second;
@@ -485,7 +524,9 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d position = dynamic_cast<Joints*>(jointsSensor)->getPosition();
+                                        Eigen::VectorXd position = dynamic_cast<Joints*>(jointsSensor)->getPosition();
+                                        if (position.size() < 23)
+                                            continue;
                                         plot->addDataPoint("head_yaw", position(0), simTime);
                                         plot->addDataPoint("head_pitch", position(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", position(2), simTime);
@@ -514,7 +555,9 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d velocity = dynamic_cast<Joints*>(jointsSensor)->getVelocity();
+                                        Eigen::VectorXd velocity = dynamic_cast<Joints*>(jointsSensor)->getVelocity();
+                                        if (velocity.size() < 23)
+                                            continue;
                                         plot->addDataPoint("head_yaw", velocity(0), simTime);
                                         plot->addDataPoint("head_pitch", velocity(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", velocity(2), simTime);
@@ -543,7 +586,9 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d acceleration = dynamic_cast<Joints*>(jointsSensor)->getAcceleration();
+                                        Eigen::VectorXd acceleration = dynamic_cast<Joints*>(jointsSensor)->getAcceleration();
+                                        if (acceleration.size() < 23)
+                                            continue;
                                         plot->addDataPoint("head_yaw", acceleration(0), simTime);
                                         plot->addDataPoint("head_pitch", acceleration(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", acceleration(2), simTime);
@@ -572,7 +617,9 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d torque = dynamic_cast<Joints*>(jointsSensor)->getTorque();
+                                        Eigen::VectorXd torque = dynamic_cast<Joints*>(jointsSensor)->getTorque();
+                                        if (torque.size() < 23)
+                                            continue;
                                         plot->addDataPoint("head_yaw", torque(0), simTime);
                                         plot->addDataPoint("head_pitch", torque(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", torque(2), simTime);

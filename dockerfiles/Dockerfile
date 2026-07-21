@@ -31,6 +31,9 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     netcat \
     ros-humble-image-view \
+    ros-humble-rviz2 \
+    ros-humble-tf2-tools \
+    ros-humble-tf2-ros \
     net-tools
 
 RUN rm -rf /var/lib/apt/lists/*
@@ -63,6 +66,9 @@ RUN chmod +x /app/entrypoint.sh
 
 COPY delayed_start.sh /app
 RUN chmod +x /app/delayed_start.sh
+
+COPY start_robot_state_publisher.sh /app
+RUN chmod +x /app/start_robot_state_publisher.sh
 
 # add custom bashrc
 COPY configs/bashrc /root/.bashrc_addendum

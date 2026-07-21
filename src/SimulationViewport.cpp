@@ -48,13 +48,17 @@ void SimulationViewport::paintGL() {
     mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
     mjr_render(viewport, scene, context);
 
-    // Render cameras offscreen and save images
+    // Render cameras offscreen and save images.
+    // Sensors are null until bindMujoco(); paint can run earlier via the Qt timer.
     for (int i = 0; i < RobotManager::instance().getRobots().size(); ++i) {
         auto robot = RobotManager::instance().getRobots()[i];
 
         std::map<std::string, Sensor*> sensors = robot->getSensors();
-        CameraRGB* rgbCamera = dynamic_cast<CameraRGB*>(sensors["rgb_camera"]);
-        CameraDepth* depthCamera = dynamic_cast<CameraDepth*>(sensors["depth_camera"]);
+        auto rgbIt = sensors.find("rgb_camera");
+        auto depthIt = sensors.find("depth_camera");
+        CameraRGB* rgbCamera = (rgbIt != sensors.end() && rgbIt->second) ? dynamic_cast<CameraRGB*>(rgbIt->second) : nullptr;
+        CameraDepth* depthCamera =
+            (depthIt != sensors.end() && depthIt->second) ? dynamic_cast<CameraDepth*>(depthIt->second) : nullptr;
 
         if (rgbCamera)
             rgbCamera->render();
