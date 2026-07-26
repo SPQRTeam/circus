@@ -4,7 +4,9 @@
 
 #include <QThread>
 #include <map>
+#include <msgpack.hpp>
 #include <mutex>
+#include <unordered_map>
 #include <vector>
 
 #include "robots/Robot.h"
@@ -46,6 +48,11 @@ class SimulationThread : public QThread {
         std::vector<std::shared_ptr<Robot>> robots_;
         std::vector<pollfd> fds;
         mutable std::mutex mutex_;
+
+        // Per-fd streaming parser state: needed because incoming command
+        // messages have no length-prefix framing, so a single read() can
+        // return multiple concatenated messages or a partial one.
+        std::unordered_map<int, msgpack::unpacker> unpackers_;
 
         ssize_t send_all(int fd, char* buf, size_t len);
 

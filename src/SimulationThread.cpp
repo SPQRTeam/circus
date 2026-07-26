@@ -2,6 +2,7 @@
 
 #include <set>
 #include <stdexcept>
+#include <utility>
 
 #include "GameController.h"
 #include "RobotManager.h"
@@ -108,17 +109,35 @@ void SimulationThread::receiveCommandMessages() {
         for (size_t i = 0; i < fds.size(); ++i) {
             // An event occured for the i-th fd
             if (fds[i].revents & POLLIN) {
-                char buffer[MAX_MSG_SIZE];
-                int n = read(fds[i].fd, buffer, sizeof(buffer) - 1);
+                int fd = fds[i].fd;
+                msgpack::unpacker& unp = unpackers_[fd];
+                unp.reserve_buffer(MAX_MSG_SIZE);
+                int n = read(fd, unp.buffer(), unp.buffer_capacity());
                 if (n <= 0) {
-                    close(fds[i].fd);
+                    close(fd);
                     fds.erase(fds.begin() + i);
                     --i;
+                    unpackers_.erase(fd);
                     continue;
                 }
+                unp.buffer_consumed(static_cast<size_t>(n));
 
-                msgpack::object_handle oh = msgpack::unpack(buffer, n);
-                auto data_map = oh.get().as<std::map<std::string, msgpack::object>>();
+                // Drain every complete message currently buffered (a single
+                // read() can return several concatenated messages if we were
+                // slow to read), keeping only the latest one -- older ones
+                // queued up behind it are superseded and discarded on
+                // purpose, never applied.
+                msgpack::object_handle oh;
+                msgpack::object_handle latest;
+                bool gotOne = false;
+                while (unp.next(oh)) {
+                    latest = std::move(oh);
+                    gotOne = true;
+                }
+                if (!gotOne)
+                    continue;  // only a partial message so far; wait for more bytes
+
+                auto data_map = latest.get().as<std::map<std::string, msgpack::object>>();
                 auto it = data_map.find("robot_name");
                 if (it == data_map.end())
                     continue;
@@ -248,6 +267,16 @@ void SimulationThread::run() {
 
     double sim_dt = model_->opt.timestep;
 
+    // Physics integrates at the model's native sim_dt (kept small for
+    // numerical accuracy), but robot control frameworks only produce new
+    // commands at their own, much lower, rate (~50Hz). Only exchange
+    // state/commands every kControlDecimation physics steps instead of
+    // every single one; in between, RobotManager::applyCommands() keeps
+    // re-applying the last received torque (zero-order hold) every step,
+    // unchanged.
+    constexpr int kControlDecimation = 1;
+    int stepsSinceLastControl = 0;
+
     using clock = std::chrono::steady_clock;
     auto next_step_time = clock::now();
     while (running_) {
@@ -273,11 +302,18 @@ void SimulationThread::run() {
             sendStateMessages();
             receiveCommandMessages();
 
-            next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(sim_dt));
-            // std::this_thread::sleep_until(next_step_time);
+            // TEST HOOK: pad each iteration (integration + comms) to ~20ms
+            // total real time instead of pacing to sim_dt, to test whether
+            // feeding the policy's gait-phase/velocity-ramp accumulators a
+            // matching per-tick dt (see Locomotion.h POLICY_DT, also set to
+            // sim_dt for this test) keeps the simulation physically correct
+            // while running ~10x slower than real time.
+            constexpr double kTestControlPeriod = 0.02;
+            next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(kTestControlPeriod));
+            std::this_thread::sleep_until(next_step_time);
 
-            // if (clock::now() > next_step_time)
-            //     next_step_time = clock::now();
+            if (clock::now() >= next_step_time)
+                next_step_time = clock::now();
         } else {
             // When paused, sleep briefly to avoid busy-waiting
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
