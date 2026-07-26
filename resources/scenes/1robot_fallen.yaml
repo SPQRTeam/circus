@@ -1,0 +1,10 @@
+simulation_config: default
+teams:
+  red:
+    number: 8
+    players:
+      - type: Booster-T1
+        number: 1
+        # Spawn nearly on the ground, pitched forward (~fallen)
+        position: [-4.0, 0.0, 0.25]
+        orientation: [1.57, 0.0, 0.0]

@@ -12,3 +12,6 @@ volumes:
   - "<maximus>/src/app/config:/app/maximus/config"
   - "<maximus>/src/app/behaviors/trees:/app/maximus/behaviors"
   - "/dev/shm/circus_ipc:/dev/shm/circus_ipc"
+  # Local scripts/config without rebuilding the image (bash runner ignores +x)
+  - "<circus>/dockerfiles/delayed_start.sh:/app/delayed_start.sh"
+  - "<circus>/dockerfiles/booster.conf:/etc/supervisor/conf.d/booster.conf"

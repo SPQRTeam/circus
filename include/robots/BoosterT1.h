@@ -136,12 +136,23 @@ class BoosterT1 : public Robot {
                                          + std::to_string(joint_map.size()) + ")");
             }
 
+            // Never accept a limp (all-near-zero) command — that drops the robot.
+            // Keep the last non-limp torques instead.
+            double mag = 0.0;
+            for (double t : joint_torques) {
+                mag += std::abs(t);
+            }
+            if (mag < 1.0) {
+                return;
+            }
+
             size_t i = 0;
             {
                 std::lock_guard<std::mutex> lock(mutex_);
                 for (const auto& [joint_value, joint_name] : joint_map) {
                     latestTorques[joint_value] = joint_torques[i++];
                 }
+                have_nonlimp_torques_ = true;
             }
         }
 
@@ -177,6 +188,24 @@ class BoosterT1 : public Robot {
 
         void applyCommands() override {
             std::lock_guard<std::mutex> lock(mutex_);
+            if (!have_nonlimp_torques_) {
+                // Before any real cmd: stiff PD to the initial joint pose (zeros).
+                joints->doUpdate();
+                std::unordered_map<JointValue, mjtNum> pd;
+                constexpr mjtNum kP = 250.0;
+                constexpr mjtNum kD = 8.0;
+                auto q = joints->getPosition();
+                auto dq = joints->getVelocity();
+                size_t idx = 0;
+                for (const auto& [jv, _] : joint_map) {
+                    if (idx < static_cast<size_t>(q.size())) {
+                        pd[jv] = kP * (0.0 - q[idx]) - kD * dq[idx];
+                    }
+                    ++idx;
+                }
+                joints->set_torque(pd);
+                return;
+            }
             joints->set_torque(latestTorques);
         }
 
@@ -201,6 +230,7 @@ class BoosterT1 : public Robot {
 
         std::map<JointValue, std::string> joint_map;
         std::unordered_map<JointValue, mjtNum> latestTorques;
+        bool have_nonlimp_torques_{false};
 
         std::string shm_dir_;
         ImageSharedMemoryWriter rgb_writer_;

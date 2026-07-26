@@ -50,6 +50,8 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
     std::string xauth_path = envOrDefault("XAUTHORITY", "/root/.Xauthority");
     binds_with_x11.push_back(xauth_path + ":/root/.Xauthority:rw");
 
+    // booster-motion SysV msg queues (msgget) need host IPC; private IPC makes it
+    // exit/segfault during WBC init. For multi-robot, delayed_start clears stale queues.
     payload["HostConfig"]
         = {{"Binds", binds_with_x11},
            {"IpcMode", "host"},

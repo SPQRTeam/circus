@@ -67,6 +67,9 @@ RUN chmod +x /app/entrypoint.sh
 COPY delayed_start.sh /app
 RUN chmod +x /app/delayed_start.sh
 
+COPY to_walk_mode.sh /app
+RUN chmod +x /app/to_walk_mode.sh
+
 COPY start_robot_state_publisher.sh /app
 RUN chmod +x /app/start_robot_state_publisher.sh
 
