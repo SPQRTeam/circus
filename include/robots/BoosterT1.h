@@ -190,7 +190,6 @@ class BoosterT1 : public Robot {
             rgbCamera->update();
             depthCamera->update();
             rgbCameraInfo->update();
-
         }
 
         ~BoosterT1() = default;
