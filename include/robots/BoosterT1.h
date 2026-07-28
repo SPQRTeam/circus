@@ -116,7 +116,8 @@ class BoosterT1 : public Robot {
             const int width = rgbCamera->getWidth();
             const int height = rgbCamera->getHeight();
             rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
-            depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
+            // Depth is 16-bit (16UC1): two bytes per pixel, published without precision loss
+            depth_writer_.configure(shmFilePath_("depth"), width, height, 2);
 
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
@@ -158,7 +159,7 @@ class BoosterT1 : public Robot {
 
             // Write in the shared file the information
             rgb_writer_.write(rgbCamera->getImage());
-            depth_writer_.write(depthCamera->getDepth8bit());
+            depth_writer_.write(depthCamera->getDepth16UC1());
 
             return msg;
         }

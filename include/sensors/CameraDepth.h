@@ -88,7 +88,9 @@ class CameraDepth : public Sensor {
             const float extent = static_cast<float>(mujContext->model->stat.extent);
             const float znear = static_cast<float>(mujContext->model->vis.map.znear) * extent;
             const float zfar = static_cast<float>(mujContext->model->vis.map.zfar) * extent;
-            constexpr float kDepthMaxMeters = 10.0f;  // Keep in sync with SimBridge mono8 decoding.
+            // Depth is stored as uint16 millimetres, the ROS 16UC1 convention consumers
+            // expect (raw / 1000 = metres). Saturates at 65535 mm ~= 65 m.
+            constexpr float kMillimetresPerMetre = 1000.0f;
             float max_u16 = static_cast<float>(std::numeric_limits<uint16_t>::max());
 
             // Resample offscreen depth to camera resolution and convert to metric depth.
@@ -104,8 +106,8 @@ class CameraDepth : public Sensor {
                     float z_converted = (znear * zfar) / (zfar - z_raw * (zfar - znear));
                     depthNormalized[dstRow + x] = z_converted;
 
-                    float normalizedDepth = std::clamp(z_converted / kDepthMaxMeters, 0.0f, 1.0f);
-                    depth[dstRow + x] = static_cast<uint16_t>(normalizedDepth * max_u16);
+                    const float depthMillimetres = std::clamp(z_converted * kMillimetresPerMetre, 0.0f, max_u16);
+                    depth[dstRow + x] = static_cast<uint16_t>(depthMillimetres);
                 }
             }
 
@@ -134,13 +136,14 @@ class CameraDepth : public Sensor {
             return depth;
         }
 
-        std::vector<unsigned char> getDepth8bit() const {
+        std::vector<unsigned char> getDepth16UC1() const {
             std::lock_guard<std::mutex> lock(depthMutex_);
-            std::vector<unsigned char> depth8(depth.size());
+            std::vector<unsigned char> bytes(depth.size() * sizeof(uint16_t));
             for (size_t i = 0; i < depth.size(); ++i) {
-                depth8[i] = static_cast<unsigned char>(depth[i] >> 8);  // Convert uint16 to uint8
+                bytes[i * 2 + 0] = static_cast<unsigned char>(depth[i] & 0xFF);
+                bytes[i * 2 + 1] = static_cast<unsigned char>((depth[i] >> 8) & 0xFF);
             }
-            return depth8;
+            return bytes;
         }
 
         int getWidth() const {
