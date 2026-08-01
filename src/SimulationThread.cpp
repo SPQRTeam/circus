@@ -92,6 +92,7 @@ void SimulationThread::receiveCommandMessages() {
                     std::cout << "[receiveCommandMessages] Timeout, resending state to: " << r->name << std::endl;
                     msgpack::sbuffer sbuf;
                     auto answ = r->sendMessage();
+                    r->publishSharedState();
                     msgpack::pack(sbuf, answ);
                     if (sbuf.size() > 0) {
                         int fd = entity_fd_map[r->name];
@@ -221,6 +222,7 @@ void SimulationThread::waitRobotConnections() {
                                 if (r->name == robotName) {
                                     r->isConnected = true;
                                     answ = r->sendMessage();
+                                    r->publishSharedState();
                                     answOk = true;
                                     break;
                                 }
@@ -339,7 +341,11 @@ void SimulationThread::run() {
                 }
     
                 sendStateMessages();
+
+                auto receiveStart = clock::now();
                 receiveCommandMessages();
+                double receiveElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - receiveStart).count();
+                std::cout << "[SimulationThread] receiveCommandMessages took " << receiveElapsedMs << " ms" << std::endl;
             }
             // DEBUG: real time spent computing kControlDecimation physics
             // steps, vs. the sim-time budget they represent.
@@ -375,6 +381,7 @@ void SimulationThread::sendStateMessages() {
         {
             std::unique_lock lock(mutex_);
             answ = r->sendMessage();
+            r->publishSharedState();
             answOk = true;
         }
 

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "MujocoContext.h"
+#include "ipc/SharedMemoryWriter.h"
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
 #include "sensors/CameraRGB.h"
@@ -30,6 +31,19 @@
 namespace spqr {
 
 class Team;  // Forward declaration
+
+constexpr size_t kBoosterT1JointCount = 23;
+
+// Per-tick shared-memory payload: everything BoosterT1's sendMessage() sends
+// over the socket (minus robot_name, which the shared-memory file path already
+// encodes), bundled into one trivially-copyable struct so a reader sees all
+// fields from the same tick atomically (one SharedMemoryWriter -> one seq).
+struct BoosterT1SharedState {
+        PoseData pose;
+        ImuData imu;
+        JointState<kBoosterT1JointCount> joints;
+        OracleData oracle;
+};
 
 class BoosterT1 : public Robot {
     public:
@@ -109,6 +123,7 @@ class BoosterT1 : public Robot {
             const int height = rgbCamera->getHeight();
             rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
             depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
+            state_writer_.configure(shmFilePath_("state"), /*element_count=*/1);
 
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
@@ -153,6 +168,11 @@ class BoosterT1 : public Robot {
             return msg;
         }
 
+        void publishSharedState() override {
+            state_writer_.write(BoosterT1SharedState{pose->toSharedState(), imu->toSharedState(),
+                                                       joints->toSharedState<kBoosterT1JointCount>(), oracle->toSharedState()});
+        }
+
         std::map<std::string, Sensor*> getSensors() override {
             std::map<std::string, Sensor*> sensors;
             sensors["pose"] = pose;
@@ -190,6 +210,7 @@ class BoosterT1 : public Robot {
         std::string shm_dir_;
         ImageSharedMemoryWriter rgb_writer_;
         ImageSharedMemoryWriter depth_writer_;
+        SharedMemoryWriter<BoosterT1SharedState> state_writer_;
 };
 
 }  // namespace spqr

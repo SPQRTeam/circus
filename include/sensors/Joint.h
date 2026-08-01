@@ -39,6 +39,17 @@ enum class JointValue {
     ANKLE_RIGHT_ROLL,
 };
 
+// Trivially-copyable snapshot of Joints' values, for publishing over shared memory
+// (same numbers doSerialize() sends over the socket, without msgpack/std::vector).
+// N must match the joint count of the robot type using it (i.e. its joint_map size).
+template <size_t N>
+struct JointState {
+        double position[N] = {};
+        double velocity[N] = {};
+        double acceleration[N] = {};
+        double torque[N] = {};
+};
+
 class Joints : public Sensor {
     public:
         Joints(mjModel* mujModel, mjData* mujData, std::map<JointValue, std::string> map) : mujModel(mujModel), mujData(mujData) {
@@ -121,6 +132,19 @@ class Joints : public Sensor {
             data["torque"] = msgpack::object(tor, z);
 
             return msgpack::object(data, z);
+        }
+
+        template <size_t N>
+        JointState<N> toSharedState() const {
+            JointState<N> data;
+            const size_t n = std::min(N, size);
+            for (size_t i = 0; i < n; ++i) {
+                data.position[i] = position[i];
+                data.velocity[i] = velocity[i];
+                data.acceleration[i] = acceleration[i];
+                data.torque[i] = torque[i];
+            }
+            return data;
         }
 
         Eigen::VectorXd getPosition() const {

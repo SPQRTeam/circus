@@ -8,6 +8,13 @@
 
 namespace spqr {
 
+// Trivially-copyable snapshot of Imu's values, for publishing over shared memory
+// (same numbers doSerialize() sends over the socket, without msgpack/std::vector).
+struct ImuData {
+        double linearAcceleration[3] = {};
+        double angularVelocity[3] = {};
+};
+
 class Imu : public Sensor {
     public:
         Imu(mjModel* mujModel, mjData* mujData, const char* linearAccelerationName, const char* angularVelocityName)
@@ -34,6 +41,15 @@ class Imu : public Sensor {
             imu_data["linear_acceleration"] = msgpack::object(linear_acc_vec, z);
             imu_data["angular_velocity"] = msgpack::object(angular_vel_vec, z);
             return msgpack::object(imu_data, z);
+        }
+
+        ImuData toSharedState() const {
+            ImuData data;
+            for (int i = 0; i < 3; ++i) {
+                data.linearAcceleration[i] = linearAcceleration(i);
+                data.angularVelocity[i] = angularVelocity(i);
+            }
+            return data;
         }
 
         Eigen::Vector3d getLinearAcceleration() const {

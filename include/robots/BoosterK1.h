@@ -93,6 +93,10 @@ class BoosterK1 : public Robot {
             return msg;
         }
 
+        void publishSharedState() override {
+            // Socket-only for now: BoosterK1 doesn't yet have a shared-memory state channel.
+        }
+
         std::map<std::string, Sensor*> getSensors() override {
             std::map<std::string, Sensor*> sensors;
             sensors["pose"] = pose;
