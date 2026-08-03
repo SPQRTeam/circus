@@ -50,6 +50,15 @@ struct JointState {
         double torque[N] = {};
 };
 
+// Trivially-copyable joint torque command, for receiving over shared memory
+// (same numbers previously carried as "joint_torques" in the msgpack command
+// message). Order matches joint_map's ascending JointValue iteration, i.e. the
+// same order used by BoosterT1::receiveMessage() today.
+template <size_t N>
+struct JointTorques {
+        double torque[N] = {};
+};
+
 class Joints : public Sensor {
     public:
         Joints(mjModel* mujModel, mjData* mujData, std::map<JointValue, std::string> map) : mujModel(mujModel), mujData(mujData) {

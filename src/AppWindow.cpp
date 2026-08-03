@@ -231,7 +231,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         sim->waitRobotConnections();
 
         std::cout << "Waiting Robots are Ready..." << std::endl;
-        sim->receiveCommandMessages();
+        sim->receiveCommandMessagesSHM();
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);

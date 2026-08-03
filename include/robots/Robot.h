@@ -47,6 +47,10 @@ class Robot {
         // for the socket path; a robot that only needs the socket path implements
         // this with an empty body.
         virtual void publishSharedState() = 0;
+        // Reads and applies the latest command from shared memory, if a new one has
+        // arrived since the last call. Returns true iff a new command was applied
+        // this call. Mirrors receiveMessage()'s role for the socket path.
+        virtual bool receiveSharedCommand() = 0;
         virtual std::map<std::string, Sensor*> getSensors() = 0;
         virtual void applyCommands() = 0;
 

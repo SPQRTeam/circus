@@ -27,6 +27,7 @@ class SimulationThread : public QThread {
         void initializeSocket(int port);
         void waitRobotConnections();
         void receiveCommandMessages();
+        void receiveCommandMessagesSHM();
 
     signals:
         void stepCompleted();

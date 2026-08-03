@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "MujocoContext.h"
+#include "ipc/SharedMemoryReader.h"
 #include "ipc/SharedMemoryWriter.h"
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
@@ -124,6 +125,7 @@ class BoosterT1 : public Robot {
             rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
             depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
             state_writer_.configure(shmFilePath_("state"), /*element_count=*/1);
+            command_reader_.configure(shmFilePath_("commands"));
 
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
@@ -150,6 +152,20 @@ class BoosterT1 : public Robot {
                     latestTorques[joint_value] = joint_torques[i++];
                 }
             }
+        }
+
+        bool receiveSharedCommand() override {
+            JointTorques<kBoosterT1JointCount> torques;
+            if (!command_reader_.readLatest(torques)) {
+                return false;
+            }
+
+            std::lock_guard<std::mutex> lock(mutex_);
+            size_t i = 0;
+            for (const auto& [joint_value, joint_name] : joint_map) {
+                latestTorques[joint_value] = torques.torque[i++];
+            }
+            return true;
         }
 
         std::map<std::string, msgpack::object> sendMessage() override {
@@ -211,6 +227,7 @@ class BoosterT1 : public Robot {
         ImageSharedMemoryWriter rgb_writer_;
         ImageSharedMemoryWriter depth_writer_;
         SharedMemoryWriter<BoosterT1SharedState> state_writer_;
+        SharedMemoryReader<JointTorques<kBoosterT1JointCount>> command_reader_;
 };
 
 }  // namespace spqr

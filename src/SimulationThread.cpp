@@ -169,6 +169,58 @@ void SimulationThread::receiveCommandMessages() {
     }
 }
 
+// Shared-memory counterpart to receiveCommandMessages(): same purpose (block
+// until every robot has a fresh command applied, retrying with a periodic
+// notice if one is stalled) but polling r->receiveSharedCommand() per robot
+// instead of poll()/read()/msgpack-unpack on the socket.
+void SimulationThread::receiveCommandMessagesSHM() {
+    int robot_size = robots_.size();
+    int done = 0;
+    std::set<std::string> pendingRobots;
+    for (auto& r : robots_)
+        pendingRobots.insert(r->name);
+
+    auto windowStart = std::chrono::steady_clock::now();
+    while (done < robot_size) {
+        {
+            std::unique_lock lock(mutex_);
+            for (auto& r : robots_) {
+                if (!pendingRobots.count(r->name))
+                    continue;
+                if (r->receiveSharedCommand()) {
+                    if (!r->isReady) {
+                        r->isReady = true;
+                        std::cout << "Robot ready: " << r->name << std::endl;
+                        if (RobotManager::instance().areAllRobotsReady()) {
+                            emit allRobotsReadySignal();
+                        }
+                    }
+                    pendingRobots.erase(r->name);
+                    ++done;
+                }
+            }
+        }
+        if (done < robot_size) {
+            if (std::chrono::steady_clock::now() - windowStart > std::chrono::milliseconds(2500)) {
+                // Re-send state to robots that haven't replied yet. Load-bearing for
+                // bootstrap: waitRobotConnections() sends state only once and run()
+                // (with its recurring sendStateMessages()) hasn't started yet, so
+                // without this retry a framework that subscribes late never receives
+                // state, never publishes a command, and startup deadlocks.
+                std::unique_lock lock(mutex_);
+                for (auto& r : robots_) {
+                    if (!pendingRobots.count(r->name))
+                        continue;
+                    std::cout << "[receiveCommandMessagesSHM] Timeout, resending state to: " << r->name << std::endl;
+                    r->publishSharedState();
+                }
+                windowStart = std::chrono::steady_clock::now();
+            }
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
+        }
+    }
+}
+
 void SimulationThread::waitRobotConnections() {
     bool areAllConnected = false;
     while (!areAllConnected) {
@@ -211,31 +263,17 @@ void SimulationThread::waitRobotConnections() {
                         std::string robotName = obj.as<std::string>();
                         entity_fd_map[robotName] = client_fd;
 
-                        // Send message with initial state
-                        msgpack::sbuffer sbuf;
-                        std::map<std::string, msgpack::object> answ;
-                        bool answOk = false;
-                        // Pack initial message
+                        // Answer the handshake with the initial state over shared memory.
+                        // The socket is only used to receive the robot name above.
                         {
                             std::lock_guard<std::mutex> lock(mutex_);
                             for (auto& r : robots_) {
                                 if (r->name == robotName) {
                                     r->isConnected = true;
-                                    answ = r->sendMessage();
                                     r->publishSharedState();
-                                    answOk = true;
+                                    std::cout << "Connected Robot: " << robotName << "\n";
+                                    std::cout << "Published initial state to " << robotName << " via shared memory" << std::endl;
                                     break;
-                                }
-                            }
-                        }
-                        if (answOk) {
-                            msgpack::pack(sbuf, answ);
-                            if (sbuf.size() > 0) {
-                                std::cout << "Connected Robot: " << robotName << "\n";
-                                std::cout << "Sending initial message to " << robotName << std::endl;
-                                ssize_t bytes_sent = send_all(client_fd, sbuf.data(), sbuf.size());
-                                if (bytes_sent <= 0) {
-                                    perror("Error in sending initial message");
                                 }
                             }
                         }
@@ -272,7 +310,7 @@ void SimulationThread::run() {
     // Parametri:
     //      kControlDecimation  = numero di step da eseguire per ogni comando desiderato che arriva dal framework (posizione dei giunti desiderata)
     //      kTimestepPolicy     = tempo (in secondi) corrispondente alla frequenza del nodo Brain del framework 
-    //                            (al momento 0.2 perché ho settato la frequenza di update del nodo Brain a 5Hz, quindi 1/5 = 0.2)
+    //                            (al momento 0.02 perché ho settato la frequenza di update del nodo Brain a 50Hz, quindi 1/50 = 0.02)
     //      sim_dt              = dt di quanto viene incrementata la simulazione ogni volta che viene chiamato mj_step (viene preso da SceneParser)
     //
     // Parametri del framework:
@@ -317,7 +355,7 @@ void SimulationThread::run() {
     double sim_dt = model_->opt.timestep;
 
     constexpr int kControlDecimation = 10;
-    constexpr double kTimestepPolicy = 0.2;
+    constexpr double kTimestepPolicy = 0.02;
     int stepsSinceLastControl = 0;
 
     using clock = std::chrono::steady_clock;
@@ -343,9 +381,9 @@ void SimulationThread::run() {
                 sendStateMessages();
 
                 auto receiveStart = clock::now();
-                receiveCommandMessages();
+                receiveCommandMessagesSHM();
                 double receiveElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - receiveStart).count();
-                std::cout << "[SimulationThread] receiveCommandMessages took " << receiveElapsedMs << " ms" << std::endl;
+                std::cout << "[SimulationThread] receiveCommandMessagesSHM took " << receiveElapsedMs << " ms" << std::endl;
             }
             // DEBUG: real time spent computing kControlDecimation physics
             // steps, vs. the sim-time budget they represent.
@@ -375,28 +413,8 @@ void SimulationThread::run() {
 
 void SimulationThread::sendStateMessages() {
     for (auto& r : robots_) {
-        msgpack::sbuffer sbuf;
-        std::map<std::string, msgpack::object> answ;
-        bool answOk = false;
-        {
-            std::unique_lock lock(mutex_);
-            answ = r->sendMessage();
-            r->publishSharedState();
-            answOk = true;
-        }
-
-        if (answOk) {
-            msgpack::pack(sbuf, answ);
-            if (sbuf.size() > 0) {
-                int fd = entity_fd_map[r->name];
-                if (!fd)
-                    perror("file descriptor not existing");
-                ssize_t bytes_sent = send_all(fd, sbuf.data(), sbuf.size());
-                if (bytes_sent <= 0) {
-                    perror("Sending message");
-                }
-            }
-        }
+        std::unique_lock lock(mutex_);
+        r->publishSharedState();
     }
 }
 
