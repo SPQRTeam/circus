@@ -16,13 +16,12 @@
 namespace spqr {
 
 // No metadata (default): use when the reader already knows how to interpret
-// the payload (e.g. a fixed compile-time state struct written with element_count == 1).
+// the payload (e.g. a fixed compile-time state struct with no trailing data).
 struct NoSharedMemoryMeta {};
 
-// Metadata for raw image segments: lets a reader discover the frame's shape at
-// runtime, since images are written as SharedMemoryWriter<uint8_t, ImageMeta>
-// with element_count = width * height * channels (resolution comes from the
-// MuJoCo model, so it is not known at compile time).
+// Metadata for a segment whose trailing region holds one or more camera frames:
+// lets a reader discover each frame's shape at runtime, since the resolution
+// comes from the MuJoCo model and so is not known at compile time.
 struct ImageMeta {
         uint32_t width = 0;
         uint32_t height = 0;
@@ -45,15 +44,14 @@ struct SharedMemoryChunk {
 // definition, so plain memcpy is sufficient (and fastest) -- no serialization
 // step is needed or performed.
 //
-// A slot is a fixed-size typed head (element_count T's) optionally followed by a
-// runtime-sized trailing region of opaque bytes. That covers payloads whose size
-// is only known at startup -- camera frames, whose resolution comes from the
-// MuJoCo model -- without giving up the compile-time type of the head: T stays
-// POD, and the shape of the trailing region travels in Meta. Head and trailing
-// are published under a single seq, so a reader never mixes a head from one tick
-// with trailing bytes from another. The two degenerate cases are the whole
-// previous API: head only (a POD state struct) and trailing only via
-// write(const T*, count) with T = uint8_t (a raw image segment).
+// A slot is one T (the head) optionally followed by a runtime-sized trailing
+// region of opaque bytes. That covers payloads whose size is only known at
+// startup -- camera frames, whose resolution comes from the MuJoCo model --
+// without giving up the compile-time type of the head: T stays POD, and the
+// shape of the trailing region travels in Meta. Head and trailing are
+// published under a single seq, so a reader never mixes a head from one tick
+// with trailing bytes from another. trailing_bytes = 0 is the degenerate case
+// of a plain POD message struct with no trailing data.
 template <typename T, typename Meta = NoSharedMemoryMeta>
 class SharedMemoryWriter {
     public:
@@ -66,25 +64,18 @@ class SharedMemoryWriter {
             close_();
         }
 
-        // element_count: how many T's fit in a single slot (e.g. width*height*channels
-        // for a raw uint8_t image; 1 for a single POD message struct).
-        void configure(const std::string& path, size_t element_count, Meta meta = {}, int ring_slots = 3) {
-            configure(path, element_count, /*trailing_bytes=*/0, meta, ring_slots);
-        }
-
-        // Composite slot: element_count T's followed by trailing_bytes of opaque
-        // bytes, written together by write(head, trailing). trailing_bytes is a
-        // runtime value (e.g. summed image sizes), fixed for the segment's lifetime.
-        void configure(const std::string& path, size_t element_count, size_t trailing_bytes, Meta meta, int ring_slots = 3) {
-            if (element_count == 0 || ring_slots <= 0) {
+        // trailing_bytes: how many bytes of opaque data follow the T head in each
+        // slot (e.g. summed image sizes), fixed for the segment's lifetime; 0 for a
+        // plain POD message struct with no trailing data.
+        void configure(const std::string& path, size_t trailing_bytes = 0, Meta meta = {}, int ring_slots = 3) {
+            if (ring_slots <= 0) {
                 throw std::invalid_argument("Invalid shared-memory configuration");
             }
-            head_bytes_ = element_count * sizeof(T);
             trailing_bytes_ = trailing_bytes;
             // Pad so every slot start stays 8-aligned, keeping the head's doubles
             // naturally aligned for a reader that maps the slot in place.
             const size_t padded_trailing = (trailing_bytes + 7u) & ~static_cast<size_t>(7u);
-            const size_t slot_bytes = head_bytes_ + padded_trailing;
+            const size_t slot_bytes = sizeof(T) + padded_trailing;
             const size_t total_bytes = sizeof(Header) + static_cast<size_t>(ring_slots) * slot_bytes;
 
             close_();
@@ -134,33 +125,12 @@ class SharedMemoryWriter {
             return header_ != nullptr;
         }
 
-        void write(const T* data, size_t count) {
+        // Writes the head, followed by the trailing chunks (if any), into one slot
+        // published with a single seq bump -- so head and trailing are always from
+        // the same tick. The chunk sizes must add up to the trailing_bytes passed to
+        // configure(); a mismatch is dropped rather than writing a partial slot.
+        void write(const T& head, std::initializer_list<SharedMemoryChunk> trailing = {}) {
             if (!header_) {
-                return;
-            }
-            if (count * sizeof(T) != header_->slot_bytes) {
-                return;
-            }
-
-            const uint64_t next_seq = __atomic_load_n(&header_->seq, __ATOMIC_RELAXED) + 1;
-            const uint32_t slot_idx = static_cast<uint32_t>(next_seq % header_->slot_count);
-            uint8_t* slots_base = static_cast<uint8_t*>(map_ptr_) + sizeof(Header);
-            uint8_t* dst = slots_base + static_cast<size_t>(slot_idx) * header_->slot_bytes;
-            std::memcpy(dst, data, header_->slot_bytes);
-            __atomic_store_n(&header_->seq, next_seq, __ATOMIC_RELEASE);
-        }
-
-        void write(const T& value) {
-            write(&value, 1);
-        }
-
-        // Composite write: the typed head followed by the trailing chunks, all into
-        // one slot and published with a single seq bump, so head and trailing are
-        // always from the same tick. The chunk sizes must add up to the
-        // trailing_bytes passed to configure(); a mismatch is dropped like the
-        // size guard in write(const T*, count).
-        void write(const T& head, std::initializer_list<SharedMemoryChunk> trailing) {
-            if (!header_ || head_bytes_ != sizeof(T)) {
                 return;
             }
             size_t supplied = 0;
@@ -222,7 +192,6 @@ class SharedMemoryWriter {
         size_t map_bytes_ = 0;
         Header* header_ = nullptr;
         std::string path_;
-        size_t head_bytes_ = 0;      // element_count * sizeof(T)
         size_t trailing_bytes_ = 0;  // unpadded; slot_bytes rounds this up to 8
 };
 

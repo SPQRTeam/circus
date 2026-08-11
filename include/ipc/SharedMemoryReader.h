@@ -46,27 +46,13 @@ class SharedMemoryReader {
             return true;
         }
 
-        // out must point to at least `count` T's (count == element_count the writer was configured with).
-        bool readLatest(T* out, size_t count) {
-            return readSlot_(out, count * sizeof(T), nullptr, 0, /*exact_fit=*/true);
-        }
-
-        // Convenience for element_count == 1 (single POD struct per slot).
-        bool readLatest(T& out) {
-            return readLatest(&out, 1);
-        }
-
-        // Composite counterpart to SharedMemoryWriter::write(head, trailing): copies
-        // the typed head and the runtime-sized trailing region out of the same slot,
-        // so both come from the same tick. The head is copied into a properly typed
-        // object rather than mapped in place, which keeps this free of aliasing and
-        // object-lifetime concerns.
-        bool readLatest(T& head_out, uint8_t* trailing_out, size_t trailing_bytes) {
-            return readSlot_(&head_out, sizeof(T), trailing_out, trailing_bytes, /*exact_fit=*/false);
-        }
-
-    private:
-        bool readSlot_(void* head_dst, size_t head_bytes, void* trailing_dst, size_t trailing_bytes, bool exact_fit) {
+        // Reads the head, and the trailing_bytes of opaque data after it if any, out
+        // of the same slot -- the composite counterpart to SharedMemoryWriter::write.
+        // The head is copied into a properly typed object rather than mapped in
+        // place, which keeps this free of aliasing and object-lifetime concerns.
+        // trailing_out/trailing_bytes may be omitted for a plain POD struct with no
+        // trailing data.
+        bool readLatest(T& head_out, uint8_t* trailing_out = nullptr, size_t trailing_bytes = 0) {
             if (!ensureMapped_()) {
                 return false;
             }
@@ -76,11 +62,12 @@ class SharedMemoryReader {
             if (header_->magic != kMagic || header_->version != kVersion || header_->slot_count == 0 || header_->slot_bytes == 0) {
                 return false;
             }
-            const size_t requested = head_bytes + trailing_bytes;
-            // Composite slots are padded up to an 8-byte boundary, so the reader may
-            // ask for less than the full slot; a plain typed read must match exactly,
-            // which is also what catches a segment written with a different T.
-            if (exact_fit ? (requested != header_->slot_bytes) : (requested > header_->slot_bytes)) {
+            const size_t requested = sizeof(T) + trailing_bytes;
+            // Composite slots are padded up to an 8-byte boundary, so the requested
+            // size may fall short of the slot by at most that much; anything short by
+            // more, or asking for more than the slot holds, means a size/type mismatch
+            // (e.g. a segment written with a different T) rather than padding slack.
+            if (requested > header_->slot_bytes || header_->slot_bytes - requested >= 8) {
                 return false;
             }
 
@@ -93,11 +80,9 @@ class SharedMemoryReader {
             const uint8_t* slots_base = static_cast<const uint8_t*>(map_ptr_) + sizeof(Header);
             const uint8_t* src = slots_base + static_cast<size_t>(slot_idx) * header_->slot_bytes;
 
-            if (head_bytes > 0) {
-                std::memcpy(head_dst, src, head_bytes);
-            }
+            std::memcpy(&head_out, src, sizeof(T));
             if (trailing_bytes > 0) {
-                std::memcpy(trailing_dst, src + head_bytes, trailing_bytes);
+                std::memcpy(trailing_out, src + sizeof(T), trailing_bytes);
             }
 
             // Torn-read guard. Nothing stops the writer from lapping us mid-copy, and
@@ -115,6 +100,7 @@ class SharedMemoryReader {
             return true;
         }
 
+    private:
         struct Header {
                 uint32_t magic = 0;
                 uint32_t version = 0;

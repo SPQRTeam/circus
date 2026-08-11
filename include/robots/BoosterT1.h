@@ -145,7 +145,7 @@ class BoosterT1 : public Robot {
             const uint32_t height = static_cast<uint32_t>(rgbCamera->getHeight());
             const size_t rgbBytes = static_cast<size_t>(width) * height * 3;
             const size_t depthBytes = static_cast<size_t>(width) * height * 1;
-            state_writer_.configure(shmFilePath_("state"), /*element_count=*/1, rgbBytes + depthBytes,
+            state_writer_.configure(shmFilePath_("state"), rgbBytes + depthBytes,
                                     BoosterT1StateMeta{kBoosterT1SchemaId, static_cast<uint32_t>(sizeof(BoosterT1SharedState)),
                                                        ImageMeta{width, height, 3}, ImageMeta{width, height, 1}});
             command_reader_.configure(shmFilePath_("commands"));
