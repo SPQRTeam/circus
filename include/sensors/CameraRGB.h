@@ -5,6 +5,7 @@
 
 #include <QImage>
 #include <QOpenGLFunctions>
+#include <Eigen/Eigen>
 #include <cstring>
 #include <msgpack.hpp>
 #include <mutex>
@@ -114,6 +115,24 @@ class CameraRGB : public Sensor {
 
         int getHeight() const {
             return h;
+        }
+
+        double getFovyDeg() const {
+            return mujContext->model->cam_fovy[cam.fixedcamid];
+        }
+
+        Eigen::Vector3d getPosition() const {
+            return Eigen::Map<const Eigen::Vector3d>(mujContext->data->cam_xpos + 3 * cam.fixedcamid);
+        }
+
+        Eigen::Matrix3d getRotationMatrix() const {
+            Eigen::Matrix3d rotation;
+            const mjtNum* cameraRotation = mujContext->data->cam_xmat + 9 * cam.fixedcamid;
+            for (int row = 0; row < 3; ++row) {
+                for (int column = 0; column < 3; ++column)
+                    rotation(row, column) = cameraRotation[3 * row + column];
+            }
+            return rotation;
         }
 
         msgpack::object doSerialize(msgpack::zone& z) override {

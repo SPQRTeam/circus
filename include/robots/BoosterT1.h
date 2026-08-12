@@ -108,7 +108,7 @@ class BoosterT1 : public Robot {
             const int width = rgbCamera->getWidth();
             const int height = rgbCamera->getHeight();
             rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
-            depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
+            depth_writer_.configure(shmFilePath_("depth"), width, height, sizeof(uint16_t));
 
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
@@ -145,10 +145,11 @@ class BoosterT1 : public Robot {
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
             msg["oracle"] = oracle->serialize(buffer_zone_);
+            msg["camera"] = serializeCamera_(buffer_zone_);
 
             // Write in the shared file the information
             rgb_writer_.write(rgbCamera->getImage());
-            depth_writer_.write(depthCamera->getDepth8bit());
+            depth_writer_.write(depthCamera->getDepthBytes());
 
             return msg;
         }
@@ -180,6 +181,31 @@ class BoosterT1 : public Robot {
         ~BoosterT1() = default;
 
     private:
+        msgpack::object serializeCamera_(msgpack::zone& zone) const {
+            const Eigen::Matrix3d robotRotation = pose->getRotationMatrix();
+            const Eigen::Vector3d cameraPosition = robotRotation.transpose() * (rgbCamera->getPosition() - pose->getPosition());
+
+            // MuJoCo cameras use x-right, y-up and look along -z, while the perception
+            // head frame uses x-forward, y-left and z-up.
+            Eigen::Matrix3d headToMujocoCameraFrame;
+            headToMujocoCameraFrame << 0, -1, 0,
+                                       0,  0, 1,
+                                      -1,  0, 0;
+            const Eigen::Matrix3d headRotation
+                = robotRotation.transpose() * rgbCamera->getRotationMatrix() * headToMujocoCameraFrame;
+            const Eigen::Quaterniond headOrientation(headRotation);
+
+            std::map<std::string, msgpack::object> cameraData;
+            cameraData["position"] = msgpack::object(
+                std::vector<double>{cameraPosition.x(), cameraPosition.y(), cameraPosition.z()}, zone);
+            cameraData["quat_orientation"] = msgpack::object(
+                std::vector<double>{headOrientation.w(), headOrientation.x(), headOrientation.y(), headOrientation.z()}, zone);
+            cameraData["width"] = msgpack::object(rgbCamera->getWidth(), zone);
+            cameraData["height"] = msgpack::object(rgbCamera->getHeight(), zone);
+            cameraData["fovy"] = msgpack::object(rgbCamera->getFovyDeg(), zone);
+            return msgpack::object(cameraData, zone);
+        }
+
         std::string shmFilePath_(const std::string& camera) const {
             return shm_dir_ + "/" + name + "_" + camera + ".shm";
         }

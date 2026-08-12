@@ -6,8 +6,10 @@
 #include <QImage>
 #include <QOpenGLFunctions>
 #include <algorithm>
+#include <cstring>
 #include <limits>
 #include <msgpack.hpp>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -88,8 +90,8 @@ class CameraDepth : public Sensor {
             const float extent = static_cast<float>(mujContext->model->stat.extent);
             const float znear = static_cast<float>(mujContext->model->vis.map.znear) * extent;
             const float zfar = static_cast<float>(mujContext->model->vis.map.zfar) * extent;
-            constexpr float kDepthMaxMeters = 10.0f;  // Keep in sync with SimBridge mono8 decoding.
-            float max_u16 = static_cast<float>(std::numeric_limits<uint16_t>::max());
+            std::vector<float> nextDepthMeters(depthNormalized.size());
+            std::vector<uint16_t> nextDepth(depth.size());
 
             // Resample offscreen depth to camera resolution and convert to metric depth.
             for (int y = 0; y < h; y++) {
@@ -102,11 +104,16 @@ class CameraDepth : public Sensor {
                     srcX = std::clamp(srcX, 0, viewWidth - 1);
                     float z_raw = tempDepth[srcRow + srcX];
                     float z_converted = (znear * zfar) / (zfar - z_raw * (zfar - znear));
-                    depthNormalized[dstRow + x] = z_converted;
-
-                    float normalizedDepth = std::clamp(z_converted / kDepthMaxMeters, 0.0f, 1.0f);
-                    depth[dstRow + x] = static_cast<uint16_t>(normalizedDepth * max_u16);
+                    nextDepthMeters[dstRow + x] = z_converted;
+                    nextDepth[dstRow + x] = static_cast<uint16_t>(
+                        std::clamp(z_converted * 1000.0f, 0.0f, static_cast<float>(std::numeric_limits<uint16_t>::max())));
                 }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(depthMutex_);
+                depthNormalized.swap(nextDepthMeters);
+                depth.swap(nextDepth);
             }
 
             // Restore window buffer
@@ -125,22 +132,21 @@ class CameraDepth : public Sensor {
             return cam;
         }
 
-        const std::vector<float>& getDepthNormalized() const {
+        std::vector<float> getDepthNormalized() const {
+            std::lock_guard<std::mutex> lock(depthMutex_);
             return depthNormalized;
         }
 
-        const std::vector<uint16_t>& getDepth() const {
+        std::vector<uint16_t> getDepth() const {
             std::lock_guard<std::mutex> lock(depthMutex_);
             return depth;
         }
 
-        std::vector<unsigned char> getDepth8bit() const {
+        std::vector<uint8_t> getDepthBytes() const {
             std::lock_guard<std::mutex> lock(depthMutex_);
-            std::vector<unsigned char> depth8(depth.size());
-            for (size_t i = 0; i < depth.size(); ++i) {
-                depth8[i] = static_cast<unsigned char>(depth[i] >> 8);  // Convert uint16 to uint8
-            }
-            return depth8;
+            std::vector<uint8_t> bytes(depth.size() * sizeof(uint16_t));
+            std::memcpy(bytes.data(), depth.data(), bytes.size());
+            return bytes;
         }
 
         int getWidth() const {
