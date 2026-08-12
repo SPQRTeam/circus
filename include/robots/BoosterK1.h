@@ -70,7 +70,7 @@ class BoosterK1 : public Robot {
             depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
         }
 
-        void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
+        void receiveMessageSocket(const std::map<std::string, msgpack::object>& message) override {
             std::cout << "Hi I'm " << name << " message received: {";
             bool first = true;
             for (const auto& [key, val] : message) {

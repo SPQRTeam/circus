@@ -150,7 +150,7 @@ When data arrives on a socket:
 1. Read and unpack MessagePack message
 2. Extract `robot_name` to identify sender
 3. Find corresponding `Robot` object in registry
-4. Call `robot->receiveMessage()` to process commands
+4. Call `robot->receiveMessageSocket()` to process commands
 5. Call `robot->sendMessage()` to get current state
 6. Pack and send response back to container
 

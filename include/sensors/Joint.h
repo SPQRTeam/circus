@@ -53,7 +53,7 @@ struct JointState {
 // Trivially-copyable joint torque command, for receiving over shared memory
 // (same numbers previously carried as "joint_torques" in the msgpack command
 // message). Order matches joint_map's ascending JointValue iteration, i.e. the
-// same order used by BoosterT1::receiveMessage() today.
+// same order used by BoosterT1::receiveMessageSocket() today.
 template <size_t N>
 struct JointTorques {
         double torque[N] = {};

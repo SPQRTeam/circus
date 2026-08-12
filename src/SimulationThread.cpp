@@ -121,7 +121,7 @@ void SimulationThread::receiveCommandMessages() {
                                 }
                             }
 
-                            r->receiveMessage(data_map);
+                            r->receiveMessageSocket(data_map);
                             pendingRobots.erase(messageRecipient);
                             ++done;
                             break;
@@ -342,10 +342,13 @@ void SimulationThread::run() {
                     break;
                 }
     
+                // TODO: sposta questo in RobotManager se possibile
                 sendStateMessages();
 
                 auto receiveStart = clock::now();
+                // TODO: forse pure questo si può spostare in RobotManager se possibile
                 receiveCommandMessagesSHM();
+                
                 double receiveElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - receiveStart).count();
                 std::cout << "[SimulationThread] receiveCommandMessagesSHM took " << receiveElapsedMs << " ms" << std::endl;
             }

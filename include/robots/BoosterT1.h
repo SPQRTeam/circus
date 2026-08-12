@@ -154,7 +154,7 @@ class BoosterT1 : public Robot {
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
         }
 
-        void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
+        void receiveMessageSocket(const std::map<std::string, msgpack::object>& message) override {
             auto it = message.find("joint_torques");
             if (it == message.end()) {
                 throw std::runtime_error("Error: 'joint_torques' key not found in message");
