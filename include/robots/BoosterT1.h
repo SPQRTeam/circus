@@ -34,7 +34,7 @@ class Team;  // Forward declaration
 
 constexpr size_t kBoosterT1JointCount = 23;
 
-// Per-tick shared-memory payload: everything BoosterT1's sendMessage() sends
+// Per-tick shared-memory payload: everything BoosterT1's packMessage() sends
 // over the socket (minus robot_name, which the shared-memory file path already
 // encodes), bundled into one trivially-copyable struct so a reader sees all
 // fields from the same tick atomically (one SharedMemoryWriter -> one seq).
@@ -191,7 +191,7 @@ class BoosterT1 : public Robot {
             return true;
         }
 
-        std::map<std::string, msgpack::object> sendMessage() override {
+        std::map<std::string, msgpack::object> packMessage() override {
             buffer_zone_.clear();
             std::map<std::string, msgpack::object> msg;
             msg["robot_name"] = msgpack::object(name, buffer_zone_);

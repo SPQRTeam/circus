@@ -62,8 +62,6 @@ class RobotManager {
         RobotManager(const RobotManager&) = delete;
         RobotManager& operator=(const RobotManager&) = delete;
 
-        ssize_t send_all(int fd, char* buf, size_t len);
-
         std::atomic<bool> serverRunning_ = false;
         std::thread serverThread_;
 

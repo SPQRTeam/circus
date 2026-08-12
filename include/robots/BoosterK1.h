@@ -82,7 +82,7 @@ class BoosterK1 : public Robot {
             std::cout << "}" << std::endl;
         }
 
-        std::map<std::string, msgpack::object> sendMessage() override {
+        std::map<std::string, msgpack::object> packMessage() override {
             buffer_zone_.clear();
             std::map<std::string, msgpack::object> msg;
             msg["robot_name"] = msgpack::object(name, buffer_zone_);

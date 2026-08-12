@@ -17,6 +17,7 @@
 #include "Container.h"
 #include "MujocoContext.h"
 #include "sensors/Sensor.h"
+#include "ipc/utils.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -40,10 +41,19 @@ class Robot {
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext) = 0;
         virtual void update() = 0;
+
+        virtual void sendMessageSocket(int fd) final {
+            auto message = packMessage();
+            msgpack::sbuffer sbuf;
+            msgpack::pack(sbuf, message);
+            if (sbuf.size() > 0) {
+                send_all(fd, sbuf.data(), sbuf.size());
+            }
+        }
+
         virtual void receiveMessage(const std::map<std::string, msgpack::object>& message) = 0;
-        virtual std::map<std::string, msgpack::object> sendMessage() = 0;
         // Publishes this robot's per-tick state to shared memory, for the case where
-        // circus and simbridge run on the same machine. Mirrors sendMessage()'s role
+        // circus and simbridge run on the same machine. Mirrors packMessage()'s role
         // for the socket path; a robot that only needs the socket path implements
         // this with an empty body.
         virtual void publishSharedState() = 0;
@@ -53,6 +63,11 @@ class Robot {
         virtual bool receiveSharedCommand() = 0;
         virtual std::map<std::string, Sensor*> getSensors() = 0;
         virtual void applyCommands() = 0;
+
+    private:
+        virtual std::map<std::string, msgpack::object> packMessage() = 0;
+        
+    public:
 
         std::string name;
         std::string type;

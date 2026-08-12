@@ -55,8 +55,6 @@ class SimulationThread : public QThread {
         // return multiple concatenated messages or a partial one.
         std::unordered_map<int, msgpack::unpacker> unpackers_;
 
-        ssize_t send_all(int fd, char* buf, size_t len);
-
         void sendStateMessages();
 };
 
