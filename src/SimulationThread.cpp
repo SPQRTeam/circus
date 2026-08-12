@@ -64,7 +64,7 @@ void SimulationThread::receiveCommandMessages() {
                 if (pendingRobots.count(r->name)) {
                     std::cout << "[receiveCommandMessages] Timeout, resending state to: " << r->name << std::endl;
                     r->sendMessageSocket(entity_fd_map[r->name]);
-                    r->publishSharedState();
+                    r->sendMessageSHM();
                 }
             }
             continue;
@@ -135,7 +135,7 @@ void SimulationThread::receiveCommandMessages() {
 
 // Shared-memory counterpart to receiveCommandMessages(): same purpose (block
 // until every robot has a fresh command applied, retrying with a periodic
-// notice if one is stalled) but polling r->receiveSharedCommand() per robot
+// notice if one is stalled) but polling r->receiveMessageSHM() per robot
 // instead of poll()/read()/msgpack-unpack on the socket.
 void SimulationThread::receiveCommandMessagesSHM() {
     int robot_size = robots_.size();
@@ -151,7 +151,7 @@ void SimulationThread::receiveCommandMessagesSHM() {
             for (auto& r : robots_) {
                 if (!pendingRobots.count(r->name))
                     continue;
-                if (r->receiveSharedCommand()) {
+                if (r->receiveMessageSHM()) {
                     if (!r->isReady) {
                         r->isReady = true;
                         std::cout << "Robot ready: " << r->name << std::endl;
@@ -176,7 +176,7 @@ void SimulationThread::receiveCommandMessagesSHM() {
                     if (!pendingRobots.count(r->name))
                         continue;
                     std::cout << "[receiveCommandMessagesSHM] Timeout, resending state to: " << r->name << std::endl;
-                    r->publishSharedState();
+                    r->sendMessageSHM();
                 }
                 windowStart = std::chrono::steady_clock::now();
             }
@@ -234,7 +234,7 @@ void SimulationThread::waitRobotConnections() {
                             for (auto& r : robots_) {
                                 if (r->name == robotName) {
                                     r->isConnected = true;
-                                    r->publishSharedState();
+                                    r->sendMessageSHM();
                                     std::cout << "Connected Robot: " << robotName << "\n";
                                     std::cout << "Published initial state to " << robotName << " via shared memory" << std::endl;
                                     break;
@@ -381,7 +381,7 @@ void SimulationThread::run() {
 void SimulationThread::sendStateMessages() {
     for (auto& r : robots_) {
         std::unique_lock lock(mutex_);
-        r->publishSharedState();
+        r->sendMessageSHM();
     }
 }
 

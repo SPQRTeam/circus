@@ -51,7 +51,7 @@ struct BoosterT1SharedState {
 constexpr uint32_t kBoosterT1SchemaId = 0xB0057E71;
 
 // Describes the camera frames that ride along in the trailing region of the
-// state slot, in the order publishSharedState() writes them. Per-robot by
+// state slot, in the order sendMessageSHM() writes them. Per-robot by
 // design: another robot type declares its own <Robot>SharedState /
 // <Robot>StateMeta pair with however many streams it actually has (the
 // mechanism is generic; only the payload is robot-specific). If a robot ever
@@ -177,7 +177,7 @@ class BoosterT1 : public Robot {
             }
         }
 
-        bool receiveSharedCommand() override {
+        bool receiveMessageSHM() override {
             JointTorques<kBoosterT1JointCount> torques;
             if (!command_reader_.readLatest(torques)) {
                 return false;
@@ -203,7 +203,7 @@ class BoosterT1 : public Robot {
             return msg;
         }
 
-        void publishSharedState() override {
+        void sendMessageSHM() override {
             // One slot, one seq: pose/imu/joints/oracle and both frames are published
             // together, so a reader can never pair a frame with a pose from a
             // different tick -- which matters as soon as anything unprojects an image

@@ -93,11 +93,11 @@ class BoosterK1 : public Robot {
             return msg;
         }
 
-        void publishSharedState() override {
+        void sendMessageSHM() override {
             // Socket-only for now: BoosterK1 doesn't yet have a shared-memory state channel.
         }
 
-        bool receiveSharedCommand() override {
+        bool receiveMessageSHM() override {
             // Socket-only for now: BoosterK1 doesn't yet have a shared-memory command channel.
             return false;
         }

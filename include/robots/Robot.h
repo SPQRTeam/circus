@@ -52,15 +52,17 @@ class Robot {
         }
 
         virtual void receiveMessageSocket(const std::map<std::string, msgpack::object>& message) = 0;
+
         // Publishes this robot's per-tick state to shared memory, for the case where
         // circus and simbridge run on the same machine. Mirrors packMessage()'s role
         // for the socket path; a robot that only needs the socket path implements
         // this with an empty body.
-        virtual void publishSharedState() = 0;
+        virtual void sendMessageSHM() = 0;
         // Reads and applies the latest command from shared memory, if a new one has
         // arrived since the last call. Returns true iff a new command was applied
         // this call. Mirrors receiveMessageSocket()'s role for the socket path.
-        virtual bool receiveSharedCommand() = 0;
+        virtual bool receiveMessageSHM() = 0;
+        
         virtual std::map<std::string, Sensor*> getSensors() = 0;
         virtual void applyCommands() = 0;
 
