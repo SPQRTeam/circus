@@ -253,6 +253,51 @@ void SimulationThread::waitRobotConnections() {
     }
 }
 
+// "shm" connect-mode counterpart to waitRobotConnections(): instead of accepting
+// a socket connection and reading the robot's name off it, this polls each
+// still-pending robot's Robot::hasConnectSignal() (the presence of its
+// <name>_commands.shm segment, created by simbridge's BridgeNode constructor
+// before it would otherwise dial the socket -- see Robot::connect_shm_path_).
+// Selected exclusively via the --connect-mode flag (AppWindow.cpp); never run
+// together with waitRobotConnections() in the same startup.
+void SimulationThread::waitRobotConnectionsSHM() {
+    std::set<std::string> pendingRobots;
+    {
+        std::unique_lock lock(mutex_);
+        for (auto& r : robots_)
+            if (!r->isConnected)
+                pendingRobots.insert(r->name);
+    }
+
+    auto lastStatusLog = std::chrono::steady_clock::now();
+    while (!pendingRobots.empty()) {
+        {
+            std::unique_lock lock(mutex_);
+            for (auto& r : robots_) {
+                if (pendingRobots.count(r->name) && r->hasConnectSignal()) {
+                    r->isConnected = true;
+                    r->sendMessageSHM();  // publish initial state, same as the socket path
+                    pendingRobots.erase(r->name);
+                    std::cout << "Connected Robot: " << r->name << " (shm)\n";
+                }
+            }
+        }
+        if (pendingRobots.empty())
+            break;
+
+        if (std::chrono::steady_clock::now() - lastStatusLog > std::chrono::milliseconds(2500)) {
+            std::unique_lock lock(mutex_);
+            std::cout << "[waitRobotConnectionsSHM] still waiting for:";
+            for (auto& n : pendingRobots)
+                std::cout << " " << n;
+            std::cout << std::endl;
+            lastStatusLog = std::chrono::steady_clock::now();
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    std::cout << "All Robots are connected!" << std::endl;
+}
+
 /*
 //  SimulationThread IDEA
     mj_step1();
@@ -350,14 +395,14 @@ void SimulationThread::run() {
                 receiveCommandMessagesSHM();
                 
                 double receiveElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - receiveStart).count();
-                std::cout << "[SimulationThread] receiveCommandMessagesSHM took " << receiveElapsedMs << " ms" << std::endl;
+                // std::cout << "[SimulationThread] receiveCommandMessagesSHM took " << receiveElapsedMs << " ms" << std::endl;
             }
             // DEBUG: real time spent computing kControlDecimation physics
             // steps, vs. the sim-time budget they represent.
             double stepsElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - stepsStart).count();
             double stepsBudgetMs = kControlDecimation * sim_dt * 1000.0;
-            std::cout << "[SimulationThread] " << kControlDecimation << " physics steps took "
-                      << stepsElapsedMs << " ms (sim-time budget " << stepsBudgetMs << " ms)" << std::endl;
+            // std::cout << "[SimulationThread] " << kControlDecimation << " physics steps took "
+            //           << stepsElapsedMs << " ms (sim-time budget " << stepsBudgetMs << " ms)" << std::endl;
 
             // for each robot:
             //      send(state)       // non-blocking

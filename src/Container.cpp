@@ -35,7 +35,8 @@ Container::~Container() {
     }
 }
 
-void Container::create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds) {
+void Container::create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds,
+                       const std::string& connectMode) {
     auto envOrDefault = [](const char* key, const char* fallback) -> std::string {
         const char* value = std::getenv(key);
         return (value && *value) ? std::string(value) : std::string(fallback);
@@ -86,6 +87,7 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
                       "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
+                      "CONNECT_MODE=" + connectMode,
                       "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0"),
                       "INFERENCE_BACKEND=" + envOrDefault("INFERENCE_BACKEND", "trt"),
                       "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity"),

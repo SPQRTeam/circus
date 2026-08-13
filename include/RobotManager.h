@@ -50,7 +50,8 @@ class RobotManager {
                                       const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team,
                                       const std::string& role = "Striker");
 
-        void startContainers(const std::string& fwkCfgPath = spqr::frameworkConfigPath, const std::string& pathsCfgPath = spqr::pathsConfigPath);
+        void startContainers(const std::string& fwkCfgPath = spqr::frameworkConfigPath, const std::string& pathsCfgPath = spqr::pathsConfigPath,
+                             const std::string& connectMode = "shm");
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
         void applyCommands();

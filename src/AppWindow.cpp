@@ -45,6 +45,8 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
             frameworkConfigPath_ = argv[++i];
         else if (arg == "--paths" && i + 1 < argc)
             pathsConfigPath_ = argv[++i];
+        else if (arg == "--connect-mode" && i + 1 < argc)
+            connectMode_ = argv[++i];
     }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
@@ -225,10 +227,16 @@ void AppWindow::loadScene(const QString& yaml_file) {
         sim->initializeSocket(frameworkCommunicationPort);
 
         std::cout << "Starting containers..." << std::endl;
-        RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_);
+        RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
 
         std::cout << "Connecting Robots..." << std::endl;
-        sim->waitRobotConnections();
+        if (connectMode_ == "shm") {
+            std::cout << "Simulation starting with SHM approach..." << std::endl;
+            sim->waitRobotConnectionsSHM();
+        } else {
+            std::cout << "Simulation starting with SOCKET approach..." << std::endl;
+            sim->waitRobotConnections();
+        }
 
         std::cout << "Waiting Robots are Ready..." << std::endl;
         sim->receiveCommandMessagesSHM();

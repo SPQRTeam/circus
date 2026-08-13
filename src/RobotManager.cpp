@@ -64,7 +64,7 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
     return nullptr;
 }
 
-void RobotManager::startContainers(const std::string& fwkCfgPath, const std::string& pathsCfgPath) {
+void RobotManager::startContainers(const std::string& fwkCfgPath, const std::string& pathsCfgPath, const std::string& connectMode) {
     YAML::Node configRoot = loadYamlFile(fwkCfgPath.c_str());
 
     if (!configRoot["image"])
@@ -112,7 +112,7 @@ void RobotManager::startContainers(const std::string& fwkCfgPath, const std::str
     }
     for (std::shared_ptr<Robot> r : robots_) {
         r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
-        r->container->create(r, image, binds);
+        r->container->create(r, image, binds, connectMode);
         r->container->start();
     }
     std::cout << "Containers started successfully!" << std::endl;

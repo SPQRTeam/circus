@@ -8,6 +8,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
+#include <filesystem>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -37,6 +38,12 @@ class Robot {
             } else {
                 throw std::runtime_error("Team color currently unsupported: " + colorName);
             }
+            // Reuses the per-robot commands SHM segment as the connect signal: simbridge's
+            // BridgeNode constructor synchronously creates this file (via
+            // SharedMemoryWriter::configure()) before it dials the socket -- or, in "shm"
+            // connect mode, instead of dialing it at all -- so its presence on tmpfs alone
+            // proves the robot process is up, with no dedicated connect channel needed.
+            connect_shm_path_ = "/dev/shm/circus_ipc/" + name + "_commands.shm";
         }
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext) = 0;
@@ -62,13 +69,22 @@ class Robot {
         // arrived since the last call. Returns true iff a new command was applied
         // this call. Mirrors receiveMessageSocket()'s role for the socket path.
         virtual bool receiveMessageSHM() = 0;
-        
+
+        // True once this robot's simbridge process has announced itself via shared
+        // memory (SimulationThread::waitRobotConnectionsSHM(), the "shm" connect-mode
+        // counterpart to the socket handshake in waitRobotConnections()).
+        bool hasConnectSignal() const {
+            return std::filesystem::exists(connect_shm_path_);
+        }
+
         virtual std::map<std::string, Sensor*> getSensors() = 0;
         virtual void applyCommands() = 0;
 
     private:
         virtual std::map<std::string, msgpack::object> packMessage() = 0;
-        
+
+        std::string connect_shm_path_;
+
     public:
 
         std::string name;
