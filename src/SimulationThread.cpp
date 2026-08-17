@@ -9,7 +9,9 @@
 
 namespace spqr {
 
-SimulationThread::SimulationThread(const mjModel* model, mjData* data) : model_(model), data_(data), running_(true), paused_(false) {}
+SimulationThread::SimulationThread(const mjModel* model, mjData* data) : model_(model), data_(data), running_(true), paused_(false) {
+    robots_ = RobotManager::instance().getRobots();
+}
 
 void SimulationThread::initializeSocket(int port) {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -32,7 +34,7 @@ void SimulationThread::initializeSocket(int port) {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
 
-    robots_ = RobotManager::instance().getRobots();
+
     if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
         perror("bind");
         throw std::runtime_error("Socket bind failed");
@@ -43,7 +45,7 @@ void SimulationThread::initializeSocket(int port) {
     fds.push_back({server_fd, POLLIN, 0});
 }
 
-void SimulationThread::receiveCommandMessages() {
+void SimulationThread::receiveCommandMessagesSocket() {
     int robot_size = robots_.size();
     int done = 0;
     // Track which robots have not yet replied this step
@@ -62,7 +64,7 @@ void SimulationThread::receiveCommandMessages() {
             std::unique_lock lock(mutex_);
             for (auto& r : robots_) {
                 if (pendingRobots.count(r->name)) {
-                    std::cout << "[receiveCommandMessages] Timeout, resending state to: " << r->name << std::endl;
+                    std::cout << "[receiveCommandMessagesSocket] Timeout, resending state to: " << r->name << std::endl;
                     r->sendMessageSocket(entity_fd_map[r->name]);
                     r->sendMessageSHM();
                 }
@@ -185,7 +187,7 @@ void SimulationThread::receiveCommandMessagesSHM() {
     }
 }
 
-void SimulationThread::waitRobotConnections() {
+void SimulationThread::waitRobotConnectionsSocket() {
     bool areAllConnected = false;
     while (!areAllConnected) {
         int ret = poll(fds.data(), fds.size(), 100);
@@ -234,8 +236,8 @@ void SimulationThread::waitRobotConnections() {
                             for (auto& r : robots_) {
                                 if (r->name == robotName) {
                                     r->isConnected = true;
-                                    r->sendMessageSHM();
-                                    std::cout << "Connected Robot: " << robotName << "\n";
+                                    r->sendMessageSocket(client_fd);
+                                    std::cout << "Connected Robot (socket): " << robotName << "\n";
                                     std::cout << "Published initial state to " << robotName << " via shared memory" << std::endl;
                                     break;
                                 }
@@ -243,7 +245,6 @@ void SimulationThread::waitRobotConnections() {
                         }
                         if (RobotManager::instance().areAllRobotsConnected()) {
                             areAllConnected = true;
-                            std::cout << "All Robots are connected!" << std::endl;
                             break;
                         }
                     }
@@ -251,6 +252,8 @@ void SimulationThread::waitRobotConnections() {
             }
         }
     }
+
+    std::cout << "All Robots are connected!" << std::endl;
 }
 
 // "shm" connect-mode counterpart to waitRobotConnections(): instead of accepting
@@ -276,9 +279,9 @@ void SimulationThread::waitRobotConnectionsSHM() {
             for (auto& r : robots_) {
                 if (pendingRobots.count(r->name) && r->hasConnectSignal()) {
                     r->isConnected = true;
-                    r->sendMessageSHM();  // publish initial state, same as the socket path
+                    r->sendMessageSHM();
                     pendingRobots.erase(r->name);
-                    std::cout << "Connected Robot: " << r->name << " (shm)\n";
+                    std::cout << "Connected Robot (shm): " << r->name << "\n";
                 }
             }
         }

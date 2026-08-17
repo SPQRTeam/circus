@@ -25,9 +25,9 @@ class SimulationThread : public QThread {
         bool isPaused();
         void setMaxSimulationTime(int maxTime);
         void initializeSocket(int port);
-        void waitRobotConnections();
+        void waitRobotConnectionsSocket();
         void waitRobotConnectionsSHM();
-        void receiveCommandMessages();
+        void receiveCommandMessagesSocket();
         void receiveCommandMessagesSHM();
 
     signals:

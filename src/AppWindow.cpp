@@ -216,30 +216,46 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         // Ensure the shared memory directory exists and is writable by the current user.
         // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
-        const std::filesystem::path shmDir("/dev/shm/circus_ipc");
-        if (std::filesystem::exists(shmDir)) {
-            std::filesystem::remove_all(shmDir);
-        }
-        std::filesystem::create_directories(shmDir);
+        
+        if(connectMode_ == "shm") {
+            // TODO: il path sarebbe da mettere in config
+            const std::filesystem::path shmDir("/dev/shm/circus_ipc");
+            if (std::filesystem::exists(shmDir)) {
+                std::filesystem::remove_all(shmDir);
+            }
+            std::filesystem::create_directories(shmDir);
 
-        CircusNetwork::instance().init();
-        RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
-        sim->initializeSocket(frameworkCommunicationPort);
+            CircusNetwork::instance().init();
+            RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
 
-        std::cout << "Starting containers..." << std::endl;
-        RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
+            std::cout << "Starting containers..." << std::endl;
+            RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
 
-        std::cout << "Connecting Robots..." << std::endl;
-        if (connectMode_ == "shm") {
-            std::cout << "Simulation starting with SHM approach..." << std::endl;
+            std::cout << "Simulation starting with SHM connection mode..." << std::endl;
+            std::cout << "Connecting Robots..." << std::endl;
             sim->waitRobotConnectionsSHM();
-        } else {
-            std::cout << "Simulation starting with SOCKET approach..." << std::endl;
-            sim->waitRobotConnections();
-        }
 
-        std::cout << "Waiting Robots are Ready..." << std::endl;
-        sim->receiveCommandMessagesSHM();
+            std::cout << "Waiting Robots are Ready..." << std::endl;
+            sim->receiveCommandMessagesSHM();
+        }
+        else { // socket mode
+
+            CircusNetwork::instance().init();
+            RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
+            sim->initializeSocket(frameworkCommunicationPort);
+
+            std::cout << "Starting containers..." << std::endl;
+            RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
+
+            
+            std::cout << "Simulation starting with SOCKET connection mode..." << std::endl;
+            std::cout << "Connecting Robots..." << std::endl;
+            sim->waitRobotConnectionsSocket();
+            std::cout << "Waiting Robots are Ready..." << std::endl;
+            sim->receiveCommandMessagesSocket();
+        
+        }
+        
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);
