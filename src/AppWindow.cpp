@@ -46,7 +46,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
         else if (arg == "--paths" && i + 1 < argc)
             pathsConfigPath_ = argv[++i];
         else if (arg == "--connect-mode" && i + 1 < argc)
-            connectMode_ = argv[++i];
+            connectMode_ = argv[++i];   // TODO: forse si può aggiungere come variabile d'ambiente??
     }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
@@ -218,8 +218,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
         
         if(connectMode_ == "shm") {
-            // TODO: il path sarebbe da mettere in config
-            const std::filesystem::path shmDir("/dev/shm/circus_ipc");
+            const std::filesystem::path shmDir(sharedMemoryPath_);
             if (std::filesystem::exists(shmDir)) {
                 std::filesystem::remove_all(shmDir);
             }
@@ -233,26 +232,26 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
             std::cout << "Simulation starting with SHM connection mode..." << std::endl;
             std::cout << "Connecting Robots..." << std::endl;
-            sim->waitRobotConnectionsSHM();
+            RobotManager::instance().waitRobotConnectionsSHM();
 
             std::cout << "Waiting Robots are Ready..." << std::endl;
-            sim->receiveCommandMessagesSHM();
+            RobotManager::instance().receiveCommandMessagesSHM();
         }
         else { // socket mode
 
             CircusNetwork::instance().init();
             RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
-            sim->initializeSocket(frameworkCommunicationPort);
+            RobotManager::instance().initializeSocket(frameworkCommunicationPort);
 
             std::cout << "Starting containers..." << std::endl;
             RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
 
-            
+
             std::cout << "Simulation starting with SOCKET connection mode..." << std::endl;
             std::cout << "Connecting Robots..." << std::endl;
-            sim->waitRobotConnectionsSocket();
+            RobotManager::instance().waitRobotConnectionsSocket();
             std::cout << "Waiting Robots are Ready..." << std::endl;
-            sim->receiveCommandMessagesSocket();
+            RobotManager::instance().receiveCommandMessagesSocket();
         
         }
         

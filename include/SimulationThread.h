@@ -3,13 +3,6 @@
 #include <mujoco/mujoco.h>
 
 #include <QThread>
-#include <map>
-#include <msgpack.hpp>
-#include <mutex>
-#include <unordered_map>
-#include <vector>
-
-#include "robots/Robot.h"
 
 namespace spqr {
 
@@ -24,11 +17,6 @@ class SimulationThread : public QThread {
         void play();
         bool isPaused();
         void setMaxSimulationTime(int maxTime);
-        void initializeSocket(int port);
-        void waitRobotConnectionsSocket();
-        void waitRobotConnectionsSHM();
-        void receiveCommandMessagesSocket();
-        void receiveCommandMessagesSHM();
 
     signals:
         void stepCompleted();
@@ -41,22 +29,6 @@ class SimulationThread : public QThread {
         std::atomic<bool> running_;
         std::atomic<bool> paused_;
         int maxSimulationTime_ = -1;  // -1 means no limit
-        std::map<std::string, int> entity_fd_map;
-
-        std::function<void()> areAllRobotsReadyCallback_;
-
-        // Socket for communication stuff
-        int server_fd;
-        std::vector<std::shared_ptr<Robot>> robots_;
-        std::vector<pollfd> fds;
-        mutable std::mutex mutex_;
-
-        // Per-fd streaming parser state: needed because incoming command
-        // messages have no length-prefix framing, so a single read() can
-        // return multiple concatenated messages or a partial one.
-        std::unordered_map<int, msgpack::unpacker> unpackers_;
-
-        void sendStateMessages();
 };
 
 }  // namespace spqr

@@ -86,8 +86,8 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "XAUTHORITY=/root/.Xauthority",
                       "XDG_RUNTIME_DIR=/run/user/0",
                       "ROBOT_STACK=booster",
-                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",
-                      "CONNECT_MODE=" + connectMode,
+                      "CIRCUS_IMAGE_SHM_DIR=/dev/shm/circus_ipc",   // TODO: vedere se questo si può rimpiazzare con la costante
+                      "CONNECT_MODE=" + connectMode,    // SHM: questo serve per simbridge, per sapere che modalità attivare
                       "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0"),
                       "INFERENCE_BACKEND=" + envOrDefault("INFERENCE_BACKEND", "trt"),
                       "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity"),

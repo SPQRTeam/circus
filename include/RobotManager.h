@@ -8,12 +8,16 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
+#include <chrono>
+#include <map>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "Constants.h"
@@ -40,6 +44,18 @@ class RobotManager {
         size_t count() const;
         void update();
         void clear();
+
+        void setRobotFd(const std::string& name, int fd);
+        int getRobotFd(const std::string& name) const;   // -1 se sconosciuto
+        void removeRobotFd(int fd);
+
+        void sendStateMessages();
+        void receiveCommandMessagesSHM();
+        void receiveCommandMessagesSocket();
+
+        void initializeSocket(int port);
+        void waitRobotConnectionsSocket();
+        void waitRobotConnectionsSHM();
 
         bool areAllRobotsReady() const;
         bool areAllRobotsConnected() const;
@@ -68,6 +84,10 @@ class RobotManager {
 
         mutable std::mutex mutex_;
         std::vector<std::shared_ptr<Robot>> robots_;
+        std::map<std::string, int> robotFdMap_;
+        int serverFd_ = -1;
+        std::vector<pollfd> pollFds_;
+        std::unordered_map<int, msgpack::unpacker> unpackers_;
         std::function<void()> areAllRobotsReadyCallback_;
 
         using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&,

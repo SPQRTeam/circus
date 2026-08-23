@@ -16,6 +16,7 @@
 #include <string>
 
 #include "Container.h"
+#include "Constants.h"
 #include "MujocoContext.h"
 #include "sensors/Sensor.h"
 #include "ipc/utils.h"
@@ -43,7 +44,8 @@ class Robot {
             // SharedMemoryWriter::configure()) before it dials the socket -- or, in "shm"
             // connect mode, instead of dialing it at all -- so its presence on tmpfs alone
             // proves the robot process is up, with no dedicated connect channel needed.
-            connect_shm_path_ = "/dev/shm/circus_ipc/" + name + "_commands.shm";
+            receive_shm_path = spqr::sharedMemoryPath + name + "_commands.shm";
+            send_shm_path = spqr::sharedMemoryPath + name + "_state.shm";
         }
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext) = 0;
@@ -74,7 +76,7 @@ class Robot {
         // memory (SimulationThread::waitRobotConnectionsSHM(), the "shm" connect-mode
         // counterpart to the socket handshake in waitRobotConnections()).
         bool hasConnectSignal() const {
-            return std::filesystem::exists(connect_shm_path_);
+            return std::filesystem::exists(receive_shm_path);
         }
 
         virtual std::map<std::string, Sensor*> getSensors() = 0;
@@ -83,7 +85,9 @@ class Robot {
     private:
         virtual std::map<std::string, msgpack::object> packMessage() = 0;
 
-        std::string connect_shm_path_;
+    protected:
+        std::string receive_shm_path;
+        std::string send_shm_path;
 
     public:
 

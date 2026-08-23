@@ -55,6 +55,7 @@ class AppWindow : public QMainWindow {
 
         std::string frameworkConfigPath_ = spqr::frameworkConfigPath;
         std::string pathsConfigPath_ = spqr::pathsConfigPath;
+        std::string sharedMemoryPath_ = spqr::sharedMemoryPath;
         std::string connectMode_ = "shm";
 };
 
