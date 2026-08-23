@@ -69,7 +69,7 @@ void RobotManager::clear() {
     robots_.clear();
 }
 
-void RobotManager::sendStateMessages() {
+void RobotManager::sendStateMessagesSHM() {
     for (auto& r : robots_) {
         std::unique_lock lock(mutex_);
         r->sendMessageSHM();
@@ -111,7 +111,7 @@ void RobotManager::receiveCommandMessagesSHM() {
             if (std::chrono::steady_clock::now() - windowStart > std::chrono::milliseconds(2500)) {
                 // Re-send state to robots that haven't replied yet. Load-bearing for
                 // bootstrap: waitRobotConnections() sends state only once and run()
-                // (with its recurring sendStateMessages()) hasn't started yet, so
+                // (with its recurring sendStateMessagesSHM()) hasn't started yet, so
                 // without this retry a framework that subscribes late never receives
                 // state, never publishes a command, and startup deadlocks.
                 std::unique_lock lock(mutex_);

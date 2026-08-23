@@ -49,7 +49,7 @@ class RobotManager {
         int getRobotFd(const std::string& name) const;   // -1 se sconosciuto
         void removeRobotFd(int fd);
 
-        void sendStateMessages();
+        void sendStateMessagesSHM();
         void receiveCommandMessagesSHM();
         void receiveCommandMessagesSocket();
 

@@ -100,7 +100,7 @@ void SimulationThread::run() {
                     break;
                 }
     
-                RobotManager::instance().sendStateMessages();
+                RobotManager::instance().sendStateMessagesSHM();
 
                 auto receiveStart = clock::now();
                 RobotManager::instance().receiveCommandMessagesSHM();
