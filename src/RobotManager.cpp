@@ -76,6 +76,17 @@ void RobotManager::sendStateMessagesSHM() {
     }
 }
 
+void RobotManager::sendStateMessagesSocket() {
+    for (auto& r : robots_) {
+        std::unique_lock lock(mutex_);
+        // mutex_ is already held here, so look up the fd directly instead of
+        // going through getRobotFd() (which would try to re-lock the same
+        // non-recursive mutex_ and deadlock).
+        auto fdIt = robotFdMap_.find(r->name);
+        r->sendMessageSocket(fdIt != robotFdMap_.end() ? fdIt->second : -1);
+    }
+}
+
 // Shared-memory counterpart to receiveCommandMessagesSocket(): same purpose (block
 // until every robot has a fresh command applied, retrying with a periodic
 // notice if one is stalled) but polling r->receiveMessageSHM() per robot
@@ -153,7 +164,7 @@ void RobotManager::receiveCommandMessagesSocket() {
                     // re-lock the same non-recursive mutex_ and deadlock).
                     auto fdIt = robotFdMap_.find(r->name);
                     r->sendMessageSocket(fdIt != robotFdMap_.end() ? fdIt->second : -1);
-                    r->sendMessageSHM();
+                    // r->sendMessageSHM();
                 }
             }
             continue;

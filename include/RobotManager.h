@@ -50,6 +50,7 @@ class RobotManager {
         void removeRobotFd(int fd);
 
         void sendStateMessagesSHM();
+        void sendStateMessagesSocket();
         void receiveCommandMessagesSHM();
         void receiveCommandMessagesSocket();
 
