@@ -49,14 +49,11 @@ class RobotManager {
         int getRobotFd(const std::string& name) const;   // -1 se sconosciuto
         void removeRobotFd(int fd);
 
-        void sendStateMessagesSHM();
-        void sendStateMessagesSocket();
-        void receiveCommandMessagesSHM();
-        void receiveCommandMessagesSocket();
+        void sendStateMessages();
+        void receiveCommandMessages();
+        void waitRobotConnections();
 
-        void initializeSocket(int port);
-        void waitRobotConnectionsSocket();
-        void waitRobotConnectionsSHM();
+        void initializeSocket(int port);        
 
         bool areAllRobotsReady() const;
         bool areAllRobotsConnected() const;
@@ -80,8 +77,16 @@ class RobotManager {
         RobotManager(const RobotManager&) = delete;
         RobotManager& operator=(const RobotManager&) = delete;
 
-        std::atomic<bool> serverRunning_ = false;
-        std::thread serverThread_;
+        void sendStateMessagesSHM();
+        void sendStateMessagesSocket();
+
+        void receiveCommandMessagesSHM();
+        void receiveCommandMessagesSocket();
+
+        void waitRobotConnectionsSocket();
+        void waitRobotConnectionsSHM();
+
+        std::string connectMode_;
 
         mutable std::mutex mutex_;
         std::vector<std::shared_ptr<Robot>> robots_;

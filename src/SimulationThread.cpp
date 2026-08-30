@@ -66,14 +66,12 @@ void SimulationThread::run() {
     // N.B.3: il bottleneck al momento sembra essere sendStateMessages+receiveCommandMessages; aumentando il numero di kControlDecimation steps,
     //        ovviamente il sistema rallenta. Quello che non deve succedere è quello spiegato in N.B.1
     //
-    // TODO:  il problema da risolvere è trovare la combinazione giusta di parametri. Probabilmente una configurazione che vada sempre bene non c'è, 
-    //        anche perché dipendente dal numero di robot simulati e dal pc utilizzato. 
-    //        Idee per risolvere questo problema:       
-    //          - abbassare la frequenza del nodo di Brain (se la policy non dà problemi), 
-    //          - alzare il sim_dt (fino a un certo punto, altrimenti lo step di integrazione diventa una cattiva approssimazione) 
-    //            per abbassare kControlDecimation
-    //          - entrambe, cioè trovare una formulazione adattiva che possa conciliare tutti questi aspetti
-    //
+    // NOTE: con la shm funziona più o meno in real-time. Usando la socket, conviene impostare il seguente profilo al momento:
+    //              constexpr int kControlDecimation = 5;
+    //              constexpr double kTimestepPolicy = 0.2;
+    //              timestep (in SceneParser) = 0.004;
+    //              update_rate (nodo Brain)= 5;
+    
     double sim_dt = model_->opt.timestep;
 
     constexpr int kControlDecimation = 10;
@@ -84,7 +82,9 @@ void SimulationThread::run() {
     auto next_step_time = clock::now();
     while (running_) {
         if (!paused_) {
-            auto stepsStart = clock::now();
+            // DEBUG
+            // auto stepsStart = clock::now();
+            
             for(int i=0; i<kControlDecimation; ++i){
                 mj_step1(model_, data_);
                 RobotManager::instance().applyCommands();
@@ -100,25 +100,15 @@ void SimulationThread::run() {
                     break;
                 }
     
-                RobotManager::instance().sendStateMessagesSHM();
-
-                auto receiveStart = clock::now();
-                RobotManager::instance().receiveCommandMessagesSHM();
+                RobotManager::instance().sendStateMessages();
+                RobotManager::instance().receiveCommandMessages();
                 
-                double receiveElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - receiveStart).count();
-                // std::cout << "[SimulationThread] receiveCommandMessagesSHM took " << receiveElapsedMs << " ms" << std::endl;
             }
-            // DEBUG: real time spent computing kControlDecimation physics
-            // steps, vs. the sim-time budget they represent.
-            double stepsElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - stepsStart).count();
-            double stepsBudgetMs = kControlDecimation * sim_dt * 1000.0;
+            // DEBUG: real time spent computing kControlDecimation physics steps, vs. the sim-time budget they represent.
+            // double stepsElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - stepsStart).count();
+            // double stepsBudgetMs = kControlDecimation * sim_dt * 1000.0;
             // std::cout << "[SimulationThread] " << kControlDecimation << " physics steps took "
             //           << stepsElapsedMs << " ms (sim-time budget " << stepsBudgetMs << " ms)" << std::endl;
-
-            // for each robot:
-            //      send(state)       // non-blocking
-            //      recv(torques)     // bloccante o con timeout
-
 
             next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(kTimestepPolicy));
             std::this_thread::sleep_until(next_step_time);

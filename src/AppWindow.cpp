@@ -227,34 +227,23 @@ void AppWindow::loadScene(const QString& yaml_file) {
             CircusNetwork::instance().init();
             RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
 
-            std::cout << "Starting containers..." << std::endl;
-            RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
-
-            std::cout << "Simulation starting with SHM connection mode..." << std::endl;
-            std::cout << "Connecting Robots..." << std::endl;
-            RobotManager::instance().waitRobotConnectionsSHM();
-
-            std::cout << "Waiting Robots are Ready..." << std::endl;
-            RobotManager::instance().receiveCommandMessagesSHM();
         }
         else { // socket mode
 
             CircusNetwork::instance().init();
             RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
             RobotManager::instance().initializeSocket(frameworkCommunicationPort);
-
-            std::cout << "Starting containers..." << std::endl;
-            RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
-
-
-            std::cout << "Simulation starting with SOCKET connection mode..." << std::endl;
-            std::cout << "Connecting Robots..." << std::endl;
-            RobotManager::instance().waitRobotConnectionsSocket();
-            std::cout << "Waiting Robots are Ready..." << std::endl;
-            RobotManager::instance().receiveCommandMessagesSocket();
-        
         }
         
+        std::cout << "Starting containers..." << std::endl;
+        RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
+
+        std::cout << "Simulation starting with " << connectMode_ << " connection mode..." << std::endl;
+        std::cout << "Connecting Robots..." << std::endl;
+        RobotManager::instance().waitRobotConnections();
+
+        std::cout << "Waiting Robots are Ready..." << std::endl;
+        RobotManager::instance().receiveCommandMessages();
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);

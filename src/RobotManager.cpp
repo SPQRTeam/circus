@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "Constants.h"
-#include "Team.h"  // needed for the forward declaration in the .h
+#include "Team.h"
 #include "Utils.h"
 
 namespace spqr {
@@ -69,6 +69,29 @@ void RobotManager::clear() {
     robots_.clear();
 }
 
+void RobotManager::sendStateMessages() {
+    if (connectMode_ == "shm") {
+        // std::cout << "[sendStateMessages] sending message with SHM" << std::endl;
+        sendStateMessagesSHM();
+    }
+    else {
+        // std::cout << "[sendStateMessages] sending message with Socket" << std::endl;
+        sendStateMessagesSocket();
+    }
+}
+
+void RobotManager::receiveCommandMessages() {
+    if (connectMode_ == "shm") {
+        // std::cout << "[receiveCommandMessages] receiving message with SHM" << std::endl;
+        receiveCommandMessagesSHM();
+    }
+    else {
+        // std::cout << "[receiveCommandMessages] receiving message with Socket" << std::endl;
+        receiveCommandMessagesSocket();
+    }
+}
+
+
 void RobotManager::sendStateMessagesSHM() {
     for (auto& r : robots_) {
         std::unique_lock lock(mutex_);
@@ -79,18 +102,11 @@ void RobotManager::sendStateMessagesSHM() {
 void RobotManager::sendStateMessagesSocket() {
     for (auto& r : robots_) {
         std::unique_lock lock(mutex_);
-        // mutex_ is already held here, so look up the fd directly instead of
-        // going through getRobotFd() (which would try to re-lock the same
-        // non-recursive mutex_ and deadlock).
         auto fdIt = robotFdMap_.find(r->name);
         r->sendMessageSocket(fdIt != robotFdMap_.end() ? fdIt->second : -1);
     }
 }
 
-// Shared-memory counterpart to receiveCommandMessagesSocket(): same purpose (block
-// until every robot has a fresh command applied, retrying with a periodic
-// notice if one is stalled) but polling r->receiveMessageSHM() per robot
-// instead of poll()/read()/msgpack-unpack on the socket.
 void RobotManager::receiveCommandMessagesSHM() {
     int robot_size = robots_.size();
     int done = 0;
@@ -120,11 +136,6 @@ void RobotManager::receiveCommandMessagesSHM() {
         }
         if (done < robot_size) {
             if (std::chrono::steady_clock::now() - windowStart > std::chrono::milliseconds(2500)) {
-                // Re-send state to robots that haven't replied yet. Load-bearing for
-                // bootstrap: waitRobotConnections() sends state only once and run()
-                // (with its recurring sendStateMessagesSHM()) hasn't started yet, so
-                // without this retry a framework that subscribes late never receives
-                // state, never publishes a command, and startup deadlocks.
                 std::unique_lock lock(mutex_);
                 for (auto& r : robots_) {
                     if (!pendingRobots.count(r->name))
@@ -159,12 +170,9 @@ void RobotManager::receiveCommandMessagesSocket() {
             for (auto& r : robots_) {
                 if (pendingRobots.count(r->name)) {
                     std::cout << "[receiveCommandMessagesSocket] Timeout, resending state to: " << r->name << std::endl;
-                    // mutex_ is already held here, so look up the fd directly
-                    // instead of going through getRobotFd() (which would try to
-                    // re-lock the same non-recursive mutex_ and deadlock).
+
                     auto fdIt = robotFdMap_.find(r->name);
                     r->sendMessageSocket(fdIt != robotFdMap_.end() ? fdIt->second : -1);
-                    // r->sendMessageSHM();
                 }
             }
             continue;
@@ -265,6 +273,15 @@ void RobotManager::initializeSocket(int port) {
     pollFds_.push_back({serverFd_, POLLIN, 0});
 }
 
+void RobotManager::waitRobotConnections() {
+    if(connectMode_ == "shm") {
+        waitRobotConnectionsSHM();
+    }
+    else {
+        waitRobotConnectionsSocket();
+    }
+}
+
 void RobotManager::waitRobotConnectionsSocket() {
     bool areAllConnected = false;
     while (!areAllConnected) {
@@ -313,7 +330,7 @@ void RobotManager::waitRobotConnectionsSocket() {
                                     r->isConnected = true;
                                     r->sendMessageSocket(client_fd);
                                     std::cout << "Connected Robot (socket): " << robotName << "\n";
-                                    std::cout << "Published initial state to " << robotName << " via shared memory" << std::endl;
+                                    std::cout << "Published initial state to " << robotName << " via socket" << std::endl;
                                     break;
                                 }
                             }
@@ -331,13 +348,6 @@ void RobotManager::waitRobotConnectionsSocket() {
     std::cout << "All Robots are connected!" << std::endl;
 }
 
-// "shm" connect-mode counterpart to waitRobotConnectionsSocket(): instead of accepting
-// a socket connection and reading the robot's name off it, this polls each
-// still-pending robot's Robot::hasConnectSignal() (the presence of its
-// <name>_commands.shm segment, created by simbridge's BridgeNode constructor
-// before it would otherwise dial the socket -- see Robot::connect_shm_path_).
-// Selected exclusively via the --connect-mode flag (AppWindow.cpp); never run
-// together with waitRobotConnectionsSocket() in the same startup.
 void RobotManager::waitRobotConnectionsSHM() {
     std::set<std::string> pendingRobots;
     {
@@ -352,7 +362,7 @@ void RobotManager::waitRobotConnectionsSHM() {
         {
             std::unique_lock lock(mutex_);
             for (auto& r : robots_) {
-                if (pendingRobots.count(r->name) && r->hasConnectSignal()) {
+                if (pendingRobots.count(r->name) && r->hasConnectSignalSHM()) {
                     r->isConnected = true;
                     r->sendMessageSHM();
                     pendingRobots.erase(r->name);
@@ -394,6 +404,9 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
 }
 
 void RobotManager::startContainers(const std::string& fwkCfgPath, const std::string& pathsCfgPath, const std::string& connectMode) {
+    // Save connection mode
+    connectMode_ = connectMode;
+    
     YAML::Node configRoot = loadYamlFile(fwkCfgPath.c_str());
 
     if (!configRoot["image"])
