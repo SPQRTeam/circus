@@ -83,7 +83,7 @@ void SimulationThread::run() {
     while (running_) {
         if (!paused_) {
             // DEBUG
-            // auto stepsStart = clock::now();
+            auto stepsStart = clock::now();
             
             for(int i=0; i<kControlDecimation; ++i){
                 mj_step1(model_, data_);
@@ -105,10 +105,10 @@ void SimulationThread::run() {
                 
             }
             // DEBUG: real time spent computing kControlDecimation physics steps, vs. the sim-time budget they represent.
-            // double stepsElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - stepsStart).count();
-            // double stepsBudgetMs = kControlDecimation * sim_dt * 1000.0;
-            // std::cout << "[SimulationThread] " << kControlDecimation << " physics steps took "
-            //           << stepsElapsedMs << " ms (sim-time budget " << stepsBudgetMs << " ms)" << std::endl;
+            double stepsElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - stepsStart).count();
+            double stepsBudgetMs = kControlDecimation * sim_dt * 1000.0;
+            std::cout << "[SimulationThread] " << kControlDecimation << " physics steps took "
+                      << stepsElapsedMs << " ms (sim-time budget " << stepsBudgetMs << " ms)" << std::endl;
 
             next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(kTimestepPolicy));
             std::this_thread::sleep_until(next_step_time);

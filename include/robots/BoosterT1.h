@@ -9,6 +9,7 @@
 
 #include <Eigen/Eigen>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -21,7 +22,9 @@
 #include "ipc/SharedMemoryWriter.h"
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
+#include "sensors/CameraInfo.h"
 #include "sensors/CameraRGB.h"
+#include "sensors/GroundRelativePosition.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
 #include "sensors/Oracle.h"
@@ -67,11 +70,13 @@ struct BoosterT1StateMeta {
 class BoosterT1 : public Robot {
     public:
         Pose* pose = nullptr;
+        GroundRelativePosition* headPose = nullptr;
         Imu* imu = nullptr;
         Joints* joints = nullptr;
         Oracle* oracle = nullptr;
         CameraRGB* rgbCamera;
         CameraDepth* depthCamera;
+        CameraInfo* rgbCameraInfo = nullptr;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team)
@@ -105,6 +110,8 @@ class BoosterT1 : public Robot {
 
         void bindMujoco(MujocoContext* mujCtx) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
+            headPose = new GroundRelativePosition(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(),
+                                                  GroundRelativePosition::TargetType::Site, pose);
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
 
@@ -136,6 +143,7 @@ class BoosterT1 : public Robot {
             // Use RGB viewpoint for simulated depth to provide aligned depth-to-color.
             // This avoids parallax between rgb_cam and depth_cam when unprojecting RGB detections.
             depthCamera = new CameraDepth(mujCtx, (name + "_rgb_cam").c_str());
+            rgbCameraInfo = new CameraInfo(mujCtx->model, (name + "_rgb_cam").c_str());
 
             // State and both camera frames share a single segment. The frames are
             // runtime-sized (resolution comes from the MuJoCo model) but fixed once
@@ -144,10 +152,10 @@ class BoosterT1 : public Robot {
             const uint32_t width = static_cast<uint32_t>(rgbCamera->getWidth());
             const uint32_t height = static_cast<uint32_t>(rgbCamera->getHeight());
             const size_t rgbBytes = static_cast<size_t>(width) * height * 3;
-            const size_t depthBytes = static_cast<size_t>(width) * height * 1;
+            const size_t depthBytes = static_cast<size_t>(width) * height * 2;
             state_writer_.configure(send_shm_path, rgbBytes + depthBytes,
                                     BoosterT1StateMeta{kBoosterT1SchemaId, static_cast<uint32_t>(sizeof(BoosterT1SharedState)),
-                                                       ImageMeta{width, height, 3}, ImageMeta{width, height, 1}});
+                                                       ImageMeta{width, height, 3}, ImageMeta{width, height, 2}});
             command_reader_.configure(receive_shm_path);
 
             // Create Oracle with the pose and all robots
@@ -196,9 +204,11 @@ class BoosterT1 : public Robot {
             std::map<std::string, msgpack::object> msg;
             msg["robot_name"] = msgpack::object(name, buffer_zone_);
             msg["pose"] = pose->serialize(buffer_zone_);
+            msg["head_pose"] = headPose->serialize(buffer_zone_);
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
             msg["oracle"] = oracle->serialize(buffer_zone_);
+            msg["camera_info"] = rgbCameraInfo->serialize(buffer_zone_);
 
             return msg;
         }
@@ -209,7 +219,7 @@ class BoosterT1 : public Robot {
             // different tick -- which matters as soon as anything unprojects an image
             // detection using the pose at capture time.
             const auto& rgbFrame = rgbCamera->getImage();
-            const auto& depthFrame = depthCamera->getDepth8bit();
+            const auto& depthFrame = depthCamera->getDepth16UC1();
             state_writer_.write(BoosterT1SharedState{pose->toSharedState(), imu->toSharedState(),
                                                      joints->toSharedState<kBoosterT1JointCount>(), oracle->toSharedState()},
                                 {{rgbFrame.data(), rgbFrame.size()}, {depthFrame.data(), depthFrame.size()}});
@@ -218,10 +228,12 @@ class BoosterT1 : public Robot {
         std::map<std::string, Sensor*> getSensors() override {
             std::map<std::string, Sensor*> sensors;
             sensors["pose"] = pose;
+            sensors["head_pose"] = headPose;
             sensors["imu"] = imu;
             sensors["joints"] = joints;
             sensors["rgb_camera"] = rgbCamera;
             sensors["depth_camera"] = depthCamera;
+            sensors["camera_info"] = rgbCameraInfo;
             return sensors;
         }
 
@@ -232,11 +244,13 @@ class BoosterT1 : public Robot {
 
         void update() override {
             pose->update();
+            headPose->update();
             imu->update();
             joints->update();
             oracle->update();
             rgbCamera->update();
             depthCamera->update();
+            rgbCameraInfo->update();
         }
 
         ~BoosterT1() = default;

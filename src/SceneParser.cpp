@@ -133,9 +133,10 @@ SceneParser::SceneParser(const string& yamlPath) {
             uint8_t robotNumber = robotNode["number"].as<uint8_t>();
             string robotName = robotNode["name"] ? robotNode["name"].as<string>() : teamName + "_" + robotType + "_" + to_string(typeIndex++);
             // Role is taken from the scene if present; otherwise fall back to a number-based default.
-            string robotRole = robotNode["role"]
-                                   ? robotNode["role"].as<string>()
-                                   : (robotNumber == 1) ? "Goalkeeper" : (robotNumber == 2) ? "Defender" : "Striker";
+            string robotRole = robotNode["role"]  ? robotNode["role"].as<string>() :
+                               (robotNumber == 1) ? "Goalkeeper" :
+                               (robotNumber == 2) ? "Defender" :
+                                                    "Striker";
             Vector3d pos = Vector3d::Zero();
             Vector3d ori = Vector3d::Zero();
 
