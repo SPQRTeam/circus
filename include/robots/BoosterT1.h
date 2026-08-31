@@ -9,6 +9,7 @@
 
 #include <Eigen/Eigen>
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
@@ -19,7 +20,9 @@
 #include "MujocoContext.h"
 #include "robots/Robot.h"
 #include "sensors/CameraDepth.h"
+#include "sensors/CameraInfo.h"
 #include "sensors/CameraRGB.h"
+#include "sensors/GroundRelativePosition.h"
 #include "sensors/ImageSharedMemoryWriter.h"
 #include "sensors/Imu.h"
 #include "sensors/Joint.h"
@@ -34,11 +37,13 @@ class Team;  // Forward declaration
 class BoosterT1 : public Robot {
     public:
         Pose* pose = nullptr;
+        GroundRelativePosition* headPose = nullptr;
         Imu* imu = nullptr;
         Joints* joints = nullptr;
         Oracle* oracle = nullptr;
         CameraRGB* rgbCamera;
         CameraDepth* depthCamera;
+        CameraInfo* rgbCameraInfo = nullptr;
 
         BoosterT1(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
                   const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team)
@@ -72,6 +77,8 @@ class BoosterT1 : public Robot {
 
         void bindMujoco(MujocoContext* mujCtx) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
+            headPose = new GroundRelativePosition(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(),
+                                                  GroundRelativePosition::TargetType::Site, pose);
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
 
@@ -103,12 +110,14 @@ class BoosterT1 : public Robot {
             // Use RGB viewpoint for simulated depth to provide aligned depth-to-color.
             // This avoids parallax between rgb_cam and depth_cam when unprojecting RGB detections.
             depthCamera = new CameraDepth(mujCtx, (name + "_rgb_cam").c_str());
+            rgbCameraInfo = new CameraInfo(mujCtx->model, (name + "_rgb_cam").c_str());
 
             // Configure the writer for the shared memory file
             const int width = rgbCamera->getWidth();
             const int height = rgbCamera->getHeight();
             rgb_writer_.configure(shmFilePath_("rgb"), width, height, 3);
-            depth_writer_.configure(shmFilePath_("depth"), width, height, 1);
+            // Depth is 16-bit (16UC1): two bytes per pixel, published without precision loss
+            depth_writer_.configure(shmFilePath_("depth"), width, height, 2);
 
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
@@ -142,13 +151,15 @@ class BoosterT1 : public Robot {
             std::map<std::string, msgpack::object> msg;
             msg["robot_name"] = msgpack::object(name, buffer_zone_);
             msg["pose"] = pose->serialize(buffer_zone_);
+            msg["head_pose"] = headPose->serialize(buffer_zone_);
             msg["imu"] = imu->serialize(buffer_zone_);
             msg["joints"] = joints->serialize(buffer_zone_);
             msg["oracle"] = oracle->serialize(buffer_zone_);
+            msg["camera_info"] = rgbCameraInfo->serialize(buffer_zone_);
 
             // Write in the shared file the information
             rgb_writer_.write(rgbCamera->getImage());
-            depth_writer_.write(depthCamera->getDepth8bit());
+            depth_writer_.write(depthCamera->getDepth16UC1());
 
             return msg;
         }
@@ -156,10 +167,12 @@ class BoosterT1 : public Robot {
         std::map<std::string, Sensor*> getSensors() override {
             std::map<std::string, Sensor*> sensors;
             sensors["pose"] = pose;
+            sensors["head_pose"] = headPose;
             sensors["imu"] = imu;
             sensors["joints"] = joints;
             sensors["rgb_camera"] = rgbCamera;
             sensors["depth_camera"] = depthCamera;
+            sensors["camera_info"] = rgbCameraInfo;
             return sensors;
         }
 
@@ -170,11 +183,13 @@ class BoosterT1 : public Robot {
 
         void update() override {
             pose->update();
+            headPose->update();
             imu->update();
             joints->update();
             oracle->update();
             rgbCamera->update();
             depthCamera->update();
+            rgbCameraInfo->update();
         }
 
         ~BoosterT1() = default;

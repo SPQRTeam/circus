@@ -150,7 +150,7 @@ void FieldGenerator::addFieldGeometries(pugi::xml_node& worldbodyNode, const Fie
     addCenterCircle(worldbodyNode, fieldConfig);
 
     // Add goals
-    float halfWidth = fieldConfig.width / 2.0f;
+    float halfWidth = fieldConfig.width / 2.0f - fieldConfig.line_width / 2.0f;
     addGoal(worldbodyNode, fieldConfig, "left_goal", -halfWidth, 0.0f);
     addGoal(worldbodyNode, fieldConfig, "right_goal", halfWidth, static_cast<float>(M_PI));
 }
@@ -192,8 +192,10 @@ void FieldGenerator::addGroundPlane(pugi::xml_node& worldbodyNode, const FieldCo
 std::vector<LineSegment> FieldGenerator::calculateFieldLines(const FieldConfig& fieldConfig) {
     std::vector<LineSegment> lines;
 
-    float halfWidth = fieldConfig.width / 2.0f;
-    float halfHeight = fieldConfig.height / 2.0f;
+    // Boundary line centers are inset by half the line width so their outer
+    // edges sit exactly at ±width/2 and ±height/2 (the declared field dimensions).
+    float halfWidth = fieldConfig.width / 2.0f - fieldConfig.line_width / 2.0f;
+    float halfHeight = fieldConfig.height / 2.0f - fieldConfig.line_width / 2.0f;
     float z = 0.004f;  // Slightly above ground
     float overlap = fieldConfig.line_width / 2.0f;
 

@@ -485,7 +485,7 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d position = dynamic_cast<Joints*>(jointsSensor)->getPosition();
+                                        Eigen::VectorXd position = dynamic_cast<Joints*>(jointsSensor)->getPosition();
                                         plot->addDataPoint("head_yaw", position(0), simTime);
                                         plot->addDataPoint("head_pitch", position(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", position(2), simTime);
@@ -514,7 +514,7 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d velocity = dynamic_cast<Joints*>(jointsSensor)->getVelocity();
+                                        Eigen::VectorXd velocity = dynamic_cast<Joints*>(jointsSensor)->getVelocity();
                                         plot->addDataPoint("head_yaw", velocity(0), simTime);
                                         plot->addDataPoint("head_pitch", velocity(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", velocity(2), simTime);
@@ -543,7 +543,7 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d acceleration = dynamic_cast<Joints*>(jointsSensor)->getAcceleration();
+                                        Eigen::VectorXd acceleration = dynamic_cast<Joints*>(jointsSensor)->getAcceleration();
                                         plot->addDataPoint("head_yaw", acceleration(0), simTime);
                                         plot->addDataPoint("head_pitch", acceleration(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", acceleration(2), simTime);
@@ -572,7 +572,7 @@ class ToolsPanelGrid : public QWidget {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
                                         Sensor* jointsSensor = it->second;
-                                        Eigen::Vector3d torque = dynamic_cast<Joints*>(jointsSensor)->getTorque();
+                                        Eigen::VectorXd torque = dynamic_cast<Joints*>(jointsSensor)->getTorque();
                                         plot->addDataPoint("head_yaw", torque(0), simTime);
                                         plot->addDataPoint("head_pitch", torque(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", torque(2), simTime);
@@ -655,9 +655,13 @@ class ToolsPanelGrid : public QWidget {
                                             int height = depthCamera->getHeight();
 
                                             if (!depthData.empty() && width > 0 && height > 0) {
+                                                // Depth is uint16 millimetres; map the near 10 m to the
+                                                // full 8-bit range so the preview keeps usable contrast
+                                                constexpr uint32_t kPreviewRangeMm = 10000;
                                                 std::vector<uint8_t> depthImage(depthData.size());
                                                 for (size_t i = 0; i < depthData.size(); ++i) {
-                                                    depthImage[i] = static_cast<uint8_t>(depthData[i] / 256);  // Scale 16-bit to 8-bit
+                                                    const uint32_t scaled = static_cast<uint32_t>(depthData[i]) * 255u / kPreviewRangeMm;
+                                                    depthImage[i] = static_cast<uint8_t>(scaled > 255u ? 255u : scaled);
                                                 }
                                                 imageTool->setImage(depthImage.data(), width, height, 1);
                                             } else {
