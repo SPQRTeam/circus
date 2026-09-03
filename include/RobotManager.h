@@ -49,7 +49,9 @@ class RobotManager {
         int getRobotFd(const std::string& name) const;   // -1 se sconosciuto
         void removeRobotFd(int fd);
 
-        void sendStateMessages();
+        // publishImages: forwarded to each robot's sendMessageSHM() (ignored in
+        // socket mode, which never sends images) -- see Robot::sendMessageSHM().
+        void sendStateMessages(bool publishImages);
         void receiveCommandMessages();
         void waitRobotConnections();
 
@@ -77,7 +79,7 @@ class RobotManager {
         RobotManager(const RobotManager&) = delete;
         RobotManager& operator=(const RobotManager&) = delete;
 
-        void sendStateMessagesSHM();
+        void sendStateMessagesSHM(bool publishImages);
         void sendStateMessagesSocket();
 
         void receiveCommandMessagesSHM();

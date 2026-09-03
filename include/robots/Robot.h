@@ -69,7 +69,11 @@ class Robot {
 
         virtual void receiveMessageSocket(const std::map<std::string, msgpack::object>& message) = 0;
 
-        virtual void sendMessageSHM() = 0;
+        // publishImages: whether this call should also publish this robot's
+        // camera frames (on the robots that have a camera SHM channel), not just
+        // its low-rate-independent state. See SimulationThread::run() for the
+        // substep-vs-control-step cadence this flag encodes.
+        virtual void sendMessageSHM(bool publishImages) = 0;
         virtual bool receiveMessageSHM() = 0;
 
         // True once this robot's simbridge process has announced itself via shared

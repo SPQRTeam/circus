@@ -69,10 +69,10 @@ void RobotManager::clear() {
     robots_.clear();
 }
 
-void RobotManager::sendStateMessages() {
+void RobotManager::sendStateMessages(bool publishImages) {
     if (connectMode_ == "shm") {
         // std::cout << "[sendStateMessages] sending message with SHM" << std::endl;
-        sendStateMessagesSHM();
+        sendStateMessagesSHM(publishImages);
     }
     else {
         // std::cout << "[sendStateMessages] sending message with Socket" << std::endl;
@@ -92,10 +92,10 @@ void RobotManager::receiveCommandMessages() {
 }
 
 
-void RobotManager::sendStateMessagesSHM() {
+void RobotManager::sendStateMessagesSHM(bool publishImages) {
     for (auto& r : robots_) {
         std::unique_lock lock(mutex_);
-        r->sendMessageSHM();
+        r->sendMessageSHM(publishImages);
     }
 }
 
@@ -141,7 +141,7 @@ void RobotManager::receiveCommandMessagesSHM() {
                     if (!pendingRobots.count(r->name))
                         continue;
                     std::cout << "[receiveCommandMessagesSHM] Timeout, resending state to: " << r->name << std::endl;
-                    r->sendMessageSHM();
+                    r->sendMessageSHM(true);
                 }
                 windowStart = std::chrono::steady_clock::now();
             }
@@ -364,7 +364,7 @@ void RobotManager::waitRobotConnectionsSHM() {
             for (auto& r : robots_) {
                 if (pendingRobots.count(r->name) && r->hasConnectSignalSHM()) {
                     r->isConnected = true;
-                    r->sendMessageSHM();
+                    r->sendMessageSHM(true);
                     pendingRobots.erase(r->name);
                     std::cout << "Connected Robot (shm): " << r->name << "\n";
                 }

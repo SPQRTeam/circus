@@ -10,21 +10,20 @@
 #include <string>
 #include <type_traits>
 
-#include "ipc/SharedMemoryWriter.h"  // for NoSharedMemoryMeta
+#include "ipc/SharedMemoryWriter.h"  // for NoSharedMemoryMeta, ImageMeta
 
 namespace spqr {
 
-// Reader counterpart to SharedMemoryWriter<T, Meta> (external/circus/include/ipc/SharedMemoryWriter.h).
+// Reader counterpart to SharedMemoryWriter<Meta> (external/circus/include/ipc/SharedMemoryWriter.h).
 // Used when circus is the *reader* (e.g. commands written by simbridge). Must
 // stay in sync with whatever writes the segment: same Header layout, same
 // magic/version, same ring-buffer/atomic-seq protocol. Mirrors
 // external/simbridge/src/SharedMemoryReader.hpp -- kept as a separate copy on
 // purpose, same duplication discipline used for the image Header struct.
-template <typename T, typename Meta = NoSharedMemoryMeta>
+template <typename Meta = NoSharedMemoryMeta>
 class SharedMemoryReader {
     public:
-        static_assert(std::is_trivially_copyable_v<T>, "SharedMemoryReader<T> requires a trivially-copyable T");
-        static_assert(std::is_trivially_copyable_v<Meta>, "SharedMemoryReader<T, Meta> requires a trivially-copyable Meta");
+        static_assert(std::is_trivially_copyable_v<Meta>, "SharedMemoryReader<Meta> requires a trivially-copyable Meta");
 
         SharedMemoryReader() = default;
 
@@ -46,28 +45,17 @@ class SharedMemoryReader {
             return true;
         }
 
-        // Reads the head, and the trailing_bytes of opaque data after it if any, out
-        // of the same slot -- the composite counterpart to SharedMemoryWriter::write.
-        // The head is copied into a properly typed object rather than mapped in
-        // place, which keeps this free of aliasing and object-lifetime concerns.
-        // trailing_out/trailing_bytes may be omitted for a plain POD struct with no
-        // trailing data.
-        bool readLatest(T& head_out, uint8_t* trailing_out = nullptr, size_t trailing_bytes = 0) {
+        // Reads the latest slot into out, which must be exactly bytes long -- a
+        // size mismatch (e.g. a segment written with a different payload) is
+        // rejected rather than partially filled.
+        bool readLatest(void* out, size_t bytes) {
             if (!ensureMapped_()) {
                 return false;
             }
             if (!header_) {
                 return false;
             }
-            if (header_->magic != kMagic || header_->version != kVersion || header_->slot_count == 0 || header_->slot_bytes == 0) {
-                return false;
-            }
-            const size_t requested = sizeof(T) + trailing_bytes;
-            // Composite slots are padded up to an 8-byte boundary, so the requested
-            // size may fall short of the slot by at most that much; anything short by
-            // more, or asking for more than the slot holds, means a size/type mismatch
-            // (e.g. a segment written with a different T) rather than padding slack.
-            if (requested > header_->slot_bytes || header_->slot_bytes - requested >= 8) {
+            if (header_->magic != kMagic || header_->version != kVersion || header_->slot_count == 0 || header_->slot_bytes != bytes) {
                 return false;
             }
 
@@ -80,16 +68,10 @@ class SharedMemoryReader {
             const uint8_t* slots_base = static_cast<const uint8_t*>(map_ptr_) + sizeof(Header);
             const uint8_t* src = slots_base + static_cast<size_t>(slot_idx) * header_->slot_bytes;
 
-            std::memcpy(&head_out, src, sizeof(T));
-            if (trailing_bytes > 0) {
-                std::memcpy(trailing_out, src + sizeof(T), trailing_bytes);
-            }
+            std::memcpy(out, src, bytes);
 
-            // Torn-read guard. Nothing stops the writer from lapping us mid-copy, and
-            // the copy is only getting longer now that images share the slot. The
-            // writer starts filling the slot for seq X before publishing X, so by the
-            // time seq has advanced by slot_count - 1 it may already be overwriting
-            // the slot we just read; discard rather than hand back spliced data.
+            // Torn-read guard. Nothing stops the writer from lapping us mid-copy;
+            // discard rather than hand back spliced data.
             // (With slot_count == 1 every read is unprotected and so always rejected.)
             const uint64_t seq_after = __atomic_load_n(&header_->seq, __ATOMIC_ACQUIRE);
             if (seq_after - seq_before >= header_->slot_count - 1) {
@@ -112,8 +94,8 @@ class SharedMemoryReader {
 
         static constexpr uint32_t kMagic = 0x5348514d;  // SHQM
         // Must match SharedMemoryWriter::kVersion; see the note there on why the
-        // composite layout required a bump rather than a silent format change.
-        static constexpr uint32_t kVersion = 2;
+        // flat-slot layout required a bump rather than a silent format change.
+        static constexpr uint32_t kVersion = 3;
 
         bool ensureMapped_() {
             if (map_ptr_) {

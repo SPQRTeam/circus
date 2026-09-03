@@ -83,7 +83,6 @@ void SimulationThread::run() {
     while (running_) {
         if (!paused_) {
             // DEBUG
-            auto stepsStart = clock::now();
             
             for(int i=0; i<kControlDecimation; ++i){
                 mj_step1(model_, data_);
@@ -100,15 +99,22 @@ void SimulationThread::run() {
                     break;
                 }
     
-                RobotManager::instance().sendStateMessages();
+                // Camera frames only change once per GUI-thread render cycle, so only
+                // publish them on the last substep of each control step rather than
+                // re-copying them on every one of the kControlDecimation substeps.
+                const bool publishImages = (i == kControlDecimation - 1);
+                
+                RobotManager::instance().sendStateMessages(publishImages);
+                auto stepsStart = clock::now();
+
                 RobotManager::instance().receiveCommandMessages();
+                
+                double stepsElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - stepsStart).count();
+                double stepsBudgetMs = kControlDecimation * sim_dt * 1000.0;
+                std::cout << "[SimulationThread] il singolo step  " << i << "   impiega " << stepsElapsedMs << " ms (sim-time budget " << stepsBudgetMs << " ms)" << std::endl;
                 
             }
             // DEBUG: real time spent computing kControlDecimation physics steps, vs. the sim-time budget they represent.
-            double stepsElapsedMs = std::chrono::duration<double, std::milli>(clock::now() - stepsStart).count();
-            double stepsBudgetMs = kControlDecimation * sim_dt * 1000.0;
-            std::cout << "[SimulationThread] " << kControlDecimation << " physics steps took "
-                      << stepsElapsedMs << " ms (sim-time budget " << stepsBudgetMs << " ms)" << std::endl;
 
             next_step_time += std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(kTimestepPolicy));
             std::this_thread::sleep_until(next_step_time);
