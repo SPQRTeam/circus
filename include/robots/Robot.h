@@ -28,7 +28,14 @@ class Robot {
         Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
               const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team,
               const std::string& role = "Striker")
-            : name(name), type(type), number(number), initPosition(initPosition), initOrientation(initOrientation), colorName(colorName), team(team), role(role) {
+            : name(name),
+              type(type),
+              number(number),
+              initPosition(initPosition),
+              initOrientation(initOrientation),
+              colorName(colorName),
+              team(team),
+              role(role) {
             if (colorName == "red") {
                 color = {130, 36, 51};
             } else if (colorName == "blue") {
