@@ -47,6 +47,7 @@ struct BoosterT1SharedState {
         ImuData imu;
         JointState<kBoosterT1JointCount> joints;
         OracleData oracle;
+        GroundRelativePositionData headPose;
 };
 
 // Identifies this exact state layout. Shared memory carries no schema, so a
@@ -114,7 +115,6 @@ class BoosterT1 : public Robot {
                         {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
                         {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
                         {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {
-            // Where to put the images
             shm_dir_ = "/dev/shm/circus_ipc";
         }
 
@@ -227,7 +227,8 @@ class BoosterT1 : public Robot {
 
         void sendMessageSHM(bool publishImages) override {
             const BoosterT1SharedState state{pose->toSharedState(), imu->toSharedState(),
-                                             joints->toSharedState<kBoosterT1JointCount>(), oracle->toSharedState()};
+                                             joints->toSharedState<kBoosterT1JointCount>(), oracle->toSharedState(),
+                                            headPose->toSharedState()};
             state_writer_.write(&state, sizeof(state));
 
             // Camera frames don't change between physics substeps -- rendering
