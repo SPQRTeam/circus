@@ -165,10 +165,9 @@ class BoosterT1 : public Robot {
                 imageBuffer_.resize(rgbBytes + depthBytes);
 
                 // Configuration of shm channels
-                image_writer_.configure(shmFilePath_("images"), imageBuffer_.size(),
+                image_writer_.configure(image_shm_path, imageBuffer_.size(),
                                         BoosterT1ImageMeta{kBoosterT1ImageSchemaId, ImageMeta{width, height, 3}, ImageMeta{width, height, 2}});
                 state_writer_.configure(send_shm_path, sizeof(BoosterT1SharedState), BoosterT1StateMeta{});
-    
                 command_reader_.configure(receive_shm_path);
 
             }

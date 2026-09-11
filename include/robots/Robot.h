@@ -53,6 +53,7 @@ class Robot {
             // proves the robot process is up, with no dedicated connect channel needed.
             receive_shm_path = spqr::sharedMemoryPath + name + "_commands.shm";
             send_shm_path = spqr::sharedMemoryPath + name + "_state.shm";
+            image_shm_path = spqr::sharedMemoryPath + name + "_images.shm";
         }
         virtual ~Robot() = default;
         virtual void bindMujoco(MujocoContext* mujContext, std::string connectMode_) = 0;
@@ -92,6 +93,7 @@ class Robot {
     protected:
         std::string receive_shm_path;
         std::string send_shm_path;
+        std::string image_shm_path;
 
     public:
 
