@@ -118,7 +118,7 @@ class BoosterT1 : public Robot {
             shm_dir_ = "/dev/shm/circus_ipc";
         }
 
-        void bindMujoco(MujocoContext* mujCtx) override {
+        void bindMujoco(MujocoContext* mujCtx, std::string connectMode_) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
             headPose = new GroundRelativePosition(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(),
                                                   GroundRelativePosition::TargetType::Site, pose);
@@ -154,26 +154,25 @@ class BoosterT1 : public Robot {
             // This avoids parallax between rgb_cam and depth_cam when unprojecting RGB detections.
             depthCamera = new CameraDepth(mujCtx, (name + "_rgb_cam").c_str());
             rgbCameraInfo = new CameraInfo(mujCtx->model, (name + "_rgb_cam").c_str());
-
-            // State and camera frames now publish on separate segments: state every
-            // physics substep (small, needed fresh for low-level torque control),
-            // images once per control step (unchanged between substeps anyway --
-            // rendering happens on the GUI thread on its own cadence). See
-            // sendMessageSHM() and SimulationThread::run().
-            state_writer_.configure(send_shm_path, sizeof(BoosterT1SharedState), BoosterT1StateMeta{});
-
-            const uint32_t width = static_cast<uint32_t>(rgbCamera->getWidth());
-            const uint32_t height = static_cast<uint32_t>(rgbCamera->getHeight());
-            const size_t rgbBytes = static_cast<size_t>(width) * height * 3;
-            const size_t depthBytes = static_cast<size_t>(width) * height * 2;
-            imageBuffer_.resize(rgbBytes + depthBytes);
-            image_writer_.configure(shmFilePath_("images"), imageBuffer_.size(),
-                                    BoosterT1ImageMeta{kBoosterT1ImageSchemaId, ImageMeta{width, height, 3}, ImageMeta{width, height, 2}});
-
-            command_reader_.configure(receive_shm_path);
-
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
+
+            if(connectMode_ == "shm") {
+                const uint32_t width = static_cast<uint32_t>(rgbCamera->getWidth());
+                const uint32_t height = static_cast<uint32_t>(rgbCamera->getHeight());
+                const size_t rgbBytes = static_cast<size_t>(width) * height * 3;
+                const size_t depthBytes = static_cast<size_t>(width) * height * 2;
+                imageBuffer_.resize(rgbBytes + depthBytes);
+
+                // Configuration of shm channels
+                image_writer_.configure(shmFilePath_("images"), imageBuffer_.size(),
+                                        BoosterT1ImageMeta{kBoosterT1ImageSchemaId, ImageMeta{width, height, 3}, ImageMeta{width, height, 2}});
+                state_writer_.configure(send_shm_path, sizeof(BoosterT1SharedState), BoosterT1StateMeta{});
+    
+                command_reader_.configure(receive_shm_path);
+
+            }
+
         }
 
         void receiveMessageSocket(const std::map<std::string, msgpack::object>& message) override {

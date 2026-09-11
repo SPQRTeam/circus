@@ -386,9 +386,9 @@ void RobotManager::waitRobotConnectionsSHM() {
     std::cout << "All Robots are connected!" << std::endl;
 }
 
-void RobotManager::bindMujoco(MujocoContext* mujContext) {
+void RobotManager::bindMujoco(MujocoContext* mujContext, std::string connectMode_) {
     for (std::shared_ptr<Robot> r : robots_)
-        r->bindMujoco(mujContext);
+        r->bindMujoco(mujContext, connectMode_);
 }
 
 std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,

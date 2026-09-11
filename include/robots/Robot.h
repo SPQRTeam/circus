@@ -55,7 +55,7 @@ class Robot {
             send_shm_path = spqr::sharedMemoryPath + name + "_state.shm";
         }
         virtual ~Robot() = default;
-        virtual void bindMujoco(MujocoContext* mujContext) = 0;
+        virtual void bindMujoco(MujocoContext* mujContext, std::string connectMode_) = 0;
         virtual void update() = 0;
 
         virtual void sendMessageSocket(int fd) final {

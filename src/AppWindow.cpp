@@ -225,13 +225,13 @@ void AppWindow::loadScene(const QString& yaml_file) {
             std::filesystem::create_directories(shmDir);
 
             CircusNetwork::instance().init();
-            RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
+            RobotManager::instance().bindMujoco(mujContext.get(), connectMode_);  // memo: this must be run before starting the communications server
 
         }
         else { // socket mode
 
             CircusNetwork::instance().init();
-            RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
+            RobotManager::instance().bindMujoco(mujContext.get(), connectMode_);  // memo: this must be run before starting the communications server
             RobotManager::instance().initializeSocket(frameworkCommunicationPort);
         }
         

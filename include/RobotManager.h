@@ -60,7 +60,7 @@ class RobotManager {
         bool areAllRobotsReady() const;
         bool areAllRobotsConnected() const;
 
-        void bindMujoco(MujocoContext* mujContext);
+        void bindMujoco(MujocoContext* mujContext, std::string connectMode_);
 
         std::shared_ptr<Robot> create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
                                       const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team,
