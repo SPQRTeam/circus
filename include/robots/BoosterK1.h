@@ -62,7 +62,7 @@ class BoosterK1 : public Robot {
                         {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
                         {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
-        void bindMujoco(MujocoContext* mujCtx) override {
+        void bindMujoco(MujocoContext* mujCtx, std::string connectMode_) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
@@ -70,7 +70,7 @@ class BoosterK1 : public Robot {
             depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
         }
 
-        void receiveMessage(const std::map<std::string, msgpack::object>& message) override {
+        void receiveMessageSocket(const std::map<std::string, msgpack::object>& message) override {
             std::cout << "Hi I'm " << name << " message received: {";
             bool first = true;
             for (const auto& [key, val] : message) {
@@ -82,7 +82,7 @@ class BoosterK1 : public Robot {
             std::cout << "}" << std::endl;
         }
 
-        std::map<std::string, msgpack::object> sendMessage() override {
+        std::map<std::string, msgpack::object> packMessage() override {
             buffer_zone_.clear();
             std::map<std::string, msgpack::object> msg;
             msg["robot_name"] = msgpack::object(name, buffer_zone_);
@@ -91,6 +91,15 @@ class BoosterK1 : public Robot {
             msg["joints"] = joints->serialize(buffer_zone_);
 
             return msg;
+        }
+
+        void sendMessageSHM(bool publishImages) override {
+            // Socket-only for now: BoosterK1 doesn't yet have a shared-memory state channel.
+        }
+
+        bool receiveMessageSHM() override {
+            // Socket-only for now: BoosterK1 doesn't yet have a shared-memory command channel.
+            return false;
         }
 
         std::map<std::string, Sensor*> getSensors() override {
