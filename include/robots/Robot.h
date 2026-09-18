@@ -64,7 +64,7 @@ class Robot {
             msgpack::sbuffer sbuf;
             msgpack::pack(sbuf, message);
             if (sbuf.size() > 0) {
-                send_all(fd, sbuf.data(), sbuf.size());
+                send_unframed(fd, sbuf.data(), sbuf.size());
             }
         }
 

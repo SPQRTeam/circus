@@ -6,6 +6,7 @@
 #include "Constants.h"
 #include "Team.h"
 #include "Utils.h"
+#include "ipc/utils.h"
 
 namespace spqr {
 
@@ -183,10 +184,9 @@ void RobotManager::receiveCommandMessagesSocket() {
             // An event occured for the i-th fd
             if (pollFds_[i].revents & POLLIN) {
                 int fd = pollFds_[i].fd;
-                msgpack::unpacker& unp = unpackers_[fd];
-                unp.reserve_buffer(MAX_MSG_SIZE);
-                int n = read(fd, unp.buffer(), unp.buffer_capacity());
-                if (n <= 0) {
+                msgpack::object_handle latest;
+                int status = recv_latest(fd, unpackers_[fd], latest, MAX_MSG_SIZE);
+                if (status < 0) {
                     close(fd);
                     pollFds_.erase(pollFds_.begin() + i);
                     --i;
@@ -194,21 +194,7 @@ void RobotManager::receiveCommandMessagesSocket() {
                     removeRobotFd(fd);
                     continue;
                 }
-                unp.buffer_consumed(static_cast<size_t>(n));
-
-                // Drain every complete message currently buffered (a single
-                // read() can return several concatenated messages if we were
-                // slow to read), keeping only the latest one -- older ones
-                // queued up behind it are superseded and discarded on
-                // purpose, never applied.
-                msgpack::object_handle oh;
-                msgpack::object_handle latest;
-                bool gotOne = false;
-                while (unp.next(oh)) {
-                    latest = std::move(oh);
-                    gotOne = true;
-                }
-                if (!gotOne)
+                if (status == 0)
                     continue;  // only a partial message so far; wait for more bytes
 
                 auto data_map = latest.get().as<std::map<std::string, msgpack::object>>();
@@ -299,17 +285,16 @@ void RobotManager::waitRobotConnectionsSocket() {
                         pollFds_.push_back({client_fd, POLLIN, 0});
 
                         // Receive initial message with robot name
-                        char buffer[MAX_MSG_SIZE];
-                        int n = read(client_fd, buffer, sizeof(buffer) - 1);
+                        msgpack::unpacker unp;
+                        msgpack::object_handle oh;
+                        int status = recv_latest(client_fd, unp, oh, MAX_MSG_SIZE);
 
-                        if (n <= 0) {
+                        if (status <= 0) {
                             std::cerr << "Error reading the initial message.\n";
                             // close(client_fd);
                             continue;
                         }
 
-                        // unpack of the MsgPack message
-                        msgpack::object_handle oh = msgpack::unpack(buffer, n);
                         msgpack::object obj = oh.get();
 
                         // First message is the robot name as a string

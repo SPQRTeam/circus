@@ -3,36 +3,57 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <msgpack.hpp>
 
 namespace spqr {
 
-// TCP Communication: sends the size of the message first, then the message itself.
-// Returns the number of bytes sent (excluding the size header), or -1 on error.
-
-// Source - https://stackoverflow.com/a
-// Posted by Arun, modified by community. See post 'Timeline' for change history
-// Retrieved 2026-01-12, License - CC BY-SA 3.0
-inline ssize_t send_all(int fd, const char* buf, size_t len) {
-    // First, send the size of the message
-    uint32_t msg_size = htonl(len);
-    ssize_t bytes_sent = send(fd, &msg_size, sizeof(msg_size), 0);
-    if (bytes_sent != sizeof(msg_size)) {
-        return -1;
-    }
-
-    ssize_t total = 0;       // how many bytes we've sent
-    size_t bytesleft = len;  // how many we have left to send
-    ssize_t n = 0;
-    while (total < len) {
-        n = send(fd, buf + total, bytesleft, 0);
-        if (n == -1) {
-            /* print/log error details */
+// TCP Communication: sender-side counterpart to recv_latest below -- loops
+// send() until the full buffer has been handed to the kernel. Writes no
+// length header: recv_latest's persistent msgpack::unpacker tracks message
+// boundaries itself (MessagePack values are self-delimiting), so nothing
+// needs to declare how many bytes are coming. Returns the number of bytes
+// sent, or -1 on error.
+inline ssize_t send_unframed(int fd, const char* buf, size_t len) {
+    ssize_t total = 0;
+    while (static_cast<size_t>(total) < len) {
+        ssize_t n = send(fd, buf + total, len - static_cast<size_t>(total), 0);
+        if (n <= 0) {
             return -1;
         }
         total += n;
-        bytesleft -= n;
     }
     return total;
+}
+
+// TCP Communication: reads whatever bytes are currently available on fd into
+// the caller-owned, per-connection `unp` (kept alive across calls, e.g. in a
+// std::unordered_map<int, msgpack::unpacker> keyed by fd), then extracts the
+// most recently completed message -- any older ones that had piled up in the
+// same read (fast sender, slow reader) are discarded on purpose, since only
+// the latest is ever still relevant. Unlike a length-prefixed protocol, this
+// needs no length header: MessagePack values are self-delimiting, so `unp`
+// tracks message boundaries -- and any partial trailing bytes -- itself.
+// Returns 1 if `out` now holds a complete message, 0 if the read only added
+// to a still-incomplete one, or -1 if the connection was closed/errored (the
+// caller should close fd).
+inline int recv_latest(int fd, msgpack::unpacker& unp, msgpack::object_handle& out, size_t maxChunk) {
+    unp.reserve_buffer(maxChunk);
+    ssize_t n = read(fd, unp.buffer(), unp.buffer_capacity());
+    if (n <= 0) {
+        return -1;
+    }
+    unp.buffer_consumed(static_cast<size_t>(n));
+
+    msgpack::object_handle oh;
+    bool gotOne = false;
+    while (unp.next(oh)) {
+        out = std::move(oh);
+        gotOne = true;
+    }
+    return gotOne ? 1 : 0;
 }
 
 }
