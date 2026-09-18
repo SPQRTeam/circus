@@ -17,7 +17,8 @@ class Container {
         Container(const std::string& name, const std::string& sockPath = "/var/run/docker.sock");
         ~Container();
 
-        void create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds);
+        void create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds,
+                    const std::string& connectMode = "shm");
 
         void start();
         void stop();

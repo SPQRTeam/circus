@@ -8,12 +8,16 @@
 #include <yaml-cpp/yaml.h>
 
 #include <Eigen/Eigen>
+#include <chrono>
+#include <map>
 #include <memory>
 #include <msgpack.hpp>
 #include <msgpack/v3/object_fwd_decl.hpp>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "Constants.h"
@@ -41,16 +45,29 @@ class RobotManager {
         void update();
         void clear();
 
+        void setRobotFd(const std::string& name, int fd);
+        int getRobotFd(const std::string& name) const;   // -1 se sconosciuto
+        void removeRobotFd(int fd);
+
+        // publishImages: forwarded to each robot's sendMessageSHM() (ignored in
+        // socket mode, which never sends images) -- see Robot::sendMessageSHM().
+        void sendStateMessages(bool publishImages);
+        void receiveCommandMessages();
+        void waitRobotConnections();
+
+        void initializeSocket(int port);        
+
         bool areAllRobotsReady() const;
         bool areAllRobotsConnected() const;
 
-        void bindMujoco(MujocoContext* mujContext);
+        void bindMujoco(MujocoContext* mujContext, std::string connectMode_);
 
         std::shared_ptr<Robot> create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
                                       const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team,
                                       const std::string& role = "Striker");
 
-        void startContainers(const std::string& fwkCfgPath = spqr::frameworkConfigPath, const std::string& pathsCfgPath = spqr::pathsConfigPath);
+        void startContainers(const std::string& fwkCfgPath = spqr::frameworkConfigPath, const std::string& pathsCfgPath = spqr::pathsConfigPath,
+                             const std::string& connectMode = "shm");
 
         void setAreAllRobotsReadyCallback(std::function<void()> cb);
         void applyCommands();
@@ -62,13 +79,23 @@ class RobotManager {
         RobotManager(const RobotManager&) = delete;
         RobotManager& operator=(const RobotManager&) = delete;
 
-        ssize_t send_all(int fd, char* buf, size_t len);
+        void sendStateMessagesSHM(bool publishImages);
+        void sendStateMessagesSocket();
 
-        std::atomic<bool> serverRunning_ = false;
-        std::thread serverThread_;
+        void receiveCommandMessagesSHM();
+        void receiveCommandMessagesSocket();
+
+        void waitRobotConnectionsSocket();
+        void waitRobotConnectionsSHM();
+
+        std::string connectMode_;
 
         mutable std::mutex mutex_;
         std::vector<std::shared_ptr<Robot>> robots_;
+        std::map<std::string, int> robotFdMap_;
+        int serverFd_ = -1;
+        std::vector<pollfd> pollFds_;
+        std::unordered_map<int, msgpack::unpacker> unpackers_;
         std::function<void()> areAllRobotsReadyCallback_;
 
         using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&,

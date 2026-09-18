@@ -10,6 +10,11 @@
 
 namespace spqr {
 
+
+struct GroundRelativePositionData {
+    double position[3] = {};
+};
+
 // Position of a body or site relative to the ground projection of a reference Pose.
 // Reference frame: (trunk_x, trunk_y, 0) with yaw-only rotation of the trunk.
 class GroundRelativePosition : public Sensor {
@@ -49,6 +54,14 @@ class GroundRelativePosition : public Sensor {
             std::map<std::string, msgpack::object> data;
             data["position"] = msgpack::object(position_vec, z);
             return msgpack::object(data, z);
+        }
+
+        GroundRelativePositionData toSharedState() const {
+            GroundRelativePositionData data;
+            for (int i = 0; i < 3; ++i) {
+                data.position[i] = position_(i);
+            }
+            return data;
         }
 
         Eigen::Vector3d getPosition() const {
