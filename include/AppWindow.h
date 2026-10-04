@@ -40,6 +40,8 @@ class AppWindow : public QMainWindow {
         void loadScene(const QString& yaml_file);
         static void signalHandler(int signal);
 
+        static void cleanupSharedMemory();
+
         QVBoxLayout* mainLayout = nullptr;
         QHBoxLayout* contentLayout = nullptr;
         QWidget* viewportContainer = nullptr;
@@ -55,6 +57,7 @@ class AppWindow : public QMainWindow {
 
         std::string frameworkConfigPath_ = spqr::frameworkConfigPath;
         std::string pathsConfigPath_ = spqr::pathsConfigPath;
+        std::string connectMode_ = "shm";
 };
 
 }  // namespace spqr

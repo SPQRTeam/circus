@@ -3,6 +3,8 @@
 #include <mujoco/mujoco.h>
 
 #include <Eigen/Eigen>
+#include <cstdint>
+#include <cstring>
 #include <map>
 #include <memory>
 #include <string>
@@ -13,6 +15,30 @@ namespace spqr {
 
 // Forward declarations
 class Pose;
+
+// Trivially-copyable snapshot of Oracle's values, for publishing over shared
+// memory. teammatesLocalPositions/opponentsLocalPositions are runtime-varying,
+// string-keyed maps (however many robots are currently on the field) -- not
+// trivially copyable as-is, so this bounds them to a fixed max squad size
+// instead of serializing: still plain memcpy, at the cost of a fixed capacity.
+struct OracleData {
+        static constexpr size_t kMaxTeammates = 6;
+        static constexpr size_t kMaxOpponents = 6;
+        static constexpr size_t kNumGoalPosts = 4;
+
+        struct Entry {
+                char name[32] = {};
+                double position[3] = {};
+        };
+
+        double ballPosition[3] = {};
+        Entry teammates[kMaxTeammates] = {};
+        uint32_t teammateCount = 0;
+        Entry opponents[kMaxOpponents] = {};
+        uint32_t opponentCount = 0;
+        Entry goalPosts[kNumGoalPosts] = {};
+        uint32_t goalPostCount = 0;
+};
 
 // L'oracle is defined as a sensor that provides the ground truth about the world.
 // It should contain information about the position of the ball, robots, obstacles, ...
@@ -76,6 +102,40 @@ class Oracle : public Sensor {
             oracle_data["goal_posts_positions"] = msgpack::object(goal_posts_data, z);
 
             return msgpack::object(oracle_data, z);
+        }
+
+        static void fillEntry_(OracleData::Entry& entry, const std::string& name, const Eigen::Vector3d& pos) {
+            std::strncpy(entry.name, name.c_str(), sizeof(entry.name) - 1);
+            for (int i = 0; i < 3; ++i) {
+                entry.position[i] = pos(i);
+            }
+        }
+
+        OracleData toSharedState() const {
+            OracleData data;
+            for (int i = 0; i < 3; ++i) {
+                data.ballPosition[i] = ballPosition(i);
+            }
+
+            for (const auto& [teammateName, localPos] : teammatesLocalPositions) {
+                if (data.teammateCount >= OracleData::kMaxTeammates)
+                    break;
+                fillEntry_(data.teammates[data.teammateCount++], teammateName, localPos);
+            }
+
+            for (const auto& [opponentName, localPos] : opponentsLocalPositions) {
+                if (data.opponentCount >= OracleData::kMaxOpponents)
+                    break;
+                fillEntry_(data.opponents[data.opponentCount++], opponentName, localPos);
+            }
+
+            for (const auto& [postName, localPos] : goalPostsLocalPositions) {
+                if (data.goalPostCount >= OracleData::kNumGoalPosts)
+                    break;
+                fillEntry_(data.goalPosts[data.goalPostCount++], postName, localPos);
+            }
+
+            return data;
         }
 
         Eigen::Vector3d getBallPosition() const {

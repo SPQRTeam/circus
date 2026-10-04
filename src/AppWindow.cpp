@@ -1,6 +1,7 @@
 #include "AppWindow.h"
 
 #include <qaction.h>
+#include <unistd.h>
 
 #include <QFileDialog>
 #include <QHBoxLayout>
@@ -45,6 +46,8 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
             frameworkConfigPath_ = argv[++i];
         else if (arg == "--paths" && i + 1 < argc)
             pathsConfigPath_ = argv[++i];
+        else if (arg == "--connect-mode" && i + 1 < argc)
+            connectMode_ = argv[++i];  // TODO: forse si può aggiungere come variabile d'ambiente??
     }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
@@ -112,6 +115,14 @@ void AppWindow::openScene() {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open Scene File"), "resources/scenes/", tr("YAML Files (*.yaml)"));
     if (!fileName.isEmpty()) {
         loadScene(fileName);
+    }
+}
+
+void AppWindow::cleanupSharedMemory() {
+    std::error_code ec;
+    std::filesystem::remove_all(std::filesystem::path(sharedMemoryPath), ec);
+    if (ec) {
+        std::cerr << "Failed to clean " << sharedMemoryPath << ": " << ec.message() << std::endl;
     }
 }
 
@@ -214,24 +225,36 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         // Ensure the shared memory directory exists and is writable by the current user.
         // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
-        const std::filesystem::path shmDir("/dev/shm/circus_ipc");
-        if (std::filesystem::exists(shmDir)) {
-            std::filesystem::remove_all(shmDir);
-        }
-        std::filesystem::create_directories(shmDir);
+        if (connectMode_ == "shm") {
+            const std::filesystem::path shmDir(sharedMemoryPath);
+            cleanupSharedMemory();
 
-        CircusNetwork::instance().init();
-        RobotManager::instance().bindMujoco(mujContext.get());  // memo: this must be run before starting the communications server
-        sim->initializeSocket(frameworkCommunicationPort);
+            std::error_code ec;
+            std::filesystem::create_directories(shmDir, ec);
+            if (ec || access(shmDir.c_str(), W_OK) != 0) {
+                throw std::runtime_error(shmDir.string() + " is not writable by the current user. Remove it (sudo rm -rf " + shmDir.string()
+                                         + ") and load the scene again.");
+            }
+
+            CircusNetwork::instance().init();
+            RobotManager::instance().bindMujoco(mujContext.get(), connectMode_);  // memo: this must be run before starting the communications server
+
+        } else {  // socket mode
+
+            CircusNetwork::instance().init();
+            RobotManager::instance().bindMujoco(mujContext.get(), connectMode_);  // memo: this must be run before starting the communications server
+            RobotManager::instance().initializeSocket(frameworkCommunicationPort);
+        }
 
         std::cout << "Starting containers..." << std::endl;
-        RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_);
+        RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
 
+        std::cout << "Simulation starting with " << connectMode_ << " connection mode..." << std::endl;
         std::cout << "Connecting Robots..." << std::endl;
-        sim->waitRobotConnections();
+        RobotManager::instance().waitRobotConnections();
 
         std::cout << "Waiting Robots are Ready..." << std::endl;
-        sim->receiveCommandMessages();
+        RobotManager::instance().receiveCommandMessages();
 
         // Set initial simulation state (playing when scene is loaded)
         toolsPanel->setSimulationPlaying(true);
@@ -341,6 +364,7 @@ void AppWindow::signalHandler(int signal) {
     std::cerr.flush();
 
     TeamManager::instance().clear();
+    cleanupSharedMemory();
 
     std::cerr << "Cleanup complete. Re-raising signal." << std::endl;
     std::cerr.flush();
@@ -353,6 +377,7 @@ AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
     TeamManager::instance().clear();
+    cleanupSharedMemory();
 }
 
 }  // namespace spqr

@@ -8,6 +8,16 @@
 
 namespace spqr {
 
+// Trivially-copyable snapshot of Pose's values, for publishing over shared memory
+// (same numbers doSerialize() sends over the socket, without msgpack/std::vector).
+struct PoseData {
+        double position[3] = {};
+        double quatOrientation[4] = {};
+        double eulerOrientation[3] = {};
+        double rotationMatrix[9] = {};
+        double transformationMatrix[16] = {};
+};
+
 class Pose : public Sensor {
     public:
         Pose(mjModel* mujModel, mjData* mujData, const char* positionName, const char* orientationName) : mujModel(mujModel), mujData(mujData) {
@@ -53,6 +63,30 @@ class Pose : public Sensor {
             pose_data["transformation_matrix"] = msgpack::object(transformation_matrix_vec, z);
 
             return msgpack::object(pose_data, z);
+        }
+
+        // Row-major matrix flattening, matching doSerialize()'s element order
+        // (Eigen's own Map/storage is column-major, so this is spelled out explicitly).
+        PoseData toSharedState() const {
+            PoseData data;
+            for (int i = 0; i < 3; ++i) {
+                data.position[i] = position(i);
+                data.eulerOrientation[i] = eulerOrientation(i);
+            }
+            for (int i = 0; i < 4; ++i) {
+                data.quatOrientation[i] = quatOrientation(i);
+            }
+            for (int r = 0; r < 3; ++r) {
+                for (int c = 0; c < 3; ++c) {
+                    data.rotationMatrix[r * 3 + c] = rotationMatrix(r, c);
+                }
+            }
+            for (int r = 0; r < 4; ++r) {
+                for (int c = 0; c < 4; ++c) {
+                    data.transformationMatrix[r * 4 + c] = transformationMatrix(r, c);
+                }
+            }
+            return data;
         }
 
         Eigen::Vector3d getPosition() const {
