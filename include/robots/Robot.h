@@ -15,11 +15,11 @@
 #include <mutex>
 #include <string>
 
-#include "Container.h"
 #include "Constants.h"
+#include "Container.h"
 #include "MujocoContext.h"
-#include "sensors/Sensor.h"
 #include "ipc/utils.h"
+#include "sensors/Sensor.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
 namespace spqr {
@@ -96,7 +96,6 @@ class Robot {
         std::string image_shm_path;
 
     public:
-
         std::string name;
         std::string type;
         uint8_t number;

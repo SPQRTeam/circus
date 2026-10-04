@@ -114,8 +114,7 @@ class BoosterT1 : public Robot {
                         {JointValue::HIP_RIGHT_YAW, name + "_Right_Hip_Yaw"},
                         {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
                         {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
-                        {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {
-        }
+                        {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {}
 
         void bindMujoco(MujocoContext* mujCtx, std::string connectMode_) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
@@ -156,7 +155,7 @@ class BoosterT1 : public Robot {
             // Create Oracle with the pose and all robots
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
 
-            if(connectMode_ == "shm") {
+            if (connectMode_ == "shm") {
                 const uint32_t width = static_cast<uint32_t>(rgbCamera->getWidth());
                 const uint32_t height = static_cast<uint32_t>(rgbCamera->getHeight());
                 const size_t rgbBytes = static_cast<size_t>(width) * height * 3;
@@ -168,9 +167,7 @@ class BoosterT1 : public Robot {
                                         BoosterT1ImageMeta{kBoosterT1ImageSchemaId, ImageMeta{width, height, 3}, ImageMeta{width, height, 2}});
                 state_writer_.configure(send_shm_path, sizeof(BoosterT1SharedState), BoosterT1StateMeta{});
                 command_reader_.configure(receive_shm_path);
-
             }
-
         }
 
         void receiveMessageSocket(const std::map<std::string, msgpack::object>& message) override {
@@ -225,9 +222,8 @@ class BoosterT1 : public Robot {
         }
 
         void sendMessageSHM(bool publishImages) override {
-            const BoosterT1SharedState state{pose->toSharedState(), imu->toSharedState(),
-                                             joints->toSharedState<kBoosterT1JointCount>(), oracle->toSharedState(),
-                                            headPose->toSharedState()};
+            const BoosterT1SharedState state{pose->toSharedState(), imu->toSharedState(), joints->toSharedState<kBoosterT1JointCount>(),
+                                             oracle->toSharedState(), headPose->toSharedState()};
             state_writer_.write(&state, sizeof(state));
 
             // Camera frames don't change between physics substeps -- rendering

@@ -56,4 +56,4 @@ inline int recv_latest(int fd, msgpack::unpacker& unp, msgpack::object_handle& o
     return gotOne ? 1 : 0;
 }
 
-}
+}  // namespace spqr

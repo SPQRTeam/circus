@@ -47,7 +47,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
         else if (arg == "--paths" && i + 1 < argc)
             pathsConfigPath_ = argv[++i];
         else if (arg == "--connect-mode" && i + 1 < argc)
-            connectMode_ = argv[++i];   // TODO: forse si può aggiungere come variabile d'ambiente??
+            connectMode_ = argv[++i];  // TODO: forse si può aggiungere come variabile d'ambiente??
     }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
@@ -225,28 +225,27 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         // Ensure the shared memory directory exists and is writable by the current user.
         // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
-        if(connectMode_ == "shm") {
+        if (connectMode_ == "shm") {
             const std::filesystem::path shmDir(sharedMemoryPath);
             cleanupSharedMemory();
 
             std::error_code ec;
             std::filesystem::create_directories(shmDir, ec);
             if (ec || access(shmDir.c_str(), W_OK) != 0) {
-                throw std::runtime_error(shmDir.string() + " is not writable by the current user. Remove it (sudo rm -rf "
-                                         + shmDir.string() + ") and load the scene again.");
+                throw std::runtime_error(shmDir.string() + " is not writable by the current user. Remove it (sudo rm -rf " + shmDir.string()
+                                         + ") and load the scene again.");
             }
 
             CircusNetwork::instance().init();
             RobotManager::instance().bindMujoco(mujContext.get(), connectMode_);  // memo: this must be run before starting the communications server
 
-        }
-        else { // socket mode
+        } else {  // socket mode
 
             CircusNetwork::instance().init();
             RobotManager::instance().bindMujoco(mujContext.get(), connectMode_);  // memo: this must be run before starting the communications server
             RobotManager::instance().initializeSocket(frameworkCommunicationPort);
         }
-        
+
         std::cout << "Starting containers..." << std::endl;
         RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
 

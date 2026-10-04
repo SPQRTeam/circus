@@ -46,7 +46,7 @@ class RobotManager {
         void clear();
 
         void setRobotFd(const std::string& name, int fd);
-        int getRobotFd(const std::string& name) const;   // -1 se sconosciuto
+        int getRobotFd(const std::string& name) const;  // -1 se sconosciuto
         void removeRobotFd(int fd);
 
         // publishImages: forwarded to each robot's sendMessageSHM() (ignored in
@@ -55,7 +55,7 @@ class RobotManager {
         void receiveCommandMessages();
         void waitRobotConnections();
 
-        void initializeSocket(int port);        
+        void initializeSocket(int port);
 
         bool areAllRobotsReady() const;
         bool areAllRobotsConnected() const;

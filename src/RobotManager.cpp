@@ -1,7 +1,8 @@
 #include "RobotManager.h"
 
-#include <filesystem>
 #include <unistd.h>
+
+#include <filesystem>
 
 #include "Constants.h"
 #include "Team.h"
@@ -74,8 +75,7 @@ void RobotManager::sendStateMessages(bool publishImages) {
     if (connectMode_ == "shm") {
         // std::cout << "[sendStateMessages] sending message with SHM" << std::endl;
         sendStateMessagesSHM(publishImages);
-    }
-    else {
+    } else {
         // std::cout << "[sendStateMessages] sending message with Socket" << std::endl;
         sendStateMessagesSocket();
     }
@@ -85,13 +85,11 @@ void RobotManager::receiveCommandMessages() {
     if (connectMode_ == "shm") {
         // std::cout << "[receiveCommandMessages] receiving message with SHM" << std::endl;
         receiveCommandMessagesSHM();
-    }
-    else {
+    } else {
         // std::cout << "[receiveCommandMessages] receiving message with Socket" << std::endl;
         receiveCommandMessagesSocket();
     }
 }
-
 
 void RobotManager::sendStateMessagesSHM(bool publishImages) {
     for (auto& r : robots_) {
@@ -260,10 +258,9 @@ void RobotManager::initializeSocket(int port) {
 }
 
 void RobotManager::waitRobotConnections() {
-    if(connectMode_ == "shm") {
+    if (connectMode_ == "shm") {
         waitRobotConnectionsSHM();
-    }
-    else {
+    } else {
         waitRobotConnectionsSocket();
     }
 }
@@ -392,7 +389,7 @@ std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::
 void RobotManager::startContainers(const std::string& fwkCfgPath, const std::string& pathsCfgPath, const std::string& connectMode) {
     // Save connection mode
     connectMode_ = connectMode;
-    
+
     YAML::Node configRoot = loadYamlFile(fwkCfgPath.c_str());
 
     if (!configRoot["image"])
@@ -439,7 +436,7 @@ void RobotManager::startContainers(const std::string& fwkCfgPath, const std::str
         binds.push_back(v2);
     }
 
-    // The shared-memory bind belongs to "shm" mode only, 
+    // The shared-memory bind belongs to "shm" mode only,
     // and must match the path AppWindow creates and cleans
     if (connectMode == "shm") {
         std::string shmPath(sharedMemoryPath);

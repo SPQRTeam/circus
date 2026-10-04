@@ -32,7 +32,6 @@ class SimulationThread : public QThread {
 
         static constexpr int kControlDecimation = 5;
         static constexpr double kTimestepPolicy = 0.02;
-
 };
 
 }  // namespace spqr

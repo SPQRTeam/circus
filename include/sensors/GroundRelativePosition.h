@@ -10,9 +10,8 @@
 
 namespace spqr {
 
-
 struct GroundRelativePositionData {
-    double position[3] = {};
+        double position[3] = {};
 };
 
 // Position of a body or site relative to the ground projection of a reference Pose.
