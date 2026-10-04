@@ -115,7 +115,6 @@ class BoosterT1 : public Robot {
                         {JointValue::KNEE_RIGHT_PITCH, name + "_Right_Knee_Pitch"},
                         {JointValue::ANKLE_RIGHT_PITCH, name + "_Right_Ankle_Pitch"},
                         {JointValue::ANKLE_RIGHT_ROLL, name + "_Right_Ankle_Roll"}} {
-            shm_dir_ = "/dev/shm/circus_ipc";
         }
 
         void bindMujoco(MujocoContext* mujCtx, std::string connectMode_) override {
@@ -275,10 +274,6 @@ class BoosterT1 : public Robot {
         ~BoosterT1() = default;
 
     private:
-        std::string shmFilePath_(const std::string& camera) const {
-            return shm_dir_ + "/" + name + "_" + camera + ".shm";
-        }
-
         std::map<JointValue, std::string> joint_map;
         std::unordered_map<JointValue, mjtNum> latestTorques;
 

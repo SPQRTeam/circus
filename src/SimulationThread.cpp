@@ -74,10 +74,6 @@ void SimulationThread::run() {
     
     double sim_dt = model_->opt.timestep;
 
-    constexpr int kControlDecimation = 10;
-    constexpr double kTimestepPolicy = 0.02;
-    int stepsSinceLastControl = 0;
-
     using clock = std::chrono::steady_clock;
     auto next_step_time = clock::now();
     while (running_) {

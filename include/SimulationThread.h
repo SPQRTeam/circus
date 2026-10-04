@@ -29,6 +29,10 @@ class SimulationThread : public QThread {
         std::atomic<bool> running_;
         std::atomic<bool> paused_;
         int maxSimulationTime_ = -1;  // -1 means no limit
+
+        static constexpr int kControlDecimation = 5;
+        static constexpr double kTimestepPolicy = 0.02;
+
 };
 
 }  // namespace spqr

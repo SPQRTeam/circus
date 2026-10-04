@@ -1,6 +1,7 @@
 #include "AppWindow.h"
 
 #include <qaction.h>
+#include <unistd.h>
 
 #include <QFileDialog>
 #include <QHBoxLayout>
@@ -117,6 +118,14 @@ void AppWindow::openScene() {
     }
 }
 
+void AppWindow::cleanupSharedMemory() {
+    std::error_code ec;
+    std::filesystem::remove_all(std::filesystem::path(sharedMemoryPath), ec);
+    if (ec) {
+        std::cerr << "Failed to clean " << sharedMemoryPath << ": " << ec.message() << std::endl;
+    }
+}
+
 void AppWindow::loadScene(const QString& yaml_file) {
     try {
         TeamManager::instance().clear();
@@ -216,13 +225,16 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         // Ensure the shared memory directory exists and is writable by the current user.
         // Docker bind mounts create missing host dirs as root, so remove and recreate if needed.
-        
         if(connectMode_ == "shm") {
-            const std::filesystem::path shmDir(sharedMemoryPath_);
-            if (std::filesystem::exists(shmDir)) {
-                std::filesystem::remove_all(shmDir);
+            const std::filesystem::path shmDir(sharedMemoryPath);
+            cleanupSharedMemory();
+
+            std::error_code ec;
+            std::filesystem::create_directories(shmDir, ec);
+            if (ec || access(shmDir.c_str(), W_OK) != 0) {
+                throw std::runtime_error(shmDir.string() + " is not writable by the current user. Remove it (sudo rm -rf "
+                                         + shmDir.string() + ") and load the scene again.");
             }
-            std::filesystem::create_directories(shmDir);
 
             CircusNetwork::instance().init();
             RobotManager::instance().bindMujoco(mujContext.get(), connectMode_);  // memo: this must be run before starting the communications server
@@ -353,6 +365,7 @@ void AppWindow::signalHandler(int signal) {
     std::cerr.flush();
 
     TeamManager::instance().clear();
+    cleanupSharedMemory();
 
     std::cerr << "Cleanup complete. Re-raising signal." << std::endl;
     std::cerr.flush();
@@ -365,6 +378,7 @@ AppWindow::~AppWindow() {
     if (sim != nullptr && sim->isRunning())
         sim->stop();
     TeamManager::instance().clear();
+    cleanupSharedMemory();
 }
 
 }  // namespace spqr

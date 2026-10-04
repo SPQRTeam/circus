@@ -438,6 +438,16 @@ void RobotManager::startContainers(const std::string& fwkCfgPath, const std::str
         }
         binds.push_back(v2);
     }
+
+    // The shared-memory bind belongs to "shm" mode only, 
+    // and must match the path AppWindow creates and cleans
+    if (connectMode == "shm") {
+        std::string shmPath(sharedMemoryPath);
+        if (!shmPath.empty() && shmPath.back() == '/') {
+            shmPath.pop_back();
+        }
+        binds.push_back(shmPath + ":" + shmPath);
+    }
     for (std::shared_ptr<Robot> r : robots_) {
         r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
         r->container->create(r, image, binds, connectMode);
