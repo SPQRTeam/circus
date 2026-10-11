@@ -5,7 +5,9 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <nlohmann/json.hpp>
 #include <string>
+#include <cstdio>
 
 #include "CircusNetwork.h"
 #include "Constants.h"
@@ -35,6 +37,27 @@ Container::~Container() {
     }
 }
 
+void Container::checkDockerApi() {
+    std::string req_res = curlClient.request(GET, "/version", 200);
+    const std::string v = nlohmann::json::parse(req_res)["ApiVersion"];
+    int major = 0, minor = 0;
+    std::sscanf(v.c_str(), "%d.%d", &major, &minor);
+    // Docker 28.2 introduced DiscoveredDevices in the return payload of /info. We need it to check whether the host has a gpu.
+    if (major == 1 && minor < 50)
+        throw std::runtime_error("Docker API " + v + " is too old: circus needs Docker >= 28.2 (API 1.50)");
+}
+
+bool Container::hasNvidiaGPU() {
+    checkDockerApi();
+
+    std::string req_res = curlClient.request(GET, "/info", 200);
+    const nlohmann::json info = nlohmann::json::parse(req_res);
+    for (const nlohmann::json& dev : info.value("DiscoveredDevices", nlohmann::json::array()))
+        if (dev.value("ID", "").starts_with("nvidia.com/gpu"))
+            return true;
+    return false;
+}
+
 void Container::create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds,
                        const std::string& connectMode) {
     auto envOrDefault = [](const char* key, const char* fallback) -> std::string {
@@ -59,12 +82,15 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
            {"Privileged", true},
            {"NetworkMode", CIRCUS_NETWORK_NAME}};
 
-    payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
-    payload["HostConfig"]["DeviceRequests"].push_back({
-        {"Driver", "nvidia"},
-        {"Count", -1},
-        {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
-    });
+    if (hasNvidiaGPU()) {
+        payload["HostConfig"]["DeviceRequests"] = nlohmann::json::array();
+        payload["HostConfig"]["DeviceRequests"].push_back({
+            {"Driver", "nvidia"},
+            {"Count", -1},
+            {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
+        });
+    }
+
 
     payload["NetworkingConfig"]
         = {{"EndpointsConfig",
@@ -88,7 +114,6 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "CIRCUS_SHM_DIR=" + std::string(sharedMemoryPath),
                       "CONNECT_MODE=" + connectMode,  // SHM: questo serve per simbridge, per sapere che modalità attivare
                       "JOYSTICK_DEVICE=" + envOrDefault("JOYSTICK_DEVICE", "/dev/input/js0"),
-                      "INFERENCE_BACKEND=" + envOrDefault("INFERENCE_BACKEND", "trt"),
                       "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity"),
                       "BACKEND=" + envOrDefault("BACKEND", "booster")};
 
