@@ -4,10 +4,10 @@
 #include <yaml-cpp/yaml.h>
 
 #include <cassert>
+#include <cstdio>
 #include <cstdlib>
 #include <nlohmann/json.hpp>
 #include <string>
-#include <cstdio>
 
 #include "CircusNetwork.h"
 #include "Constants.h"
@@ -90,7 +90,6 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
             {"Capabilities", nlohmann::json::array({nlohmann::json::array({"gpu"})})},
         });
     }
-
 
     payload["NetworkingConfig"]
         = {{"EndpointsConfig",
