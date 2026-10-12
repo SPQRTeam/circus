@@ -30,7 +30,7 @@ class SimulationThread : public QThread {
         std::atomic<bool> paused_;
         int maxSimulationTime_ = -1;  // -1 means no limit
 
-        static constexpr int kControlDecimation = 5;
+        static constexpr int kControlDecimation = 10;
         static constexpr double kTimestepPolicy = 0.02;
 };
 
