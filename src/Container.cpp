@@ -92,6 +92,12 @@ void Container::create(const std::shared_ptr<Robot>& robot, const std::string& i
                       "TASK_NAME=" + envOrDefault("TASK_NAME", "t1-velocity"),
                       "BACKEND=" + envOrDefault("BACKEND", "booster")};
 
+    // Model simulated by booster-motion (T1 | K1 | T2), derived from the scene robot type (e.g. "Booster-T2" -> "T2")
+    std::string robotModel = robot->type;
+    if (robotModel.starts_with("Booster-"))
+        robotModel = robotModel.substr(std::string("Booster-").size());
+    payload["Env"].push_back("ROBOT_MODEL=" + robotModel);
+
     payload["Env"].push_back("SPAWN_X=" + std::to_string(robot->initPosition.x()));
     payload["Env"].push_back("SPAWN_Y=" + std::to_string(robot->initPosition.y()));
     payload["Env"].push_back("SPAWN_THETA=" + std::to_string(robot->initOrientation.z()));
