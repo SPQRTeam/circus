@@ -48,6 +48,8 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
             pathsConfigPath_ = argv[++i];
         else if (arg == "--connect-mode" && i + 1 < argc)
             connectMode_ = argv[++i];  // TODO: forse si può aggiungere come variabile d'ambiente??
+        else if (arg == "--no-images")
+            publishImages_ = false;
     }
 
     resize(spqr::initialWindowWidth, spqr::initialWindowHeight);
@@ -211,6 +213,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         sim = std::make_unique<SimulationThread>(mujContext->model, mujContext->data);
         sim->setMaxSimulationTime(parser.getSceneInfo().simulationConfig.simulation.max_simulation_time);
+        sim->setPublishImages(publishImages_);
         connect(sim.get(), &SimulationThread::maxSimulationTimeReached, this, &AppWindow::close);
 
         connect(
@@ -250,6 +253,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         RobotManager::instance().startContainers(frameworkConfigPath_, pathsConfigPath_, connectMode_);
 
         std::cout << "Simulation starting with " << connectMode_ << " connection mode..." << std::endl;
+        std::cout << "Camera images: " << (publishImages_ ? "ENABLED" : "DISABLED (--no-images)") << std::endl;
         std::cout << "Connecting Robots..." << std::endl;
         RobotManager::instance().waitRobotConnections();
 
