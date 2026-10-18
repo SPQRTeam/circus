@@ -386,8 +386,7 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
                     // Robots whose common.xml prefixes its classes (e.g. "Booster-T2_visual") match too
                     const std::string geomClass = geom.attribute("class").value();
                     const std::string visualSuffix = "_visual";
-                    if (geomClass == "visual"
-                        || (geomClass.size() > visualSuffix.size() && geomClass.ends_with(visualSuffix))) {
+                    if (geomClass == "visual" || (geomClass.size() > visualSuffix.size() && geomClass.ends_with(visualSuffix))) {
                         // Set the rgba attribute for this visual geometry
                         auto [r, g, b] = robotSpec->color;
                         std::ostringstream rgbaStream;
