@@ -1,0 +1,80 @@
+<mujoco>
+    <!--
+        Every class, material and mesh below is prefixed with "Booster-T2" because all
+        robot common.xml files are included in the same scene: unprefixed names would
+        collide with the Booster-T1 ones as soon as a scene mixes the two robots.
+    -->
+    <default>
+        <default class="Booster-T2">
+            <!--
+                Damping now is default (i.e. 0). To check if it is ok or not
+            -->
+            <joint limited="true" armature="0.01" frictionloss="0.0" />
+            <equality solref="0.001 2" />
+
+            <default class="Booster-T2_visual">
+                <geom type="mesh" contype="0" conaffinity="0" group="2" density="0"/>
+            </default>
+
+            <default class="Booster-T2_collision">
+                <geom group="3" material="Booster-T2_transparent" priority="1" friction="1. 0.01 0.005"/>
+            </default>
+        </default>
+    </default>
+
+    <asset>
+        <material name="Booster-T2_light" rgba="0.847 0.847 0.847 1"/>
+        <material name="Booster-T2_dark" rgba="0.2078 0.2078 0.2078 1"/>
+        <material name="Booster-T2_white" rgba="1 1 1 1"/>
+        <material name="Booster-T2_transparent" rgba="0.5 0.5 0.5 1"/>
+
+        <mesh name="Booster-T2_trunk" file="Booster-T2/trunk.STL" />
+        <mesh name="Booster-T2_logo" file="Booster-T2/logo.STL" />
+        <mesh name="Booster-T2_head_yaw_link" file="Booster-T2/head_yaw_link.STL" />
+        <mesh name="Booster-T2_head_pitch_link" file="Booster-T2/head_pitch_link.STL" />
+        <mesh name="Booster-T2_head_pitch_link_collision" file="Booster-T2/head_pitch_link_collision.STL" />
+        <mesh name="Booster-T2_left_shoulder_pitch_link" file="Booster-T2/left_shoulder_pitch_link.STL" />
+        <mesh name="Booster-T2_left_shoulder_roll_link" file="Booster-T2/left_shoulder_roll_link.STL" />
+        <mesh name="Booster-T2_left_elbow_pitch_link" file="Booster-T2/left_elbow_pitch_link.STL" />
+        <mesh name="Booster-T2_left_elbow_yaw_link" file="Booster-T2/left_elbow_yaw_link.STL" />
+        <mesh name="Booster-T2_left_wrist_pitch_link" file="Booster-T2/left_wrist_pitch_link.STL" />
+        <mesh name="Booster-T2_left_wrist_yaw_link" file="Booster-T2/left_wrist_yaw_link.STL" />
+        <mesh name="Booster-T2_left_wrist_roll_link_with_hand" file="Booster-T2/left_wrist_roll_link_with_hand.STL" />
+        <mesh name="Booster-T2_left_wrist_roll_link_collision" file="Booster-T2/left_wrist_roll_link_collision.STL" />
+        <mesh name="Booster-T2_right_shoulder_pitch_link" file="Booster-T2/right_shoulder_pitch_link.STL" />
+        <mesh name="Booster-T2_right_shoulder_roll_link" file="Booster-T2/right_shoulder_roll_link.STL" />
+        <mesh name="Booster-T2_right_elbow_pitch_link" file="Booster-T2/right_elbow_pitch_link.STL" />
+        <mesh name="Booster-T2_right_elbow_yaw_link" file="Booster-T2/right_elbow_yaw_link.STL" />
+        <mesh name="Booster-T2_right_wrist_pitch_link" file="Booster-T2/right_wrist_pitch_link.STL" />
+        <mesh name="Booster-T2_right_wrist_yaw_link" file="Booster-T2/right_wrist_yaw_link.STL" />
+        <mesh name="Booster-T2_right_wrist_roll_link_with_hand" file="Booster-T2/right_wrist_roll_link_with_hand.STL" />
+        <mesh name="Booster-T2_right_wrist_roll_link_collision" file="Booster-T2/right_wrist_roll_link_collision.STL" />
+        <mesh name="Booster-T2_waist_pitch_link" file="Booster-T2/waist_pitch_link.STL" />
+        <mesh name="Booster-T2_waist_roll_link" file="Booster-T2/waist_roll_link.STL" />
+        <mesh name="Booster-T2_waist_yaw_link" file="Booster-T2/waist_yaw_link.STL" />
+        <mesh name="Booster-T2_waist_yaw_link_collision" file="Booster-T2/waist_yaw_link_collision.STL" />
+        <mesh name="Booster-T2_left_hip_pitch_link" file="Booster-T2/left_hip_pitch_link.STL" />
+        <mesh name="Booster-T2_left_hip_roll_link" file="Booster-T2/left_hip_roll_link.STL" />
+        <mesh name="Booster-T2_left_hip_yaw_link" file="Booster-T2/left_hip_yaw_link.STL" />
+        <mesh name="Booster-T2_left_knee_pitch_link" file="Booster-T2/left_knee_pitch_link.STL" />
+        <mesh name="Booster-T2_left_ankle_pitch_link" file="Booster-T2/left_ankle_pitch_link.STL" />
+        <mesh name="Booster-T2_left_ankle_roll_link" file="Booster-T2/left_ankle_roll_link.STL" />
+        <mesh name="Booster-T2_right_hip_pitch_link" file="Booster-T2/right_hip_pitch_link.STL" />
+        <mesh name="Booster-T2_right_hip_roll_link" file="Booster-T2/right_hip_roll_link.STL" />
+        <mesh name="Booster-T2_right_hip_yaw_link" file="Booster-T2/right_hip_yaw_link.STL" />
+        <mesh name="Booster-T2_right_knee_pitch_link" file="Booster-T2/right_knee_pitch_link.STL" />
+        <mesh name="Booster-T2_right_ankle_pitch_link" file="Booster-T2/right_ankle_pitch_link.STL" />
+        <mesh name="Booster-T2_right_ankle_roll_link" file="Booster-T2/right_ankle_roll_link.STL" />
+
+        <!-- Loading numbers -->
+        <mesh name="Booster-T2_num_1" file="../meshes/numbers/1.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_2" file="../meshes/numbers/2.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_3" file="../meshes/numbers/3.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_4" file="../meshes/numbers/4.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_5" file="../meshes/numbers/5.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_6" file="../meshes/numbers/6.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_7" file="../meshes/numbers/7.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_8" file="../meshes/numbers/8.obj" scale="0.3 0.3 0.3"/>
+        <mesh name="Booster-T2_num_9" file="../meshes/numbers/9.obj" scale="0.3 0.3 0.3"/>
+    </asset>
+</mujoco>

@@ -100,7 +100,8 @@ void SimulationThread::run() {
                 // Camera frames only change once per GUI-thread render cycle, so only
                 // publish them on the last substep of each control step rather than
                 // re-copying them on every one of the kControlDecimation substeps.
-                const bool publishImages = (i == kControlDecimation - 1);
+                // Never publish them if disabled (--no-images).
+                const bool publishImages = publishImagesEnabled_ && (i == kControlDecimation - 1);
 
                 RobotManager::instance().sendStateMessages(publishImages);
                 RobotManager::instance().receiveCommandMessages();
@@ -144,6 +145,10 @@ bool SimulationThread::isPaused() {
 
 void SimulationThread::setMaxSimulationTime(int maxTime) {
     maxSimulationTime_ = maxTime;
+}
+
+void SimulationThread::setPublishImages(bool enabled) {
+    publishImagesEnabled_ = enabled;
 }
 
 }  // namespace spqr

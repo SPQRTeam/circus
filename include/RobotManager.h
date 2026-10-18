@@ -24,6 +24,7 @@
 #include "MujocoContext.h"
 #include "robots/BoosterK1.h"
 #include "robots/BoosterT1.h"
+#include "robots/BoosterT2.h"
 #include "robots/Robot.h"
 
 #define MAX_MSG_SIZE 1048576  // 1MB
@@ -104,8 +105,10 @@ class RobotManager {
         std::unordered_map<std::string, RobotCreator> robotFactory
             = {{"Booster-K1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName,
                                  auto&& team) { return std::make_shared<BoosterK1>(name, type, number, pos, ori, colorName, team); }},
-               {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName, auto&& team) {
-                    return std::make_shared<BoosterT1>(name, type, number, pos, ori, colorName, team);
+               {"Booster-T1", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName,
+                                 auto&& team) { return std::make_shared<BoosterT1>(name, type, number, pos, ori, colorName, team); }},
+               {"Booster-T2", [](auto&& name, auto&& type, uint8_t number, auto&& pos, auto&& ori, auto&& colorName, auto&& team) {
+                    return std::make_shared<BoosterT2>(name, type, number, pos, ori, colorName, team);
                 }}};
 };
 

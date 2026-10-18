@@ -13,6 +13,10 @@
 
 namespace spqr {
 
+// The declaration order is the joint order on the wire (joint_map is a std::map, so
+// it iterates in ascending JointValue order). Each robot only uses a subset, so new
+// joints can be inserted where they belong without changing the other robots' order:
+// the wrists and the 3-DoF waist are only used by Booster-T2.
 enum class JointValue {
     HEAD_YAW,
     HEAD_PITCH,
@@ -20,11 +24,20 @@ enum class JointValue {
     SHOULDER_LEFT_ROLL,
     ELBOW_LEFT_PITCH,
     ELBOW_LEFT_YAW,
+    WRIST_LEFT_PITCH,
+    WRIST_LEFT_YAW,
+    WRIST_LEFT_ROLL,
     SHOULDER_RIGHT_PITCH,
     SHOULDER_RIGHT_ROLL,
     ELBOW_RIGHT_PITCH,
     ELBOW_RIGHT_YAW,
+    WRIST_RIGHT_PITCH,
+    WRIST_RIGHT_YAW,
+    WRIST_RIGHT_ROLL,
     WAIST,
+    WAIST_PITCH,
+    WAIST_ROLL,
+    WAIST_YAW,
     HIP_LEFT_PITCH,
     HIP_LEFT_ROLL,
     HIP_LEFT_YAW,

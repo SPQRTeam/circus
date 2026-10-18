@@ -17,6 +17,7 @@ class SimulationThread : public QThread {
         void play();
         bool isPaused();
         void setMaxSimulationTime(int maxTime);
+        void setPublishImages(bool enabled);
 
     signals:
         void stepCompleted();
@@ -29,8 +30,9 @@ class SimulationThread : public QThread {
         std::atomic<bool> running_;
         std::atomic<bool> paused_;
         int maxSimulationTime_ = -1;  // -1 means no limit
+        std::atomic<bool> publishImagesEnabled_{true};
 
-        static constexpr int kControlDecimation = 5;
+        static constexpr int kControlDecimation = 10;
         static constexpr double kTimestepPolicy = 0.02;
 };
 

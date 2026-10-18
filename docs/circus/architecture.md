@@ -201,6 +201,18 @@ Left_Hip_Pitch, Left_Hip_Roll, Left_Hip_Yaw, Left_Knee_Pitch, Left_Ankle_Pitch, 
 Right_Hip_Pitch, Right_Hip_Roll, Right_Hip_Yaw, Right_Knee_Pitch, Right_Ankle_Pitch, Right_Ankle_Roll
 ```
 
+**Booster-T2** (31 joints):
+```
+aa_head_yaw_joint, head_pitch_joint,
+left_shoulder_pitch_joint, left_shoulder_roll_joint, left_elbow_pitch_joint, left_elbow_yaw_joint,
+left_wrist_pitch_joint, left_wrist_yaw_joint, left_wrist_roll_joint,
+right_shoulder_pitch_joint, right_shoulder_roll_joint, right_elbow_pitch_joint, right_elbow_yaw_joint,
+right_wrist_pitch_joint, right_wrist_yaw_joint, right_wrist_roll_joint,
+waist_pitch_joint, waist_roll_joint, waist_yaw_joint,
+left_hip_pitch_joint, left_hip_roll_joint, left_hip_yaw_joint, left_knee_pitch_joint, left_ankle_pitch_joint, left_ankle_roll_joint,
+right_hip_pitch_joint, right_hip_roll_joint, right_hip_yaw_joint, right_knee_pitch_joint, right_ankle_pitch_joint, right_ankle_roll_joint
+```
+
 **Booster-K1** (22 joints):
 ```
 Head_yaw, Head_pitch,
@@ -296,6 +308,14 @@ Currently, Circus supports the following humanoid robots:
 - **Joint configuration**: Full arm and leg articulation with head movement
 - **Use case**: Research platform for bipedal locomotion with upper body motion
 
+### Booster-T2
+
+- **Joints**: 31 DOF
+- **Features**: 3-DoF waist (pitch, roll, yaw) and 3-DoF wrists
+- **Joint configuration**: Head (2), arms (7 each), waist (3), legs (6 each); serial ankles, as in `T2_31dof.xml`
+- **Notes**: The upstream model has no camera and no accelerometer. Circus adds both (same names as Booster-T1); the head camera pose is a placeholder until the real mounting is known
+- **Use case**: Adult-size humanoid; can be mixed with Booster-T1 in the same scene (see `resources/scenes/1v1_T2.yaml`)
+
 ### Booster-K1
 
 - **Joints**: 22 DOF
@@ -303,7 +323,7 @@ Currently, Circus supports the following humanoid robots:
 - **Joint configuration**: Simplified version of T1
 - **Use case**: Locomotion-focused research without upper body complexity
 
-Both robots share the same communication protocol but differ in joint count and names. The SimBridge automatically selects the correct joint mapping based on the robot type extracted from the robot name.
+All robots share the same communication protocol but differ in joint count and names. The SimBridge automatically selects the correct joint mapping based on the robot type extracted from the robot name.
 
 ## Adding New Robots
 

@@ -213,7 +213,7 @@ string SceneParser::buildMuJoCoXml() {
 
     // TODO: The simulation options can be parametrized. I don't know if we may want to change the parameters.
     xml_node option = mujoco.append_child("option");
-    option.append_attribute("timestep") = "0.004";
+    option.append_attribute("timestep") = "0.002";
     option.append_attribute("iterations") = "50";
     option.append_attribute("tolerance") = "1e-10";
     option.append_attribute("solver") = "Newton";
@@ -383,8 +383,10 @@ void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_nod
             if (strcmp(bodyName, expectedTrunkName.c_str()) == 0) {
                 // Found the Trunk body, now find its visual geometry (class="visual")
                 for (xml_node geom : current.children("geom")) {
-                    const char* geomClass = geom.attribute("class").value();
-                    if (strcmp(geomClass, "visual") == 0) {
+                    // Robots whose common.xml prefixes its classes (e.g. "Booster-T2_visual") match too
+                    const std::string geomClass = geom.attribute("class").value();
+                    const std::string visualSuffix = "_visual";
+                    if (geomClass == "visual" || (geomClass.size() > visualSuffix.size() && geomClass.ends_with(visualSuffix))) {
                         // Set the rgba attribute for this visual geometry
                         auto [r, g, b] = robotSpec->color;
                         std::ostringstream rgbaStream;
