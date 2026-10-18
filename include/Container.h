@@ -29,6 +29,9 @@ class Container {
         }
 
     private:
+        void checkDockerApi();
+        bool hasNvidiaGPU();
+
         std::string id;
         ContainerState state;
         std::string name;
