@@ -50,6 +50,7 @@ struct BoosterT2SharedState {
         JointState<kBoosterT2JointCount> joints;
         OracleData oracle;
         GroundRelativePositionData headPose;
+        CameraInfoData cameraInfo;
 };
 
 // Identifies this exact state layout. Shared memory carries no schema, so a
@@ -242,7 +243,7 @@ class BoosterT2 : public Robot {
 
         void sendMessageSHM(bool publishImages) override {
             const BoosterT2SharedState state{pose->toSharedState(), imu->toSharedState(), joints->toSharedState<kBoosterT2JointCount>(),
-                                             oracle->toSharedState(), headPose->toSharedState()};
+                                             oracle->toSharedState(), headPose->toSharedState(), rgbCameraInfo->toSharedState()};
             state_writer_.write(&state, sizeof(state));
 
             // Camera frames don't change between physics substeps -- rendering
