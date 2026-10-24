@@ -211,7 +211,7 @@ class BoosterT2 : public Robot {
                     latestTorques[joint_value] = joint_torques[i++];
                 }
             }
-        }getPosition
+        }
 
         bool receiveMessageSHM() override {
             JointTorques<kBoosterT2JointCount> torques;
