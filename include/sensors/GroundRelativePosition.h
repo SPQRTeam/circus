@@ -16,7 +16,7 @@ struct GroundRelativePositionData {
 
 // Position of a body or site relative to the ground projection of a reference Pose.
 // Reference frame: (trunk_x, trunk_y, 0) with yaw-only rotation of the trunk.
-class GroundRelativePosition : public Sensor {
+class GroundRelativePosition : public Sensor<GroundRelativePositionData> {
     public:
         enum class TargetType { Body, Site };
 
@@ -55,16 +55,17 @@ class GroundRelativePosition : public Sensor {
             return msgpack::object(data, z);
         }
 
-        GroundRelativePositionData toSharedState() const {
+        Eigen::Vector3d getPosition() const {
+            return position_;
+        }
+
+    protected:
+        GroundRelativePositionData doSerializeSHM() const override {
             GroundRelativePositionData data;
             for (int i = 0; i < 3; ++i) {
                 data.position[i] = position_(i);
             }
             return data;
-        }
-
-        Eigen::Vector3d getPosition() const {
-            return position_;
         }
 
     private:

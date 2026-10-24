@@ -84,7 +84,7 @@ class Robot {
             return std::filesystem::exists(receive_shm_path);
         }
 
-        virtual std::map<std::string, Sensor*> getSensors() = 0;
+        virtual std::map<std::string, SensorBase*> getSensors() = 0;
         virtual void applyCommands() = 0;
 
     private:

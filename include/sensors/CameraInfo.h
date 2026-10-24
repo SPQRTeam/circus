@@ -35,7 +35,7 @@ struct CameraInfoData {
 // Intrinsics parameters of MuJoCo camera.
 // Values are derived once from cam_fovy/cam_resolution (ideal pinhole, no distortion,
 // since MuJoCo's OpenGL renderer doesn't model lens distortion) and never change at runtime.
-class CameraInfo : public Sensor {
+class CameraInfo : public Sensor<CameraInfoData> {
     public:
         CameraInfo(mjModel* mujModel, const char* cameraName) {
             int camId = mj_name2id(mujModel, mjOBJ_CAMERA, cameraName);
@@ -78,20 +78,6 @@ class CameraInfo : public Sensor {
             return msgpack::object(data, z);
         }
 
-        CameraInfoData toSharedState() const {
-            CameraInfoData data;
-            data.height = static_cast<uint32_t>(height_);
-            data.width = static_cast<uint32_t>(width_);
-            std::strncpy(data.distortionModel, "plumb_bob", sizeof(data.distortionModel) - 1);
-            const double k[9] = {fx_, 0.0, cx_, 0.0, fy_, cy_, 0.0, 0.0, 1.0};
-            const double r[9] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-            const double p[12] = {fx_, 0.0, cx_, 0.0, 0.0, fy_, cy_, 0.0, 0.0, 0.0, 1.0, 0.0};
-            std::memcpy(data.k, k, sizeof(k));
-            std::memcpy(data.r, r, sizeof(r));
-            std::memcpy(data.p, p, sizeof(p));
-            return data;
-        }
-
         int getWidth() const {
             return width_;
         }
@@ -109,6 +95,21 @@ class CameraInfo : public Sensor {
         }
         double getCy() const {
             return cy_;
+        }
+
+    protected:
+        CameraInfoData doSerializeSHM() const override {
+            CameraInfoData data;
+            data.height = static_cast<uint32_t>(height_);
+            data.width = static_cast<uint32_t>(width_);
+            std::strncpy(data.distortionModel, "plumb_bob", sizeof(data.distortionModel) - 1);
+            const double k[9] = {fx_, 0.0, cx_, 0.0, fy_, cy_, 0.0, 0.0, 1.0};
+            const double r[9] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+            const double p[12] = {fx_, 0.0, cx_, 0.0, 0.0, fy_, cy_, 0.0, 0.0, 0.0, 1.0, 0.0};
+            std::memcpy(data.k, k, sizeof(k));
+            std::memcpy(data.r, r, sizeof(r));
+            std::memcpy(data.p, p, sizeof(p));
+            return data;
         }
 
     private:

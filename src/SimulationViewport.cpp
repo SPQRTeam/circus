@@ -52,7 +52,7 @@ void SimulationViewport::paintGL() {
     for (int i = 0; i < RobotManager::instance().getRobots().size(); ++i) {
         auto robot = RobotManager::instance().getRobots()[i];
 
-        std::map<std::string, Sensor*> sensors = robot->getSensors();
+        std::map<std::string, SensorBase*> sensors = robot->getSensors();
         CameraRGB* rgbCamera = dynamic_cast<CameraRGB*>(sensors["rgb_camera"]);
         CameraDepth* depthCamera = dynamic_cast<CameraDepth*>(sensors["depth_camera"]);
 

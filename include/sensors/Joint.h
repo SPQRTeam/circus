@@ -72,9 +72,23 @@ struct JointTorques {
         double torque[N] = {};
 };
 
-class Joints : public Sensor {
+class JointsView {
+    public:
+        virtual ~JointsView() = default;
+
+        virtual Eigen::VectorXd getPosition() const = 0;
+        virtual Eigen::VectorXd getVelocity() const = 0;
+        virtual Eigen::VectorXd getAcceleration() const = 0;
+        virtual Eigen::VectorXd getTorque() const = 0;
+};
+
+template <size_t N>
+class Joints : public Sensor<JointState<N>>, public JointsView {
     public:
         Joints(mjModel* mujModel, mjData* mujData, std::map<JointValue, std::string> map) : mujModel(mujModel), mujData(mujData) {
+            if (map.size() != N)
+                throw std::runtime_error("Joint map has " + std::to_string(map.size()) + " joints, expected " + std::to_string(N));
+
             size_t idx = 0;
             order.reserve(map.size());
             for (auto& [jv, joint_name] : map) {
@@ -156,33 +170,32 @@ class Joints : public Sensor {
             return msgpack::object(data, z);
         }
 
-        template <size_t N>
-        JointState<N> toSharedState() const {
+        Eigen::VectorXd getPosition() const override {
+            return Eigen::Map<const Eigen::VectorXd>(position.data(), size);
+        }
+
+        Eigen::VectorXd getVelocity() const override {
+            return Eigen::Map<const Eigen::VectorXd>(velocity.data(), size);
+        }
+
+        Eigen::VectorXd getAcceleration() const override {
+            return Eigen::Map<const Eigen::VectorXd>(acceleration.data(), size);
+        }
+
+        Eigen::VectorXd getTorque() const override {
+            return Eigen::Map<const Eigen::VectorXd>(torque.data(), size);
+        }
+
+    protected:
+        JointState<N> doSerializeSHM() const override {
             JointState<N> data;
-            const size_t n = std::min(N, size);
-            for (size_t i = 0; i < n; ++i) {
+            for (size_t i = 0; i < N; ++i) {
                 data.position[i] = position[i];
                 data.velocity[i] = velocity[i];
                 data.acceleration[i] = acceleration[i];
                 data.torque[i] = torque[i];
             }
             return data;
-        }
-
-        Eigen::VectorXd getPosition() const {
-            return Eigen::Map<const Eigen::VectorXd>(position.data(), size);
-        }
-
-        Eigen::VectorXd getVelocity() const {
-            return Eigen::Map<const Eigen::VectorXd>(velocity.data(), size);
-        }
-
-        Eigen::VectorXd getAcceleration() const {
-            return Eigen::Map<const Eigen::VectorXd>(acceleration.data(), size);
-        }
-
-        Eigen::VectorXd getTorque() const {
-            return Eigen::Map<const Eigen::VectorXd>(torque.data(), size);
         }
 
     private:

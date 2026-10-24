@@ -12,11 +12,12 @@
 #include <vector>
 
 #include "MujocoContext.h"
+#include "ipc/SharedMemoryWriter.h"
 #include "sensors/Sensor.h"
 
 namespace spqr {
 
-class CameraDepth : public Sensor {
+class CameraDepth : public Sensor<ImageMeta> {
     public:
         CameraDepth(MujocoContext* mujContext, const char* cameraName) : mujContext(mujContext), cameraName_(cameraName) {
             cam.type = mjCAMERA_FIXED;
@@ -162,6 +163,11 @@ class CameraDepth : public Sensor {
             std::lock_guard<std::mutex> lock(depthMutex_);
             std::vector<uint16_t> img_copy(depth.begin(), depth.end());
             return msgpack::object(img_copy, z);
+        }
+
+    protected:
+        ImageMeta doSerializeSHM() const override {
+            return ImageMeta{static_cast<uint32_t>(w), static_cast<uint32_t>(h), 2};
         }
 
     private:

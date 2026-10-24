@@ -15,7 +15,7 @@ struct ImuData {
         double angularVelocity[3] = {};
 };
 
-class Imu : public Sensor {
+class Imu : public Sensor<ImuData> {
     public:
         Imu(mjModel* mujModel, mjData* mujData, const char* linearAccelerationName, const char* angularVelocityName)
             : mujModel(mujModel), mujData(mujData) {
@@ -43,20 +43,21 @@ class Imu : public Sensor {
             return msgpack::object(imu_data, z);
         }
 
-        ImuData toSharedState() const {
+        Eigen::Vector3d getLinearAcceleration() const {
+            return linearAcceleration;
+        }
+        Eigen::Vector3d getAngularVelocity() const {
+            return angularVelocity;
+        }
+
+    protected:
+        ImuData doSerializeSHM() const override {
             ImuData data;
             for (int i = 0; i < 3; ++i) {
                 data.linearAcceleration[i] = linearAcceleration(i);
                 data.angularVelocity[i] = angularVelocity(i);
             }
             return data;
-        }
-
-        Eigen::Vector3d getLinearAcceleration() const {
-            return linearAcceleration;
-        }
-        Eigen::Vector3d getAngularVelocity() const {
-            return angularVelocity;
         }
 
     private:

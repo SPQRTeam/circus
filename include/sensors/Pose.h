@@ -18,7 +18,7 @@ struct PoseData {
         double transformationMatrix[16] = {};
 };
 
-class Pose : public Sensor {
+class Pose : public Sensor<PoseData> {
     public:
         Pose(mjModel* mujModel, mjData* mujData, const char* positionName, const char* orientationName) : mujModel(mujModel), mujData(mujData) {
             positionId = mj_name2id(mujModel, mjOBJ_SENSOR, positionName);
@@ -65,9 +65,26 @@ class Pose : public Sensor {
             return msgpack::object(pose_data, z);
         }
 
+        Eigen::Vector3d getPosition() const {
+            return position;
+        }
+        Eigen::Vector4d getQuatOrientation() const {
+            return quatOrientation;
+        }
+        Eigen::Vector3d getEulerOrientation() const {
+            return eulerOrientation;
+        }
+        Eigen::Matrix3d getRotationMatrix() const {
+            return rotationMatrix;
+        }
+        Eigen::Matrix4d getTransformationMatrix() const {
+            return transformationMatrix;
+        }
+
+    protected:
         // Row-major matrix flattening, matching doSerialize()'s element order
         // (Eigen's own Map/storage is column-major, so this is spelled out explicitly).
-        PoseData toSharedState() const {
+        PoseData doSerializeSHM() const override {
             PoseData data;
             for (int i = 0; i < 3; ++i) {
                 data.position[i] = position(i);
@@ -87,22 +104,6 @@ class Pose : public Sensor {
                 }
             }
             return data;
-        }
-
-        Eigen::Vector3d getPosition() const {
-            return position;
-        }
-        Eigen::Vector4d getQuatOrientation() const {
-            return quatOrientation;
-        }
-        Eigen::Vector3d getEulerOrientation() const {
-            return eulerOrientation;
-        }
-        Eigen::Matrix3d getRotationMatrix() const {
-            return rotationMatrix;
-        }
-        Eigen::Matrix4d getTransformationMatrix() const {
-            return transformationMatrix;
         }
 
     private:

@@ -12,11 +12,12 @@
 #include <vector>
 
 #include "MujocoContext.h"
+#include "ipc/SharedMemoryWriter.h"
 #include "sensors/Sensor.h"
 
 namespace spqr {
 
-class CameraRGB : public Sensor {
+class CameraRGB : public Sensor<ImageMeta> {
     public:
         CameraRGB(MujocoContext* mujContext, const char* cameraName) : mujContext(mujContext), cameraName_(cameraName) {
             cam.type = mjCAMERA_FIXED;
@@ -119,6 +120,11 @@ class CameraRGB : public Sensor {
         msgpack::object doSerialize(msgpack::zone& z) override {
             std::lock_guard<std::mutex> lock(imageMutex_);
             return msgpack::object(image, z);
+        }
+
+    protected:
+        ImageMeta doSerializeSHM() const override {
+            return ImageMeta{static_cast<uint32_t>(w), static_cast<uint32_t>(h), 3};
         }
 
     private:

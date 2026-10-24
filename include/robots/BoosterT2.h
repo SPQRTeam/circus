@@ -87,7 +87,7 @@ class BoosterT2 : public Robot {
         Pose* pose = nullptr;
         GroundRelativePosition* headPose = nullptr;
         Imu* imu = nullptr;
-        Joints* joints = nullptr;
+        Joints<kBoosterT2JointCount>* joints = nullptr;
         Oracle* oracle = nullptr;
         CameraRGB* rgbCamera;
         CameraDepth* depthCamera;
@@ -133,7 +133,7 @@ class BoosterT2 : public Robot {
             headPose = new GroundRelativePosition(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(),
                                                   GroundRelativePosition::TargetType::Site, pose);
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
-            joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
+            joints = new Joints<kBoosterT2JointCount>(mujCtx->model, mujCtx->data, joint_map);
 
             joints->set_position({{JointValue::HEAD_YAW, 0},
                                   {JointValue::HEAD_PITCH, 0},
@@ -211,7 +211,7 @@ class BoosterT2 : public Robot {
                     latestTorques[joint_value] = joint_torques[i++];
                 }
             }
-        }
+        }getPosition
 
         bool receiveMessageSHM() override {
             JointTorques<kBoosterT2JointCount> torques;
@@ -242,8 +242,8 @@ class BoosterT2 : public Robot {
         }
 
         void sendMessageSHM(bool publishImages) override {
-            const BoosterT2SharedState state{pose->toSharedState(), imu->toSharedState(), joints->toSharedState<kBoosterT2JointCount>(),
-                                             oracle->toSharedState(), headPose->toSharedState(), rgbCameraInfo->toSharedState()};
+            const BoosterT2SharedState state{pose->serializeSHM(), imu->serializeSHM(), joints->serializeSHM(),
+                                             oracle->serializeSHM(), headPose->serializeSHM(), rgbCameraInfo->serializeSHM()};
             state_writer_.write(&state, sizeof(state));
 
             // Camera frames don't change between physics substeps -- rendering
@@ -259,8 +259,8 @@ class BoosterT2 : public Robot {
             image_writer_.write(imageBuffer_.data(), imageBuffer_.size());
         }
 
-        std::map<std::string, Sensor*> getSensors() override {
-            std::map<std::string, Sensor*> sensors;
+        std::map<std::string, SensorBase*> getSensors() override {
+            std::map<std::string, SensorBase*> sensors;
             sensors["pose"] = pose;
             sensors["head_pose"] = headPose;
             sensors["imu"] = imu;

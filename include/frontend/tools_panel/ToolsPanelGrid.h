@@ -451,7 +451,7 @@ class ToolsPanelGrid : public QWidget {
                     for (std::shared_ptr<Robot>& robot : robots_) {
                         if (QString::fromStdString(robot->name) == robotName) {
                             // Get sensor data from the robot
-                            std::map<std::string, Sensor*> sensors = robot->getSensors();
+                            std::map<std::string, SensorBase*> sensors = robot->getSensors();
 
                             // Get the tool for this cell
                             Tool* tool = cell->getTool();
@@ -464,7 +464,7 @@ class ToolsPanelGrid : public QWidget {
                                 if (sensorType == "position") {
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
-                                        Sensor* poseSensor = it->second;
+                                        SensorBase* poseSensor = it->second;
                                         Eigen::Vector3d position = dynamic_cast<Pose*>(poseSensor)->getPosition();
                                         plot->addDataPoint("X", position(0), simTime);
                                         plot->addDataPoint("Y", position(1), simTime);
@@ -475,7 +475,7 @@ class ToolsPanelGrid : public QWidget {
                                 } else if (sensorType == "orientation") {
                                     auto it = sensors.find("pose");
                                     if (it != sensors.end()) {
-                                        Sensor* poseSensor = it->second;
+                                        SensorBase* poseSensor = it->second;
                                         Eigen::Vector3d orientation = dynamic_cast<Pose*>(poseSensor)->getEulerOrientation();
                                         plot->addDataPoint("Roll", orientation(0), simTime);
                                         plot->addDataPoint("Pitch", orientation(1), simTime);
@@ -484,8 +484,8 @@ class ToolsPanelGrid : public QWidget {
                                 } else if (sensorType == "joints_position") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
-                                        Sensor* jointsSensor = it->second;
-                                        Eigen::VectorXd position = dynamic_cast<Joints*>(jointsSensor)->getPosition();
+                                        SensorBase* jointsSensor = it->second;
+                                        Eigen::VectorXd position = dynamic_cast<JointsView*>(jointsSensor)->getPosition();
                                         plot->addDataPoint("head_yaw", position(0), simTime);
                                         plot->addDataPoint("head_pitch", position(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", position(2), simTime);
@@ -513,8 +513,8 @@ class ToolsPanelGrid : public QWidget {
                                 } else if (sensorType == "joints_velocity") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
-                                        Sensor* jointsSensor = it->second;
-                                        Eigen::VectorXd velocity = dynamic_cast<Joints*>(jointsSensor)->getVelocity();
+                                        SensorBase* jointsSensor = it->second;
+                                        Eigen::VectorXd velocity = dynamic_cast<JointsView*>(jointsSensor)->getVelocity();
                                         plot->addDataPoint("head_yaw", velocity(0), simTime);
                                         plot->addDataPoint("head_pitch", velocity(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", velocity(2), simTime);
@@ -542,8 +542,8 @@ class ToolsPanelGrid : public QWidget {
                                 } else if (sensorType == "joints_acceleration") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
-                                        Sensor* jointsSensor = it->second;
-                                        Eigen::VectorXd acceleration = dynamic_cast<Joints*>(jointsSensor)->getAcceleration();
+                                        SensorBase* jointsSensor = it->second;
+                                        Eigen::VectorXd acceleration = dynamic_cast<JointsView*>(jointsSensor)->getAcceleration();
                                         plot->addDataPoint("head_yaw", acceleration(0), simTime);
                                         plot->addDataPoint("head_pitch", acceleration(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", acceleration(2), simTime);
@@ -571,8 +571,8 @@ class ToolsPanelGrid : public QWidget {
                                 } else if (sensorType == "joints_torque") {
                                     auto it = sensors.find("joints");
                                     if (it != sensors.end()) {
-                                        Sensor* jointsSensor = it->second;
-                                        Eigen::VectorXd torque = dynamic_cast<Joints*>(jointsSensor)->getTorque();
+                                        SensorBase* jointsSensor = it->second;
+                                        Eigen::VectorXd torque = dynamic_cast<JointsView*>(jointsSensor)->getTorque();
                                         plot->addDataPoint("head_yaw", torque(0), simTime);
                                         plot->addDataPoint("head_pitch", torque(1), simTime);
                                         plot->addDataPoint("shoulder_left_pitch", torque(2), simTime);
@@ -600,7 +600,7 @@ class ToolsPanelGrid : public QWidget {
                                 } else if (sensorType == "linear_acceleration") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
-                                        Sensor* imuSensor = it->second;
+                                        SensorBase* imuSensor = it->second;
                                         Eigen::Vector3d linAcc = dynamic_cast<Imu*>(imuSensor)->getLinearAcceleration();
                                         plot->addDataPoint("Ax", linAcc(0), simTime);
                                         plot->addDataPoint("Ay", linAcc(1), simTime);
@@ -609,7 +609,7 @@ class ToolsPanelGrid : public QWidget {
                                 } else if (sensorType == "angular_velocity") {
                                     auto it = sensors.find("imu");
                                     if (it != sensors.end()) {
-                                        Sensor* imuSensor = it->second;
+                                        SensorBase* imuSensor = it->second;
                                         Eigen::Vector3d angVel = dynamic_cast<Imu*>(imuSensor)->getAngularVelocity();
                                         plot->addDataPoint("Wx", angVel(0), simTime);
                                         plot->addDataPoint("Wy", angVel(1), simTime);

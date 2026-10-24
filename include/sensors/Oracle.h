@@ -43,7 +43,7 @@ struct OracleData {
 // L'oracle is defined as a sensor that provides the ground truth about the world.
 // It should contain information about the position of the ball, robots, obstacles, ...
 // It can contain also the information their velocities, ...
-class Oracle : public Sensor {
+class Oracle : public Sensor<OracleData> {
     public:
         Oracle(mjModel* mujModel, mjData* mujData, std::string robotName, Pose* robotPose)
             : mujModel(mujModel), mujData(mujData), robotName(robotName), robotPose(robotPose) {
@@ -111,33 +111,6 @@ class Oracle : public Sensor {
             }
         }
 
-        OracleData toSharedState() const {
-            OracleData data;
-            for (int i = 0; i < 3; ++i) {
-                data.ballPosition[i] = ballPosition(i);
-            }
-
-            for (const auto& [teammateName, localPos] : teammatesLocalPositions) {
-                if (data.teammateCount >= OracleData::kMaxTeammates)
-                    break;
-                fillEntry_(data.teammates[data.teammateCount++], teammateName, localPos);
-            }
-
-            for (const auto& [opponentName, localPos] : opponentsLocalPositions) {
-                if (data.opponentCount >= OracleData::kMaxOpponents)
-                    break;
-                fillEntry_(data.opponents[data.opponentCount++], opponentName, localPos);
-            }
-
-            for (const auto& [postName, localPos] : goalPostsLocalPositions) {
-                if (data.goalPostCount >= OracleData::kNumGoalPosts)
-                    break;
-                fillEntry_(data.goalPosts[data.goalPostCount++], postName, localPos);
-            }
-
-            return data;
-        }
-
         Eigen::Vector3d getBallPosition() const {
             return ballPosition;
         }
@@ -167,6 +140,34 @@ class Oracle : public Sensor {
 
         const std::map<std::string, Eigen::Vector3d>& getGoalPostsLocalPositions() const {
             return goalPostsLocalPositions;
+        }
+
+    protected:
+        OracleData doSerializeSHM() const override {
+            OracleData data;
+            for (int i = 0; i < 3; ++i) {
+                data.ballPosition[i] = ballPosition(i);
+            }
+
+            for (const auto& [teammateName, localPos] : teammatesLocalPositions) {
+                if (data.teammateCount >= OracleData::kMaxTeammates)
+                    break;
+                fillEntry_(data.teammates[data.teammateCount++], teammateName, localPos);
+            }
+
+            for (const auto& [opponentName, localPos] : opponentsLocalPositions) {
+                if (data.opponentCount >= OracleData::kMaxOpponents)
+                    break;
+                fillEntry_(data.opponents[data.opponentCount++], opponentName, localPos);
+            }
+
+            for (const auto& [postName, localPos] : goalPostsLocalPositions) {
+                if (data.goalPostCount >= OracleData::kNumGoalPosts)
+                    break;
+                fillEntry_(data.goalPosts[data.goalPostCount++], postName, localPos);
+            }
+
+            return data;
         }
 
     private:

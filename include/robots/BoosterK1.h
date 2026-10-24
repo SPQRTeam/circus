@@ -28,11 +28,13 @@ namespace spqr {
 
 class Team;  // Forward declaration
 
+constexpr size_t kBoosterK1JointCount = 22;
+
 class BoosterK1 : public Robot {
     public:
         Pose* pose = nullptr;
         Imu* imu;
-        Joints* joints = nullptr;
+        Joints<kBoosterK1JointCount>* joints = nullptr;
         CameraRGB* rgbCamera;
         CameraDepth* depthCamera;
 
@@ -65,7 +67,7 @@ class BoosterK1 : public Robot {
         void bindMujoco(MujocoContext* mujCtx, std::string connectMode_) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
-            joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
+            joints = new Joints<kBoosterK1JointCount>(mujCtx->model, mujCtx->data, joint_map);
             rgbCamera = new CameraRGB(mujCtx, (name + "_rgb_cam").c_str());
             depthCamera = new CameraDepth(mujCtx, (name + "_depth_cam").c_str());
         }
@@ -102,8 +104,8 @@ class BoosterK1 : public Robot {
             return false;
         }
 
-        std::map<std::string, Sensor*> getSensors() override {
-            std::map<std::string, Sensor*> sensors;
+        std::map<std::string, SensorBase*> getSensors() override {
+            std::map<std::string, SensorBase*> sensors;
             sensors["pose"] = pose;
             sensors["imu"] = imu;
             sensors["joints"] = joints;
