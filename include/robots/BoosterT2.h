@@ -176,15 +176,14 @@ class BoosterT2 : public Robot {
             oracle = new Oracle(mujCtx->model, mujCtx->data, name, pose);
 
             if (connectMode_ == "shm") {
-                const uint32_t width = static_cast<uint32_t>(rgbCamera->getWidth());
-                const uint32_t height = static_cast<uint32_t>(rgbCamera->getHeight());
-                const size_t rgbBytes = static_cast<size_t>(width) * height * 3;
-                const size_t depthBytes = static_cast<size_t>(width) * height * 2;
+                const ImageMeta rgbMeta = rgbCamera->serializeSHM();
+                const ImageMeta depthMeta = depthCamera->serializeSHM();
+                const size_t rgbBytes = static_cast<size_t>(rgbMeta.width) * rgbMeta.height * rgbMeta.channels;
+                const size_t depthBytes = static_cast<size_t>(depthMeta.width) * depthMeta.height * depthMeta.channels;
                 imageBuffer_.resize(rgbBytes + depthBytes);
 
                 // Configuration of shm channels
-                image_writer_.configure(image_shm_path, imageBuffer_.size(),
-                                        BoosterT2ImageMeta{kBoosterT2ImageSchemaId, ImageMeta{width, height, 3}, ImageMeta{width, height, 2}});
+                image_writer_.configure(image_shm_path, imageBuffer_.size(), BoosterT2ImageMeta{kBoosterT2ImageSchemaId, rgbMeta, depthMeta});
                 state_writer_.configure(send_shm_path, sizeof(BoosterT2SharedState), BoosterT2StateMeta{});
                 command_reader_.configure(receive_shm_path);
             }
