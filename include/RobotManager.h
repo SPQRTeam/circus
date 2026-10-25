@@ -40,8 +40,8 @@ class RobotManager {
             return mgr;
         }
 
-        void registerRobot(std::shared_ptr<Robot> robot);
-        std::vector<std::shared_ptr<Robot>> getRobots() const;
+        void registerRobot(std::shared_ptr<RobotBase> robot);
+        std::vector<std::shared_ptr<RobotBase>> getRobots() const;
         size_t count() const;
         void update();
         void clear();
@@ -51,7 +51,7 @@ class RobotManager {
         void removeRobotFd(int fd);
 
         // publishImages: forwarded to each robot's sendMessageSHM() (ignored in
-        // socket mode, which never sends images) -- see Robot::sendMessageSHM().
+        // socket mode, which never sends images) -- see RobotBase::sendMessageSHM().
         void sendStateMessages(bool publishImages);
         void receiveCommandMessages();
         void waitRobotConnections();
@@ -63,7 +63,7 @@ class RobotManager {
 
         void bindMujoco(MujocoContext* mujContext, std::string connectMode_);
 
-        std::shared_ptr<Robot> create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
+        std::shared_ptr<RobotBase> create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
                                       const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team,
                                       const std::string& role = "Striker");
 
@@ -92,14 +92,14 @@ class RobotManager {
         std::string connectMode_;
 
         mutable std::mutex mutex_;
-        std::vector<std::shared_ptr<Robot>> robots_;
+        std::vector<std::shared_ptr<RobotBase>> robots_;
         std::map<std::string, int> robotFdMap_;
         int serverFd_ = -1;
         std::vector<pollfd> pollFds_;
         std::unordered_map<int, msgpack::unpacker> unpackers_;
         std::function<void()> areAllRobotsReadyCallback_;
 
-        using RobotCreator = std::function<std::shared_ptr<Robot>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&,
+        using RobotCreator = std::function<std::shared_ptr<RobotBase>(const std::string&, const std::string&, uint8_t, const Eigen::Vector3d&,
                                                                   const Eigen::Vector3d&, const std::string&, const std::shared_ptr<Team>&)>;
 
         std::unordered_map<std::string, RobotCreator> robotFactory

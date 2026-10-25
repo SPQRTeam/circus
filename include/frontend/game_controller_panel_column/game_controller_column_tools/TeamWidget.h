@@ -67,7 +67,7 @@ class TeamWidget : public QWidget {
         void loadRobots() {
             for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
                 if (team->name == teamName_) {
-                    for (std::shared_ptr<Robot> robot : team->robots) {
+                    for (std::shared_ptr<RobotBase> robot : team->robots) {
                         robotList_->addItem(QString::fromStdString(robot->name));
                     }
                 }

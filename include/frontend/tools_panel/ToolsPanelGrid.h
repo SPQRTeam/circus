@@ -38,7 +38,7 @@ class GridCell : public QWidget {
         Q_OBJECT
 
     public:
-        GridCell(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext, QWidget* parent = nullptr)
+        GridCell(std::vector<std::shared_ptr<RobotBase>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext, QWidget* parent = nullptr)
             : mujContext_(mujContext), QWidget(parent) {
             robots_ = robots;
             setAttribute(Qt::WA_StyledBackground, true);
@@ -330,14 +330,14 @@ class GridCell : public QWidget {
 
         MujocoContext& mujContext_;
         QMap<QString, ToolType> streams_;
-        std::vector<std::shared_ptr<Robot>> robots_;
+        std::vector<std::shared_ptr<RobotBase>> robots_;
 };
 
 class ToolsPanelGrid : public QWidget {
         Q_OBJECT
 
     public:
-        ToolsPanelGrid(std::vector<std::shared_ptr<Robot>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext,
+        ToolsPanelGrid(std::vector<std::shared_ptr<RobotBase>> robots, QMap<QString, ToolType> streams, MujocoContext& mujContext,
                        QWidget* parent = nullptr)
             : mujContext_(mujContext), QWidget(parent) {
             robots_ = robots;
@@ -448,7 +448,7 @@ class ToolsPanelGrid : public QWidget {
                     QString sensorType = parts[1];
 
                     // Find the matching robot
-                    for (std::shared_ptr<Robot>& robot : robots_) {
+                    for (std::shared_ptr<RobotBase>& robot : robots_) {
                         if (QString::fromStdString(robot->name) == robotName) {
                             // Get sensor data from the robot
                             std::map<std::string, SensorBase*> sensors = robot->getSensors();
@@ -830,7 +830,7 @@ class ToolsPanelGrid : public QWidget {
         QList<GridCell*> cellGrid_;
 
         MujocoContext& mujContext_;
-        std::vector<std::shared_ptr<Robot>> robots_;
+        std::vector<std::shared_ptr<RobotBase>> robots_;
         QMap<QString, ToolType> streams_;
         QTimer* updateTimer_;
 };

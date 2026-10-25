@@ -82,7 +82,7 @@ struct BoosterT2ImageMeta {
         ImageMeta depth;
 };
 
-class BoosterT2 : public Robot {
+class BoosterT2 : public Robot<BoosterT2SharedState> {
     public:
         Pose* pose = nullptr;
         GroundRelativePosition* headPose = nullptr;
@@ -241,8 +241,7 @@ class BoosterT2 : public Robot {
         }
 
         void sendMessageSHM(bool publishImages) override {
-            const BoosterT2SharedState state{pose->serializeSHM(), imu->serializeSHM(), joints->serializeSHM(),
-                                             oracle->serializeSHM(), headPose->serializeSHM(), rgbCameraInfo->serializeSHM()};
+            const BoosterT2SharedState state = serializeSHM();
             state_writer_.write(&state, sizeof(state));
 
             // Camera frames don't change between physics substeps -- rendering
@@ -287,6 +286,12 @@ class BoosterT2 : public Robot {
         }
 
         ~BoosterT2() = default;
+
+    protected:
+        BoosterT2SharedState doSerializeSHM() const override {
+            return BoosterT2SharedState{pose->serializeSHM(), imu->serializeSHM(), joints->serializeSHM(),
+                        oracle->serializeSHM(), headPose->serializeSHM(), rgbCameraInfo->serializeSHM()};
+        }
 
     private:
         std::map<JointValue, std::string> joint_map;

@@ -58,7 +58,7 @@ bool Container::hasNvidiaGPU() {
     return false;
 }
 
-void Container::create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds,
+void Container::create(const std::shared_ptr<RobotBase>& robot, const std::string& image, const std::vector<std::string>& binds,
                        const std::string& connectMode) {
     auto envOrDefault = [](const char* key, const char* fallback) -> std::string {
         const char* value = std::getenv(key);

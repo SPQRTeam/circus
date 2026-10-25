@@ -39,7 +39,7 @@ void GameController::bindMujoco(MujocoContext* mujContext) {
     for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
         teamsInGame_.emplace_back(TeamInGame(team));
         TeamInGame& teamInGame = teamsInGame_.back();
-        for (const std::shared_ptr<Robot>& robot : team->robots) {
+        for (const std::shared_ptr<RobotBase>& robot : team->robots) {
             teamInGame.addRobotInGame(RobotInGame(robot));
         }
     }
@@ -350,10 +350,10 @@ std::string GameController::handleMoveRobot(std::string team, int robotId, doubl
         return "Invalid position (" + std::to_string(x) + ", " + std::to_string(y) + "). Must be within field bounds.";
     }
 
-    std::shared_ptr<Robot> targetRobot = nullptr;
+    std::shared_ptr<RobotBase> targetRobot = nullptr;
     for (TeamInGame& t : teamsInGame_) {
         if (toLower(t.getTeam()->name) == team) {
-            for (const std::shared_ptr<Robot>& robot : t.getTeam()->robots) {
+            for (const std::shared_ptr<RobotBase>& robot : t.getTeam()->robots) {
                 if (robot->number == robotId) {
                     targetRobot = robot;
                     break;

@@ -150,7 +150,7 @@ SceneParser::SceneParser(const string& yamlPath) {
                     ori[i] = robotNode["orientation"][i].as<double>();
             }
 
-            shared_ptr<Robot> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamName, teamSpec, robotRole);
+            shared_ptr<RobotBase> robot = RobotManager::instance().create(robotName, robotType, robotNumber, pos, ori, teamName, teamSpec, robotRole);
 
             robotTypes.insert(robotType);
             teamSpec->robots.push_back(std::move(robot));
@@ -263,7 +263,7 @@ string SceneParser::buildMuJoCoXml() {
     addObstaclesToMuJoCo(worldbody);
 
     for (const shared_ptr<Team>& team : scene.teams) {
-        for (const shared_ptr<Robot>& robot : team->robots) {
+        for (const shared_ptr<RobotBase>& robot : team->robots) {
             buildRobotInstance(robot, worldbody, actuator, sensor);
         }
     }
@@ -310,7 +310,7 @@ void SceneParser::prefixSubtree(xml_node& root, const string& robotName) {
     }
 }
 
-void SceneParser::buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor) {
+void SceneParser::buildRobotInstance(const shared_ptr<RobotBase>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor) {
     filesystem::path instancePath = filesystem::path(PROJECT_ROOT) / "resources" / "robots" / robotSpec->type / "instance.xml";
 
     if (!filesystem::exists(instancePath)) {

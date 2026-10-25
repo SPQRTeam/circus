@@ -12,18 +12,18 @@
 namespace spqr {
 
 void RobotManager::applyCommands() {
-    for (std::shared_ptr<Robot> r : robots_) {
+    for (std::shared_ptr<RobotBase> r : robots_) {
         r->applyCommands();
     }
 }
 
-void RobotManager::registerRobot(std::shared_ptr<Robot> robot) {
+void RobotManager::registerRobot(std::shared_ptr<RobotBase> robot) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     robots_.push_back(std::move(robot));
 }
 
-std::vector<std::shared_ptr<Robot>> RobotManager::getRobots() const {
+std::vector<std::shared_ptr<RobotBase>> RobotManager::getRobots() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return robots_;
 }
@@ -56,14 +56,14 @@ void RobotManager::removeRobotFd(int fd) {
 
 void RobotManager::update() {
     std::lock_guard lock(mutex_);
-    for (std::shared_ptr<Robot> r : robots_) {
+    for (std::shared_ptr<RobotBase> r : robots_) {
         r->update();
     }
 }
 
 void RobotManager::clear() {
     std::lock_guard lock(mutex_);
-    for (std::shared_ptr<Robot> r : robots_) {
+    for (std::shared_ptr<RobotBase> r : robots_) {
         // Drop ownership first
         r->container.reset();
         r->team.reset();
@@ -369,11 +369,11 @@ void RobotManager::waitRobotConnectionsSHM() {
 }
 
 void RobotManager::bindMujoco(MujocoContext* mujContext, std::string connectMode_) {
-    for (std::shared_ptr<Robot> r : robots_)
+    for (std::shared_ptr<RobotBase> r : robots_)
         r->bindMujoco(mujContext, connectMode_);
 }
 
-std::shared_ptr<Robot> RobotManager::create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
+std::shared_ptr<RobotBase> RobotManager::create(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& pos,
                                             const Eigen::Vector3d& ori, const std::string& colorName, const std::shared_ptr<Team> team,
                                             const std::string& role) {
     auto it = robotFactory.find(type);
@@ -445,7 +445,7 @@ void RobotManager::startContainers(const std::string& fwkCfgPath, const std::str
         }
         binds.push_back(shmPath + ":" + shmPath);
     }
-    for (std::shared_ptr<Robot> r : robots_) {
+    for (std::shared_ptr<RobotBase> r : robots_) {
         r->container = std::make_unique<Container>("CIRCUS_" + r->name + "_container");
         r->container->create(r, image, binds, connectMode);
         r->container->start();

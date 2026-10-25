@@ -220,7 +220,7 @@ class ToolsPanel : public QWidget {
             streams.insert("Select stream", ToolType::NONE);
             for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
                 std::string team_name = team->name;
-                for (std::shared_ptr<Robot> robot : team->robots) {
+                for (std::shared_ptr<RobotBase> robot : team->robots) {
                     std::string robot_name = robot->name;
                     for (const std::string& stream : available_streams) {
                         QString full_stream_name = QString::fromStdString(robot_name) + "/" + QString::fromStdString(stream);
@@ -241,10 +241,10 @@ class ToolsPanel : public QWidget {
             return streams;
         }
 
-        std::vector<std::shared_ptr<Robot>> getRobots() {
-            std::vector<std::shared_ptr<Robot>> robots;
+        std::vector<std::shared_ptr<RobotBase>> getRobots() {
+            std::vector<std::shared_ptr<RobotBase>> robots;
             for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
-                for (std::shared_ptr<Robot> robot : team->robots) {
+                for (std::shared_ptr<RobotBase> robot : team->robots) {
                     robots.push_back(robot);
                 }
             }

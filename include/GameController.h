@@ -76,10 +76,10 @@ inline std::string penaltyToString(Penalty penalty) {
 
 class RobotInGame {
     public:
-        RobotInGame(std::shared_ptr<Robot> robot) : robot_(robot){};
+        RobotInGame(std::shared_ptr<RobotBase> robot) : robot_(robot){};
         ~RobotInGame() = default;
 
-        std::shared_ptr<Robot> getRobot() const {
+        std::shared_ptr<RobotBase> getRobot() const {
             return robot_;
         }
 
@@ -110,7 +110,7 @@ class RobotInGame {
         }
 
     private:
-        std::shared_ptr<Robot> robot_;
+        std::shared_ptr<RobotBase> robot_;
         bool isPenalized_ = false;
         double gameTimeWhenPenalized_ = -1;
         Penalty currentPenalty_ = NONE_PENALTY;

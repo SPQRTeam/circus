@@ -100,7 +100,7 @@ class SceneParser {
 
     private:
         void buildRobotCommon(const string& robotType, xml_node& mujoco);
-        void buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor);
+        void buildRobotInstance(const shared_ptr<RobotBase>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor);
         void prefixSubtree(xml_node& root, const std::string& robotName);
         void addObstaclesToMuJoCo(xml_node& worldbody);
 

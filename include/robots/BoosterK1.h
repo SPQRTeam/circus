@@ -30,7 +30,13 @@ class Team;  // Forward declaration
 
 constexpr size_t kBoosterK1JointCount = 22;
 
-class BoosterK1 : public Robot {
+struct BoosterK1SharedState {
+        PoseData pose;
+        ImuData imu;
+        JointState<kBoosterK1JointCount> joints;
+};
+
+class BoosterK1 : public Robot<BoosterK1SharedState> {
     public:
         Pose* pose = nullptr;
         Imu* imu;
@@ -125,6 +131,11 @@ class BoosterK1 : public Robot {
         }
 
         ~BoosterK1() = default;
+
+    protected:
+        BoosterK1SharedState doSerializeSHM() const override {
+            return BoosterK1SharedState{pose->serializeSHM(), imu->serializeSHM(), joints->serializeSHM()};
+        }
 
     private:
         std::map<JointValue, std::string> joint_map;

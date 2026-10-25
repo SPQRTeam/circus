@@ -14,6 +14,7 @@
 #include <msgpack/v3/object_fwd_decl.hpp>
 #include <mutex>
 #include <string>
+#include <type_traits>
 
 #include "Constants.h"
 #include "Container.h"
@@ -26,9 +27,9 @@ namespace spqr {
 
 class Team;  // Forward declaration
 
-class Robot {
+class RobotBase {
     public:
-        Robot(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
+        RobotBase(const std::string& name, const std::string& type, uint8_t number, const Eigen::Vector3d& initPosition,
               const Eigen::Vector3d& initOrientation, const std::string& colorName, const std::shared_ptr<Team>& team,
               const std::string& role = "Striker")
             : name(name),
@@ -55,7 +56,7 @@ class Robot {
             send_shm_path = spqr::sharedMemoryPath + name + "_state.shm";
             image_shm_path = spqr::sharedMemoryPath + name + "_images.shm";
         }
-        virtual ~Robot() = default;
+        virtual ~RobotBase() = default;
         virtual void bindMujoco(MujocoContext* mujContext, std::string connectMode_) = 0;
         virtual void update() = 0;
 
@@ -112,6 +113,23 @@ class Robot {
 
         bool isConnected = false;
         bool isReady = false;
+};
+
+template <typename State>
+class Robot : public RobotBase {
+    public:
+        using RobotState = State;
+
+        static_assert(std::is_trivially_copyable_v<RobotState>, "RobotState must be trivially copyable");
+
+        using RobotBase::RobotBase;
+
+        RobotState serializeSHM() const {
+            return doSerializeSHM();
+        }
+
+    protected:
+        virtual RobotState doSerializeSHM() const = 0;
 };
 
 }  // namespace spqr

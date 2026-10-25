@@ -15,7 +15,7 @@ class Team {
 
         std::string name;
         int number;
-        std::vector<std::shared_ptr<Robot>> robots;
+        std::vector<std::shared_ptr<RobotBase>> robots;
 };
 
 class TeamManager {
@@ -29,7 +29,7 @@ class TeamManager {
         void registerTeam(std::shared_ptr<Team> team) {
             std::lock_guard<std::mutex> lock(mutex_);
 
-            for (const std::shared_ptr<Robot>& robot : team->robots)
+            for (const std::shared_ptr<RobotBase>& robot : team->robots)
                 RobotManager::instance().registerRobot(robot);
 
             teams_.push_back(std::move(team));

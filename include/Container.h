@@ -8,7 +8,7 @@
 
 namespace spqr {
 
-class Robot;  // forwards declaration
+class RobotBase;  // forwards declaration
 
 enum class ContainerState { NONE, IDLE, RUNNING, REMOVED };
 class Container {
@@ -17,7 +17,7 @@ class Container {
         Container(const std::string& name, const std::string& sockPath = "/var/run/docker.sock");
         ~Container();
 
-        void create(const std::shared_ptr<Robot>& robot, const std::string& image, const std::vector<std::string>& binds,
+        void create(const std::shared_ptr<RobotBase>& robot, const std::string& image, const std::vector<std::string>& binds,
                     const std::string& connectMode = "shm");
 
         void start();
