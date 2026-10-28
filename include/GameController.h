@@ -239,6 +239,7 @@ class GameController {
         std::string handleGameSubPhase(std::string subPhase, std::string team);
         std::string handleMoveRobot(std::string team, int robotId, double x, double y, double theta, bool checkBounds = true);
         std::string handleMoveBall(double x, double y);
+        std::string handleShootBall(double x, double y, double speed, double direction);
         std::string handlePenalizeRobot(std::string team, int robotId, Penalty penalty);
         std::tuple<std::string, std::string> handleBallEvent();
         std::tuple<double, double> getBallPosition() const;
