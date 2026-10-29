@@ -232,6 +232,11 @@ string SceneParser::buildMuJoCoXml() {
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");
     // map.append_attribute("shadowsize") = "0";
+    // The headlight follows the camera; it is kept dim so that it only lifts the shadows.
+    xml_node headlight = visual.append_child("headlight");
+    headlight.append_attribute("ambient") = "0.15 0.15 0.15";
+    headlight.append_attribute("diffuse") = "0.3 0.3 0.3";
+    headlight.append_attribute("specular") = "0 0 0";
 
     for (const string& robotType : robotTypes)
         buildRobotCommon(robotType, mujoco);
@@ -251,12 +256,16 @@ string SceneParser::buildMuJoCoXml() {
     xml_node actuator = mujoco.append_child("actuator");
     xml_node sensor = mujoco.append_child("sensor");
 
+    // A directional light from above shades the meshes. The ambient part is kept low because it
+    // adds up with the headlight: with an almost full ambient light, light materials (the T2 is
+    // almost white) saturate to a flat white.
     xml_node light = worldbody.append_child("light");
-    light.append_attribute("ambient") = "0.95 0.95 0.95";
-    light.append_attribute("diffuse") = "0 0 0";
-    light.append_attribute("specular") = "0 0 0";
+    light.append_attribute("ambient") = "0.3 0.3 0.3";
+    light.append_attribute("diffuse") = "0.6 0.6 0.6";
+    light.append_attribute("specular") = "0.1 0.1 0.1";
     light.append_attribute("pos") = "0 0 50";
     light.append_attribute("dir") = "0 0 -1";
+    light.append_attribute("directional") = "true";
     light.append_attribute("castshadow") = "false";
 
     // Add obstacles to the scene

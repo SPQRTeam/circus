@@ -651,7 +651,8 @@ void FieldGenerator::addBall(pugi::xml_node& assetNode, pugi::xml_node& worldbod
     ballMat.append_attribute("specular") = "0.3";
     ballMat.append_attribute("shininess") = "0.5";
     ballMat.append_attribute("reflectance") = "0.05";
-    ballMat.append_attribute("rgba") = "0.5 0.5 0.5 1";
+    // White, so that the texture keeps its own colors (rgba multiplies it).
+    ballMat.append_attribute("rgba") = "1 1 1 1";
 
     pugi::xml_node ballMesh = assetNode.append_child("mesh");
     ballMesh.append_attribute("name") = "ball_mesh";
