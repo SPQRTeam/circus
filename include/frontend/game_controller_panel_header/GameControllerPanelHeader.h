@@ -179,7 +179,7 @@ class GameControllerPanelHeader : public QWidget {
             if (!GameControllerBridge::instance().readControlData(data, true)) {
                 gameTimeLabel_->setText("--:--");
                 gamePhaseLabel_->setText("NOT RUNNING");
-                updatePhaseButton(STATE_INITIAL, false, false);
+                updatePhaseButton(nullptr);
                 return;
             }
 
@@ -195,7 +195,7 @@ class GameControllerPanelHeader : public QWidget {
             redScoreLabel_->setText(QString::number(data.teams[0].score));
             blueScoreLabel_->setText(QString::number(data.teams[1].score));
 
-            updatePhaseButton(data.state, shootout, true);
+            updatePhaseButton(&data);
         }
 
         void onPhaseButtonClicked() {
@@ -203,7 +203,7 @@ class GameControllerPanelHeader : public QWidget {
             if (!GameControllerBridge::instance().readControlData(data, true)) {
                 return;
             }
-            std::optional<GameControllerAction> action = phaseAction(data.state, data.gamePhase == GAME_PHASE_PENALTY_SHOOT_OUT);
+            std::optional<GameControllerAction> action = phaseAction(data);
             if (action) {
                 action->apply();
             }
@@ -261,41 +261,41 @@ class GameControllerPanelHeader : public QWidget {
         }
 
         // The action that moves the game on from the given state, if any.
-        static std::optional<GameControllerAction> phaseAction(uint8_t state, bool shootout) {
-            switch (state) {
+        static std::optional<GameControllerAction> phaseAction(const RoboCupGameControlData& data) {
+            bool shootout = data.gamePhase == GAME_PHASE_PENALTY_SHOOT_OUT;
+            switch (data.state) {
                 case STATE_INITIAL:
-                    return gcaction::startSetPlay(std::nullopt, RoboCup::SetPlay::kickOff);
+                    return gcaction::kickOff(data);
                 case STATE_READY:
                     return shootout ? gcaction::waitForPenaltyShot() : gcaction::waitForSetPlay();
                 case STATE_SET:
                     return shootout ? gcaction::freePenaltyShot() : gcaction::freeSetPlay();
                 case STATE_PLAYING:
                     return shootout ? gcaction::finishPenaltyShot() : gcaction::finishHalf();
+                case STATE_FINISHED:
+                    // After the first half (or the first extra half) the second one can start right
+                    // away, without waiting for the end of the half-time break.
+                    if (!shootout && data.firstHalf) {
+                        return gcaction::switchHalf();
+                    }
+                    return std::nullopt;
                 default:
                     return std::nullopt;
             }
         }
 
-        // The button shows the next state to move to, and is enabled only if that action is legal.
-        void updatePhaseButton(uint8_t state, bool shootout, bool connected) {
-            static const std::map<uint8_t, std::string> labels = {
-                {STATE_INITIAL, "Ready"},
-                {STATE_READY, "Set"},
-                {STATE_SET, "Playing"},
-                {STATE_PLAYING, "Finish"},
-            };
-            auto label = labels.find(state);
-            if (!connected || label == labels.end()) {
+        // The button shows the next step of the game, and is enabled only if that action is legal.
+        void updatePhaseButton(const RoboCupGameControlData* data) {
+            std::optional<GameControllerAction> action = data ? phaseAction(*data) : std::nullopt;
+            if (!action) {
                 phaseButton_->setText("Finished");
                 phaseButton_->setEnabled(false);
                 phaseButton_->setStyleSheet(getButtonStyle(false));
                 return;
             }
 
-            std::optional<GameControllerAction> action = phaseAction(state, shootout);
-            bool legal = action && action->isLegal();
-
-            phaseButton_->setText(QString::fromStdString(label->second));
+            bool legal = action->isLegal();
+            phaseButton_->setText(QString::fromStdString(action->info.name));
             phaseButton_->setEnabled(legal);
             phaseButton_->setStyleSheet(getButtonStyle(legal));
         }

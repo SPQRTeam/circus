@@ -14,6 +14,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <algorithm>
+#include <utility>
 #include <chrono>
 #include <cstdlib>
 #include <limits>
@@ -41,7 +42,8 @@ constexpr uint32_t kRefereeFeatures = (1u << 0)   // SWITCH_TO_SET
                                       | (1u << 1)  // SWITCH_TO_PLAYING
                                       | (1u << 2)  // SWITCH_TO_FINISHED
                                       | (1u << 3)  // BALL_OUT
-                                      | (1u << 4);  // INVALID_GOAL
+                                      | (1u << 4)  // INVALID_GOAL
+                                      | (1u << 16);  // PLACE_BALL: kick-off, penalty kick, shoot-out and all other set plays
 
 constexpr float kRobotRadius = 0.25f;
 
@@ -67,6 +69,24 @@ const std::map<uint8_t, const char*> kPenaltyKeys = {
     {PENALTY_SENT_OFF, "sentOff"},
     {PENALTY_SUBSTITUTE, "substitute"},
 };
+
+// Reads the game state for the simulator. The control message lists the teams in the order of the
+// sides of the field (the team that defends the left goal first), so they swap at half-time; the
+// simulator always gets the home team first. The messages sent to the robots keep the original
+// order.
+bool readGame(RoboCup::GameController* gameController, bool trueData, RoboCupGameControlData& data) {
+    if (!gc_read(gameController, 0, trueData, reinterpret_cast<uint8_t*>(&data), sizeof(data))) {
+        return false;
+    }
+    if (data.teams[0].teamNumber != kHomeTeamNumber) {
+        std::swap(data.teams[0], data.teams[1]);
+    }
+    return true;
+}
+
+float normalizeAngle(double angle) {
+    return static_cast<float>(std::atan2(std::sin(angle), std::cos(angle)));
+}
 
 std::string readFile(const std::string& path) {
     std::ifstream file(path);
@@ -206,8 +226,10 @@ void GameControllerBridge::createGameController() {
 
     loadFormation();
 
+    lastHalf_ = -1;
+    refereeSign_ = -1.f;
     RoboCupGameControlData initial{};
-    if (gc_read(gameController_, 0, true, reinterpret_cast<uint8_t*>(&initial), sizeof(initial))) {
+    if (readGame(gameController_, true, initial)) {
         for (int side = 0; side < 2; ++side) {
             for (int player = 0; player < MAX_NUM_PLAYERS; ++player) {
                 lastPenalties_[side][player] = initial.teams[side].players[player].penalty;
@@ -249,13 +271,26 @@ void GameControllerBridge::update() {
         pendingMs_ -= static_cast<double>(wholeMs);
     }
 
+    // The robots never change sides in the simulator (red, the home team, always defends the -x
+    // goal, which the framework relies on), while for the GameController the sides switch every
+    // half. Its automatic referee has the left goal at +x, so the world is given to it rotated
+    // by pi while the home team defends the left goal, and as it is otherwise.
+    RoboCupGameControlData game{};
+    if (readGame(gameController_, true, game)) {
+        bool shootout = game.gamePhase == GAME_PHASE_PENALTY_SHOOT_OUT;
+        bool homeDefendsLeftGoal = shootout ? shootoutSides_ == SideMapping::homeDefendsLeftGoal : game.firstHalf;
+        refereeSign_ = homeDefendsLeftGoal ? -1.f : 1.f;
+    }
+    const float sign = refereeSign_;
+    const double turn = sign < 0 ? M_PI : 0.0;
+
     AutorefereeWorld world{};
 
     int ballQpos = 0;
     int ballQvel = 0;
     if (freeJointAddresses(model, "ball", ballQpos, ballQvel)) {
-        world.ball[0] = static_cast<float>(data->qpos[ballQpos + 0]);
-        world.ball[1] = static_cast<float>(data->qpos[ballQpos + 1]);
+        world.ball[0] = sign * static_cast<float>(data->qpos[ballQpos + 0]);
+        world.ball[1] = sign * static_cast<float>(data->qpos[ballQpos + 1]);
         world.ball[2] = static_cast<float>(data->qpos[ballQpos + 2]);
     }
 
@@ -276,9 +311,9 @@ void GameControllerBridge::update() {
             double z = data->qpos[qposadr + 6];
             AutorefereePlayer& player = world.players[0][robot->number - 1];
             player.present = true;
-            player.x = static_cast<float>(data->qpos[qposadr + 0]);
-            player.y = static_cast<float>(data->qpos[qposadr + 1]);
-            player.theta = static_cast<float>(std::atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z)));
+            player.x = sign * static_cast<float>(data->qpos[qposadr + 0]);
+            player.y = sign * static_cast<float>(data->qpos[qposadr + 1]);
+            player.theta = normalizeAngle(std::atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z)) + turn);
             player.radius = kRobotRadius;
         }
     }
@@ -327,7 +362,7 @@ bool GameControllerBridge::apply(VAction* action, ActionSource source, const Gam
                 // The counter only grows for incremental penalties, which is decided by the penalty
                 // that the call resulted in (e.g. a second yellow card becomes a red one).
                 RoboCupGameControlData data{};
-                if (gc_read(gameController_, 0, true, reinterpret_cast<uint8_t*>(&data), sizeof(data)) && info.player >= 1
+                if (readGame(gameController_, true, data) && info.player >= 1
                     && info.player <= MAX_NUM_PLAYERS) {
                     int side = info.side == Side::home ? 0 : 1;
                     uint8_t penalty = data.teams[side].players[info.player - 1].penalty;
@@ -385,12 +420,14 @@ bool GameControllerBridge::readControlData(RoboCupGameControlData& data, bool tr
     if (!gameController_) {
         return false;
     }
-    return gc_read(gameController_, 0, trueData, reinterpret_cast<uint8_t*>(&data), sizeof(data));
+    return readGame(gameController_, trueData, data);
 }
 
+// The callbacks receive positions in the frame of the automatic referee (see update).
 void GameControllerBridge::placeBall(void* userptr, float x, float y, float z) {
     auto* bridge = static_cast<GameControllerBridge*>(userptr);
-    bridge->placeBallInWorld(x, y, z);
+    const float sign = bridge->refereeSign_;
+    bridge->placeBallInWorld(sign * x, sign * y, z);
 }
 
 void GameControllerBridge::placePlayer(void* userptr, Side side, uint8_t player, float x, float y, float theta) {
@@ -405,7 +442,8 @@ void GameControllerBridge::placePlayer(void* userptr, Side side, uint8_t player,
     }
     for (const std::shared_ptr<Robot>& robot : teams[0]->robots) {
         if (robot->number == player) {
-            bridge->placeRobotInWorld(*robot, x, y, theta);
+            const float sign = bridge->refereeSign_;
+            bridge->placeRobotInWorld(*robot, sign * x, sign * y, normalizeAngle(theta + (sign < 0 ? M_PI : 0.0)));
             return;
         }
     }
@@ -443,11 +481,26 @@ void GameControllerBridge::placeBallInWorld(float x, float y, float z) {
 // penalty is over.
 void GameControllerBridge::placePenalizedRobots() {
     RoboCupGameControlData data{};
-    if (!gc_read(gameController_, 0, true, reinterpret_cast<uint8_t*>(&data), sizeof(data))) {
+    if (!readGame(gameController_, true, data)) {
         return;
     }
     // In a penalty shoot-out the players are benched and selected by the GameController.
     bool shootout = data.gamePhase == GAME_PHASE_PENALTY_SHOOT_OUT;
+
+    // A new half (or extra half) has started. Every penalty except sent off and substitute has
+    // just been removed, but the robots do not come back from the touchline: they all start the
+    // half from where they were spawned (see placeForNewHalf).
+    if (data.gamePhase == GAME_PHASE_NORMAL || data.gamePhase == GAME_PHASE_EXTRA_TIME) {
+        int half = (data.gamePhase == GAME_PHASE_EXTRA_TIME ? 2 : 0) + (data.firstHalf ? 0 : 1);
+        if (half != lastHalf_) {
+            bool newHalf = lastHalf_ >= 0;
+            lastHalf_ = half;
+            if (newHalf) {
+                placeForNewHalf(data);
+                return;
+            }
+        }
+    }
 
     std::vector<std::shared_ptr<Team>> teams = TeamManager::instance().getTeams();
     std::vector<std::pair<float, float>> placed;
@@ -489,6 +542,35 @@ void GameControllerBridge::placeOutside(const Robot& robot) {
     const float y = std::abs(spawnY) > halfWidth ? spawnY + outwards * kOutsideDistance : outwards * (halfWidth + kOutsideDistance);
     const float theta = outwards < 0 ? static_cast<float>(M_PI_2) : -static_cast<float>(M_PI_2);
     placeRobotInWorld(robot, spawnX, y, theta);
+}
+
+// The sides of the field switch at half-time, but turning the robots around would break the
+// framework, whose field frame in simulation is fixed by the team color (and which, in fast
+// simulation, is given the world pose of the robot). The field is symmetric, so the robots are
+// put back where they started the game instead: the framework resets its pose to that same
+// initial pose when the new half goes to Ready.
+void GameControllerBridge::placeForNewHalf(const RoboCupGameControlData& data) {
+    std::vector<std::shared_ptr<Team>> teams = TeamManager::instance().getTeams();
+    for (int side = 0; side < 2; ++side) {
+        for (int player = 0; player < MAX_NUM_PLAYERS; ++player) {
+            lastPenalties_[side][player] = data.teams[side].players[player].penalty;
+        }
+        if (side >= static_cast<int>(teams.size())) {
+            continue;
+        }
+        for (const std::shared_ptr<Robot>& robot : teams[side]->robots) {
+            if (robot->number < 1 || robot->number > MAX_NUM_PLAYERS) {
+                continue;
+            }
+            uint8_t penalty = data.teams[side].players[robot->number - 1].penalty;
+            if (penalty == PENALTY_SUBSTITUTE || penalty == PENALTY_SENT_OFF) {
+                continue;
+            }
+            placeRobotInWorld(*robot, static_cast<float>(robot->initPosition.x()), static_cast<float>(robot->initPosition.y()),
+                              static_cast<float>(robot->initOrientation.z()));
+        }
+    }
+    placeBallInWorld(0.f, 0.f, config_->field.ball_radius);
 }
 
 void GameControllerBridge::placeInTeamFrame(const Robot& robot, float x, float y, float theta) {

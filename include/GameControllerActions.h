@@ -102,6 +102,20 @@ inline GameControllerAction startSetPlay(std::optional<RoboCup::Side> side, Robo
         setPlayName(setPlay));
 }
 
+// The team that takes the next kick-off, as reported by the control message.
+inline std::optional<RoboCup::Side> kickingSide(const RoboCupGameControlData& data) {
+    if (data.kickingTeam == KICKING_TEAM_NONE) {
+        return std::nullopt;
+    }
+    return data.teams[0].teamNumber == data.kickingTeam ? RoboCup::Side::home : RoboCup::Side::away;
+}
+
+// The kick-off is only legal for the team that takes it (in the second half the other one), so
+// the team must always be given: a kick-off without a team is never legal.
+inline GameControllerAction kickOff(const RoboCupGameControlData& data) {
+    return startSetPlay(kickingSide(data), RoboCup::SetPlay::kickOff);
+}
+
 inline GameControllerAction timeout(std::optional<RoboCup::Side> side) {
     return make(
         [side]() {

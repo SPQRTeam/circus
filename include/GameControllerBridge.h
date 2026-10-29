@@ -86,8 +86,9 @@ class GameControllerBridge {
         // Checks an action without applying it (does not take ownership of it).
         bool isLegal(const RoboCup::VAction* action);
 
-        // Copies the control message describing the game state. If trueData is set, the true
-        // state is returned, otherwise the (possibly delayed) state sent to the players.
+        // Copies the control message describing the game state, with the home team always in
+        // teams[0] (the message itself orders them by side of the field). If trueData is set, the
+        // true state is returned, otherwise the (possibly delayed) state sent to the players.
         bool readControlData(RoboCupGameControlData& data, bool trueData);
 
     private:
@@ -119,6 +120,8 @@ class GameControllerBridge {
 
         // Moves the robots whose penalty just started or ended (see placePenalizedRobots).
         void placePenalizedRobots();
+        // Puts every robot back at its spawn pose and the ball on the center mark.
+        void placeForNewHalf(const RoboCupGameControlData& data);
         // Places a penalized robot outside the field, next to where it was spawned.
         void placeOutside(const Robot& robot);
         // Pose in the frame of the robot's team (own goal at -x) -> pose in the world.
@@ -141,6 +144,11 @@ class GameControllerBridge {
         RoboCup::Params* params_ = nullptr;
         RoboCup::GameController* gameController_ = nullptr;
         RoboCup::Autoreferee* autoreferee_ = nullptr;
+
+        // World of the simulator -> frame of the automatic referee: -1 = rotated by pi, 1 = same.
+        float refereeSign_ = -1.f;
+        // Half being played (0/1 = first/second half, 2/3 = extra halves), -1 if not known yet.
+        int lastHalf_ = -1;
 
         // Penalty of every player in the last step (index: side, player number - 1).
         std::array<std::array<uint8_t, MAX_NUM_PLAYERS>, 2> lastPenalties_{};

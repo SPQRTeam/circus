@@ -142,7 +142,9 @@ std::string CommandConsole::handleReferee(const std::string& command) {
     iss >> cmd;
 
     if (cmd == "ready" || cmd == "set" || cmd == "playing" || cmd == "finish") {
-        GameControllerAction action = cmd == "ready"     ? gcaction::startSetPlay(std::nullopt, SetPlay::kickOff)
+        RoboCupGameControlData data{};
+        GameControllerBridge::instance().readControlData(data, true);
+        GameControllerAction action = cmd == "ready"     ? gcaction::kickOff(data)
                                       : cmd == "set"     ? gcaction::waitForSetPlay()
                                       : cmd == "playing" ? gcaction::freeSetPlay()
                                                          : gcaction::finishHalf();

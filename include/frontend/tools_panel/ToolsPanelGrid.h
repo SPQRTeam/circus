@@ -101,7 +101,17 @@ class GridCell : public QWidget {
                                  "  border: 1px solid #006778; "
                                  "} ");
 
-            combo->addItems(streams.keys());
+            // The streams are sorted by name, so the placeholder is put first explicitly: it is what
+            // a new cell shows.
+            const QString placeholder = "Select stream";
+            if (streams.contains(placeholder)) {
+                combo->addItem(placeholder);
+            }
+            for (const QString& stream : streams.keys()) {
+                if (stream != placeholder) {
+                    combo->addItem(stream);
+                }
+            }
             selectedItem_ = combo->currentText();
             connect(combo, &QComboBox::currentTextChanged, this, [this](const QString& text) {
                 selectedItem_ = text;
@@ -115,6 +125,10 @@ class GridCell : public QWidget {
             layout->addWidget(tool_, 1);
 
             streams_ = streams;
+
+            // Show the tool of the stream selected at start, which otherwise would only be created
+            // when the selection changes.
+            onSourceChanged();
         }
 
         QString selectedItem() const {

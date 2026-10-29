@@ -1057,8 +1057,11 @@ class GameControllerTool : public Tool {
             GcGame game = toGame(data);
             selection_.alternative = QGuiApplication::queryKeyboardModifiers() & Qt::ShiftModifier;
 
-            bool mirror = game.isShootout() ? GameControllerBridge::instance().shootoutSides() == RoboCup::SideMapping::homeDefendsRightGoal
-                                            : game.phase == GcPhase::SecondHalf || game.phase == GcPhase::SecondExtraHalf;
+            // The frontend swaps the team panels with the sides of the field at half-time, but in
+            // the simulator the robots keep their side for the whole game (see
+            // GameControllerBridge::placeForNewHalf), so only the shoot-out side is followed.
+            bool mirror = game.isShootout()
+                          && GameControllerBridge::instance().shootoutSides() == RoboCup::SideMapping::homeDefendsRightGoal;
             if (mirror != mirror_) {
                 placePanels(mirror);
             }
