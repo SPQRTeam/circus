@@ -132,8 +132,8 @@ inline GameControllerAction goal(RoboCup::Side side) {
 inline GameControllerAction penalize(RoboCup::Side side, uint8_t player, size_t callIndex) {
     const auto& call = penaltyCalls()[callIndex];
     RoboCup::PenaltyCall penaltyCall = call.second;
-    GameControllerAction action =
-        make([side, player, penaltyCall]() { return RoboCup::gc_action_penalize(side, player, penaltyCall); }, call.first, Kind::Penalize);
+    GameControllerAction action
+        = make([side, player, penaltyCall]() { return RoboCup::gc_action_penalize(side, player, penaltyCall); }, call.first, Kind::Penalize);
     action.info.side = side;
     action.info.player = player;
     return action;
@@ -164,8 +164,8 @@ inline GameControllerAction startExtraTime() {
 }
 
 inline GameControllerAction startPenaltyShootout(RoboCup::SideMapping sides) {
-    GameControllerAction action =
-        make([sides]() { return RoboCup::gc_action_start_penalty_shootout(sides); }, "Penalty Shoot-out", Kind::PenaltyShootout);
+    GameControllerAction action
+        = make([sides]() { return RoboCup::gc_action_start_penalty_shootout(sides); }, "Penalty Shoot-out", Kind::PenaltyShootout);
     action.info.sides = sides;
     return action;
 }

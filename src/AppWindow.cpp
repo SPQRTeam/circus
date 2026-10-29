@@ -20,8 +20,8 @@
 #endif
 
 #include "CircusNetwork.h"
-#include "Constants.h"
 #include "CommandConsole.h"
+#include "Constants.h"
 #include "GameControllerBridge.h"
 #include "MujocoContext.h"
 #include "RobotManager.h"

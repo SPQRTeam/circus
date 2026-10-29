@@ -144,10 +144,10 @@ std::string CommandConsole::handleReferee(const std::string& command) {
     if (cmd == "ready" || cmd == "set" || cmd == "playing" || cmd == "finish") {
         RoboCupGameControlData data{};
         GameControllerBridge::instance().readControlData(data, true);
-        GameControllerAction action = cmd == "ready"     ? gcaction::kickOff(data)
-                                      : cmd == "set"     ? gcaction::waitForSetPlay()
-                                      : cmd == "playing" ? gcaction::freeSetPlay()
-                                                         : gcaction::finishHalf();
+        GameControllerAction action = cmd == "ready"   ? gcaction::kickOff(data) :
+                                      cmd == "set"     ? gcaction::waitForSetPlay() :
+                                      cmd == "playing" ? gcaction::freeSetPlay() :
+                                                         gcaction::finishHalf();
         return action.apply() ? "" : "Action not legal: " + cmd;
     }
 
@@ -158,11 +158,8 @@ std::string CommandConsole::handleReferee(const std::string& command) {
             return "Unknown team: " + team;
         }
         static const std::map<std::string, SetPlay> setPlays = {
-            {"kickin", SetPlay::throwIn},
-            {"cornerkick", SetPlay::cornerKick},
-            {"goalkick", SetPlay::goalKick},
-            {"penaltykick", SetPlay::penaltyKick},
-            {"pushingfreekick", SetPlay::directFreeKick},
+            {"kickin", SetPlay::throwIn},          {"cornerkick", SetPlay::cornerKick},          {"goalkick", SetPlay::goalKick},
+            {"penaltykick", SetPlay::penaltyKick}, {"pushingfreekick", SetPlay::directFreeKick},
         };
         return gcaction::startSetPlay(side, setPlays.at(cmd)).apply() ? "" : "Action not legal: " + cmd;
     }

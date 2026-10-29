@@ -1,24 +1,23 @@
 #include "GameControllerBridge.h"
 
-#include <cmath>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <sys/socket.h>
 #include <poll.h>
+#include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
 #include <algorithm>
-#include <utility>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
 #include <limits>
+#include <sstream>
+#include <utility>
 
 #include "CircusNetwork.h"
 #include "SceneParser.h"
@@ -39,11 +38,11 @@ constexpr uint8_t kHomeTeamNumber = 19;
 constexpr uint8_t kAwayTeamNumber = 0;
 
 // Bits of game_controller_autoreferee::Features that the simulator relies on.
-constexpr uint32_t kRefereeFeatures = (1u << 0)   // SWITCH_TO_SET
-                                      | (1u << 1)  // SWITCH_TO_PLAYING
-                                      | (1u << 2)  // SWITCH_TO_FINISHED
-                                      | (1u << 3)  // BALL_OUT
-                                      | (1u << 4)  // INVALID_GOAL
+constexpr uint32_t kRefereeFeatures = (1u << 0)      // SWITCH_TO_SET
+                                      | (1u << 1)    // SWITCH_TO_PLAYING
+                                      | (1u << 2)    // SWITCH_TO_FINISHED
+                                      | (1u << 3)    // BALL_OUT
+                                      | (1u << 4)    // INVALID_GOAL
                                       | (1u << 16);  // PLACE_BALL: kick-off, penalty kick, shoot-out and all other set plays
 
 constexpr float kRobotRadius = 0.25f;
@@ -167,8 +166,8 @@ void GameControllerBridge::createGameController() {
 
     Side kickOffSide = config_->game.first_kickoff_team == homeTeam->name ? Side::home : Side::away;
 
-    params_ = gc_params_new(reinterpret_cast<const uint8_t*>(yaml.data()), yaml.size(), &home, &away, kickOffSide,
-                            SideMapping::homeDefendsLeftGoal, test);
+    params_ = gc_params_new(reinterpret_cast<const uint8_t*>(yaml.data()), yaml.size(), &home, &away, kickOffSide, SideMapping::homeDefendsLeftGoal,
+                            test);
     if (!params_) {
         std::cerr << "GameController: " << gc_last_error() << std::endl;
         return;
@@ -305,8 +304,8 @@ void GameControllerBridge::update() {
         for (const std::shared_ptr<Robot>& robot : teams[0]->robots) {
             int qposadr = 0;
             int qveladr = 0;
-            if (robot->number < PlayerNumber_MIN || robot->number > PlayerNumber_MAX ||
-                !freeJointAddresses(model, (robot->name + "_Trunk").c_str(), qposadr, qveladr)) {
+            if (robot->number < PlayerNumber_MIN || robot->number > PlayerNumber_MAX
+                || !freeJointAddresses(model, (robot->name + "_Trunk").c_str(), qposadr, qveladr)) {
                 continue;
             }
             // Yaw from the quaternion (w, x, y, z) stored in qpos.
@@ -367,8 +366,7 @@ bool GameControllerBridge::apply(VAction* action, ActionSource source, const Gam
                 // The counter only grows for incremental penalties, which is decided by the penalty
                 // that the call resulted in (e.g. a second yellow card becomes a red one).
                 RoboCupGameControlData data{};
-                if (readGame(gameController_, true, data) && info.player >= 1
-                    && info.player <= MAX_NUM_PLAYERS) {
+                if (readGame(gameController_, true, data) && info.player >= 1 && info.player <= MAX_NUM_PLAYERS) {
                     int side = info.side == Side::home ? 0 : 1;
                     uint8_t penalty = data.teams[side].players[info.player - 1].penalty;
                     if (incrementalPenalties_[penalty]) {
@@ -806,8 +804,7 @@ int GameControllerBridge::openReceiver(uint16_t port, const char* what) {
     local.sin_port = htons(port);
     local.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(fd, reinterpret_cast<sockaddr*>(&local), sizeof(local)) != 0) {
-        std::cerr << "GameController: cannot receive " << what << ", port " << port << " is in use (is another GameController running?)"
-                  << std::endl;
+        std::cerr << "GameController: cannot receive " << what << ", port " << port << " is in use (is another GameController running?)" << std::endl;
         close(fd);
         return -1;
     }

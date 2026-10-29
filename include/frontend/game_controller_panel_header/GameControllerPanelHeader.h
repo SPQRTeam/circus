@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GameController.h>
+#include <RoboCupGameControlData.h>
 #include <qlabel.h>
 
 #include <QHBoxLayout>
@@ -10,9 +12,6 @@
 #include <iostream>
 #include <map>
 #include <optional>
-
-#include <GameController.h>
-#include <RoboCupGameControlData.h>
 
 #include "CommandConsole.h"
 #include "GameControllerActions.h"

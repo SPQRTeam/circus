@@ -252,8 +252,7 @@ class GcPlayerButton : public QPushButton {
 
         // number == 0 shows only the jersey color (selection of the jersey in the shoot-out).
         // connection: 2 = good, 1 = bad, 0 = offline (ConnectionStatusIndicatorIcon).
-        void setContent(const QString& color, uint8_t number, const QString& penalty, bool legal, bool flash, int sign,
-                        int connection = 0) {
+        void setContent(const QString& color, uint8_t number, const QString& penalty, bool legal, bool flash, int sign, int connection = 0) {
             if (connection != connection_) {
                 connection_ = connection;
                 statusLabel_->setText(connection >= 2 ? "✓" : connection >= 1 ? "⚠" : "✕");
@@ -417,8 +416,7 @@ class GcTeamPanel : public QWidget {
                 GcPlayerButton* button = players_[number - 1];
                 const RobotInfo& player = team.players[number - 1];
                 bool substitute = player.penalty == PENALTY_SUBSTITUTE;
-                bool shown = !chooseColor
-                             && (select_.type == Select::PsoPlayer ? true : select_.type == Select::PlayerIn ? substitute : !substitute);
+                bool shown = !chooseColor && (select_.type == Select::PsoPlayer ? true : select_.type == Select::PlayerIn ? substitute : !substitute);
                 button->setVisible(shown);
                 if (!shown) {
                     continue;
@@ -434,8 +432,8 @@ class GcTeamPanel : public QWidget {
                 bool legal = select_.type != Select::Default || defaultPlayerAction(number).isLegal();
 
                 bool timerStarted = player.penalty != PENALTY_NONE && player.secsTillUnpenalised > 0;
-                QString penalty = timerStarted ? gcui::formatMMSS(player.secsTillUnpenalised)
-                                               : (player.penalty == PENALTY_NONE ? QString() : gcui::penaltyDescription(player.penalty));
+                QString penalty = timerStarted ? gcui::formatMMSS(player.secsTillUnpenalised) :
+                                                 (player.penalty == PENALTY_NONE ? QString() : gcui::penaltyDescription(player.penalty));
                 bool flash = timerStarted && player.secsTillUnpenalised < 10 && player.penalty != PENALTY_SENT_OFF
                              && player.penalty != PENALTY_SUBSTITUTE && player.penalty != PENALTY_MOTION_IN_SET && gcui::flashOn();
                 button->setContent(color, number, penalty, legal, flash, sign, connection[index_][number - 1]);
@@ -638,12 +636,10 @@ class GcCenterPanel : public QWidget {
             }
             stopResume_ = createStateButton("Stop Play", [this]() { gcaction::stopPlay(game_.stopped).apply(); });
             secondHalf_ = createStateButton("Second Half", []() { gcaction::switchHalf().apply(); });
-            shootoutLeft_ = createStateButton("Penalty Shots (Left Goal)", []() {
-                gcaction::startPenaltyShootout(RoboCup::SideMapping::homeDefendsRightGoal).apply();
-            });
-            shootoutRight_ = createStateButton("Penalty Shots (Right Goal)", []() {
-                gcaction::startPenaltyShootout(RoboCup::SideMapping::homeDefendsLeftGoal).apply();
-            });
+            shootoutLeft_ = createStateButton("Penalty Shots (Left Goal)",
+                                              []() { gcaction::startPenaltyShootout(RoboCup::SideMapping::homeDefendsRightGoal).apply(); });
+            shootoutRight_ = createStateButton("Penalty Shots (Right Goal)",
+                                               []() { gcaction::startPenaltyShootout(RoboCup::SideMapping::homeDefendsLeftGoal).apply(); });
             extraTime_ = createStateButton("Extra Time", []() { gcaction::startExtraTime().apply(); });
             ready_ = createStateButton("Ready", [this]() { readyAction().apply(); });
             globalGameStuck_ = createStateButton("Global GS", []() { gcaction::globalGameStuck().apply(); });
@@ -793,8 +789,7 @@ class GcCenterPanel : public QWidget {
                     prefix = "Corner Kick";
                     break;
                 default:
-                    if (!game_.isShootout()
-                        && (game_.state != GcState::Playing || game_.data.secondaryTime != 0)) {
+                    if (!game_.isShootout() && (game_.state != GcState::Playing || game_.data.secondaryTime != 0)) {
                         prefix = "Kick-off";
                     }
             }
@@ -1060,8 +1055,7 @@ class GameControllerTool : public Tool {
             // The frontend swaps the team panels with the sides of the field at half-time, but in
             // the simulator the robots keep their side for the whole game (see
             // GameControllerBridge::placeForNewHalf), so only the shoot-out side is followed.
-            bool mirror = game.isShootout()
-                          && GameControllerBridge::instance().shootoutSides() == RoboCup::SideMapping::homeDefendsRightGoal;
+            bool mirror = game.isShootout() && GameControllerBridge::instance().shootoutSides() == RoboCup::SideMapping::homeDefendsRightGoal;
             if (mirror != mirror_) {
                 placePanels(mirror);
             }
