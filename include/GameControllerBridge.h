@@ -11,12 +11,14 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "MujocoContext.h"
 #include "SceneParser.h"
+#include "robots/Robot.h"
 
 namespace spqr {
 
@@ -113,7 +115,24 @@ class GameControllerBridge {
         void receiverLoop();
 
         void placeBallInWorld(float x, float y, float z);
-        void placeRobotInWorld(const std::string& robotName, float x, float y, float theta);
+        void placeRobotInWorld(const Robot& robot, float x, float y, float theta);
+
+        // Moves the robots whose penalty just started or ended (see placePenalizedRobots).
+        void placePenalizedRobots();
+        // Places a penalized robot outside the field, next to where it was spawned.
+        void placeOutside(const Robot& robot);
+        // Pose in the frame of the robot's team (own goal at -x) -> pose in the world.
+        void placeInTeamFrame(const Robot& robot, float x, float y, float theta);
+        // Places the robot on the touchline at the first free spot from teamX (team frame).
+        void placeOnTouchline(const Robot& robot, float teamX, std::vector<std::pair<float, float>>& occupied);
+        void loadFormation();
+
+        // penalizedPose [x, y, theta] in the team frame, read from the formation of the framework
+        // for the field in use (src/app/config/formations), as ReadyFormation does.
+        struct Pose {
+                float x, y, theta;
+        };
+        std::optional<Pose> penalizedPose_;
 
         std::mutex mutex_;
         MujocoContext* mujContext_ = nullptr;
@@ -122,6 +141,9 @@ class GameControllerBridge {
         RoboCup::Params* params_ = nullptr;
         RoboCup::GameController* gameController_ = nullptr;
         RoboCup::Autoreferee* autoreferee_ = nullptr;
+
+        // Penalty of every player in the last step (index: side, player number - 1).
+        std::array<std::array<uint8_t, MAX_NUM_PLAYERS>, 2> lastPenalties_{};
 
         double lastSimTime_ = 0.0;
         double pendingMs_ = 0.0;

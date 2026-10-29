@@ -13,7 +13,10 @@
 #include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
+#include <algorithm>
 #include <chrono>
+#include <cstdlib>
+#include <limits>
 
 #include "CircusNetwork.h"
 #include "SceneParser.h"
@@ -41,6 +44,12 @@ constexpr uint32_t kRefereeFeatures = (1u << 0)   // SWITCH_TO_SET
                                       | (1u << 4);  // INVALID_GOAL
 
 constexpr float kRobotRadius = 0.25f;
+
+// Distance between robots placed next to each other for a penalty (as the automatic referee).
+constexpr float kPenaltyPlacementDistance = 0.5f;
+
+// How much further out than its spawn position a penalized robot waits.
+constexpr float kOutsideDistance = 1.0f;
 
 // Keys of the penalties in params.yaml, indexed by the PENALTY_* values of the control message.
 const std::map<uint8_t, const char*> kPenaltyKeys = {
@@ -185,7 +194,7 @@ void GameControllerBridge::createGameController() {
     refereeConfig.field = dimensions;
     refereeConfig.timeUntilSwitchToSet = config_->game.ready_phase_duration * 1000ull;
     refereeConfig.timeUntilSwitchToPlaying = config_->game.set_phase_duration * 1000ull;
-    refereeConfig.penaltyPlacementDistance = 0.5f;
+    refereeConfig.penaltyPlacementDistance = kPenaltyPlacementDistance;
     refereeConfig.userptr = this;
     refereeConfig.placeBall = &GameControllerBridge::placeBall;
     refereeConfig.placePlayer = &GameControllerBridge::placePlayer;
@@ -194,6 +203,17 @@ void GameControllerBridge::createGameController() {
 
     lastSimTime_ = mujContext_->data->time;
     pendingMs_ = 0.0;
+
+    loadFormation();
+
+    RoboCupGameControlData initial{};
+    if (gc_read(gameController_, 0, true, reinterpret_cast<uint8_t*>(&initial), sizeof(initial))) {
+        for (int side = 0; side < 2; ++side) {
+            for (int player = 0; player < MAX_NUM_PLAYERS; ++player) {
+                lastPenalties_[side][player] = initial.teams[side].players[player].penalty;
+            }
+        }
+    }
 
     // Every simulated robot has a fixed address on the Docker network (see Container.cpp).
     for (const std::shared_ptr<Team>& team : teams) {
@@ -264,6 +284,7 @@ void GameControllerBridge::update() {
     }
 
     gc_autoreferee_update(autoreferee_, gameController_, &world);
+    placePenalizedRobots();
 }
 
 double GameControllerBridge::simTime() {
@@ -384,7 +405,7 @@ void GameControllerBridge::placePlayer(void* userptr, Side side, uint8_t player,
     }
     for (const std::shared_ptr<Robot>& robot : teams[0]->robots) {
         if (robot->number == player) {
-            bridge->placeRobotInWorld(robot->name, x, y, theta);
+            bridge->placeRobotInWorld(*robot, x, y, theta);
             return;
         }
     }
@@ -413,19 +434,174 @@ void GameControllerBridge::placeBallInWorld(float x, float y, float z) {
     mj_forward(mujContext_->model, data);
 }
 
-void GameControllerBridge::placeRobotInWorld(const std::string& robotName, float x, float y, float theta) {
+// A penalty that removes the robot from the field (all but Motion in Set), and a player that is
+// substituted out, send the robot to wait one metre further out than where it was spawned at the
+// side of the field, facing the field: every robot has its own spot, so penalized robots do not
+// run into each other. Only when the penalty is removed in the GameController (robots may come
+// back only then, not when their penalty time is up) is the robot put back on the touchline at
+// ReadyFormation::penalizedPose, where the localization of the framework is reset when its
+// penalty is over.
+void GameControllerBridge::placePenalizedRobots() {
+    RoboCupGameControlData data{};
+    if (!gc_read(gameController_, 0, true, reinterpret_cast<uint8_t*>(&data), sizeof(data))) {
+        return;
+    }
+    // In a penalty shoot-out the players are benched and selected by the GameController.
+    bool shootout = data.gamePhase == GAME_PHASE_PENALTY_SHOOT_OUT;
+
+    std::vector<std::shared_ptr<Team>> teams = TeamManager::instance().getTeams();
+    std::vector<std::pair<float, float>> placed;
+    for (int side = 0; side < 2; ++side) {
+        for (int player = 0; player < MAX_NUM_PLAYERS; ++player) {
+            uint8_t penalty = data.teams[side].players[player].penalty;
+            uint8_t last = lastPenalties_[side][player];
+            lastPenalties_[side][player] = penalty;
+            if (shootout || penalty == last || side >= static_cast<int>(teams.size())) {
+                continue;
+            }
+
+            bool removed = (last == PENALTY_NONE && penalty != PENALTY_MOTION_IN_SET) || (last == PENALTY_SUBSTITUTE);
+            bool returning = penalty == PENALTY_NONE && last != PENALTY_MOTION_IN_SET;
+            for (const std::shared_ptr<Robot>& robot : teams[side]->robots) {
+                if (robot->number != player + 1) {
+                    continue;
+                }
+                if (returning) {
+                    Pose pose = penalizedPose_.value_or(Pose{-(config_->field.width * 0.5f - config_->field.penalty_mark_distance),
+                                                             -config_->field.height * 0.5f, static_cast<float>(M_PI_2)});
+                    placeOnTouchline(*robot, pose.x, placed);
+                } else if (removed) {
+                    placeOutside(*robot);
+                }
+            }
+        }
+    }
+}
+
+void GameControllerBridge::placeOutside(const Robot& robot) {
+    // The spawn position of the scene is in the world frame. Robots are spawned outside the
+    // touchline; a robot spawned inside the field waits one metre beyond the touchline of its
+    // team instead (at -y of the team frame: -y for red, +y for blue).
+    const float halfWidth = config_->field.height * 0.5f;
+    const float spawnX = static_cast<float>(robot.initPosition.x());
+    const float spawnY = static_cast<float>(robot.initPosition.y());
+    const float outwards = spawnY != 0.f ? std::copysign(1.f, spawnY) : (robot.colorName == "blue" ? 1.f : -1.f);
+    const float y = std::abs(spawnY) > halfWidth ? spawnY + outwards * kOutsideDistance : outwards * (halfWidth + kOutsideDistance);
+    const float theta = outwards < 0 ? static_cast<float>(M_PI_2) : -static_cast<float>(M_PI_2);
+    placeRobotInWorld(robot, spawnX, y, theta);
+}
+
+void GameControllerBridge::placeInTeamFrame(const Robot& robot, float x, float y, float theta) {
+    // In simulation the red team plays towards +x (its frame is the world), the blue one towards
+    // -x (its frame is the world rotated by pi), as in ReadyFormation of the framework.
+    if (robot.colorName == "blue") {
+        placeRobotInWorld(robot, -x, -y, std::atan2(std::sin(theta + M_PI), std::cos(theta + M_PI)));
+    } else {
+        placeRobotInWorld(robot, x, y, theta);
+    }
+}
+
+void GameControllerBridge::placeOnTouchline(const Robot& robot, float teamX, std::vector<std::pair<float, float>>& occupied) {
+    const FieldConfig& field = config_->field;
+    const float halfLength = field.width * 0.5f;
+    // The touchline at -y of the team frame, facing the field (ReadyFormation::penalizedPose).
+    const float teamY = penalizedPose_ ? penalizedPose_->y : -field.height * 0.5f;
+    const float teamTheta = penalizedPose_ ? penalizedPose_->theta : static_cast<float>(M_PI_2);
+    const float sign = robot.colorName == "blue" ? -1.f : 1.f;
+
+    // Spots taken by the other robots and by those just placed (world frame).
+    const mjModel* model = mujContext_->model;
+    const mjData* data = mujContext_->data;
+    for (const std::shared_ptr<Team>& team : TeamManager::instance().getTeams()) {
+        for (const std::shared_ptr<Robot>& other : team->robots) {
+            int qposadr = 0;
+            int qveladr = 0;
+            if (other.get() != &robot && freeJointAddresses(model, (other->name + "_Trunk").c_str(), qposadr, qveladr)) {
+                occupied.emplace_back(static_cast<float>(data->qpos[qposadr]), static_cast<float>(data->qpos[qposadr + 1]));
+            }
+        }
+    }
+    auto clearance = [&](float x) {
+        float nearest = std::numeric_limits<float>::infinity();
+        for (const auto& [ox, oy] : occupied) {
+            nearest = std::min(nearest, std::hypot(ox - sign * x, oy - sign * teamY));
+        }
+        return nearest;
+    };
+
+    // Candidates as in rules::penalty_placement_candidates: from teamX, alternately towards the
+    // own goal line and the halfway line, within the own half.
+    const float min = -halfLength + kRobotRadius;
+    const float max = -kRobotRadius;
+    std::vector<float> candidates{std::clamp(teamX, min, max)};
+    for (int k = 1;; ++k) {
+        float towardsGoalLine = candidates[0] - k * kPenaltyPlacementDistance;
+        float towardsHalfwayLine = candidates[0] + k * kPenaltyPlacementDistance;
+        if (towardsGoalLine < min && towardsHalfwayLine > max) {
+            break;
+        }
+        if (towardsGoalLine >= min) {
+            candidates.push_back(towardsGoalLine);
+        }
+        if (towardsHalfwayLine <= max) {
+            candidates.push_back(towardsHalfwayLine);
+        }
+    }
+    // If every spot is taken, the one with the most room is used.
+    float best = candidates[0];
+    float bestClearance = -1.f;
+    for (float x : candidates) {
+        float room = clearance(x);
+        if (room >= kPenaltyPlacementDistance) {
+            best = x;
+            break;
+        }
+        if (room > bestClearance) {
+            bestClearance = room;
+            best = x;
+        }
+    }
+
+    placeInTeamFrame(robot, best, teamY, teamTheta);
+    occupied.emplace_back(sign * best, sign * teamY);
+}
+
+// Same file as ReadyFormation: fieldIO -> formationIO.yaml in the config of the framework.
+void GameControllerBridge::loadFormation() {
+    penalizedPose_.reset();
+
+    const char* root = std::getenv("FRAMEWORK_PATH") ? std::getenv("FRAMEWORK_PATH") : std::getenv("PIXI_PROJECT_ROOT");
+    if (!root) {
+        std::cerr << "GameController: framework not found, returning robots are placed from the field geometry" << std::endl;
+        return;
+    }
+    const std::string& field = config_->game.field;
+    const std::string suffix = field.rfind("field", 0) == 0 ? field.substr(5) : field;
+    const std::string path = std::string(root) + "/src/app/config/formations/formation" + suffix + ".yaml";
+    try {
+        YAML::Node formation = YAML::LoadFile(path);
+        const YAML::Node pose = formation["penalizedPose"];
+        penalizedPose_ = Pose{pose[0].as<float>(), pose[1].as<float>(), pose[2].as<float>()};
+    } catch (const YAML::Exception& e) {
+        std::cerr << "GameController: cannot read " << path << " (" << e.what() << "), returning robots are placed from the field geometry"
+                  << std::endl;
+    }
+}
+
+void GameControllerBridge::placeRobotInWorld(const Robot& robot, float x, float y, float theta) {
     if (!mujContext_) {
         return;
     }
     int qposadr = 0;
     int qveladr = 0;
-    if (!freeJointAddresses(mujContext_->model, (robotName + "_Trunk").c_str(), qposadr, qveladr)) {
+    if (!freeJointAddresses(mujContext_->model, (robot.name + "_Trunk").c_str(), qposadr, qveladr)) {
         return;
     }
     mjData* data = mujContext_->data;
-    // Keep the height of the trunk, set position and yaw, and zero the velocities.
+    // Upright at the height it was spawned at (it may have fallen), facing theta, standing still.
     data->qpos[qposadr + 0] = x;
     data->qpos[qposadr + 1] = y;
+    data->qpos[qposadr + 2] = robot.initPosition.z();
     double halfTheta = 0.5 * static_cast<double>(theta);
     data->qpos[qposadr + 3] = std::cos(halfTheta);
     data->qpos[qposadr + 4] = 0.0;
