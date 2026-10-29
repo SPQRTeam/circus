@@ -31,7 +31,7 @@
                         straight ahead) and the intrinsics (copied from Booster-T1) are placeholders until
                         the real mounting/calibration of the T2 head camera is known.
                     -->
-                    <body name="head_rgb_link" pos="0.095 0 0.095" quat="0.5 0.5 -0.5 -0.5">
+                    <body name="head_rgb_link" pos="0.115 0 0.095" quat="0.5 0.5 -0.5 -0.5">
                         <!-- Cameras and sites sit at the link origin, so they inherit its pose. -->
                         <site name="head_rgb_cam_site" size="0.008" rgba="0.1 0.8 0.1 1" />
                         <camera name="rgb_cam" fovy="57.96" resolution="1280 720" />
