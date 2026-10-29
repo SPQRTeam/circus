@@ -242,7 +242,7 @@ class BoosterT2 : public Robot {
         }
 
         void sendMessageSHM(bool publishImages) override {
-            const BoosterT2SharedState state{pose->toSharedState(), imu->toSharedState(), joints->toSharedState<kBoosterT2JointCount>(),
+            const BoosterT2SharedState state{pose->toSharedState(),   imu->toSharedState(),      joints->toSharedState<kBoosterT2JointCount>(),
                                              oracle->toSharedState(), headPose->toSharedState(), rgbCameraInfo->toSharedState()};
             state_writer_.write(&state, sizeof(state));
 
