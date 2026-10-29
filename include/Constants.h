@@ -2,8 +2,8 @@
 
 namespace spqr {
 constexpr const char* appName = "Circus Simulator";
-constexpr unsigned initialWindowWidth = 800;
-constexpr unsigned initialWindowHeight = 600;
+constexpr unsigned initialWindowWidth = 1000;
+constexpr unsigned initialWindowHeight = 800;
 constexpr const char* frameworkConfigPath = "resources/config/framework_config.yaml";
 constexpr const char* pathsConfigPath = "resources/config/path_constants.yaml";
 constexpr const char* sharedMemoryPath = "/dev/shm/circus_ipc/";
