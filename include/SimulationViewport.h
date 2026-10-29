@@ -15,6 +15,10 @@ class SimulationViewport : public QOpenGLWindow {
     public:
         SimulationViewport(MujocoContext& mujContext);
 
+        void setCamerasEnabled(bool enabled) {
+            camerasEnabled_ = enabled;
+        }
+
         void pauseRendering() {
             if (timer) {
                 timer->stop();
@@ -39,6 +43,7 @@ class SimulationViewport : public QOpenGLWindow {
         void keyPressEvent(QKeyEvent* event) override;
 
     private:
+        bool camerasEnabled_ = true;
         QPointF lastMousePosition;
         mjtMouse mouseAction = mjMOUSE_NONE;
 
