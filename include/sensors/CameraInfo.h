@@ -3,6 +3,8 @@
 #include <mujoco/mujoco.h>
 
 #include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -11,6 +13,24 @@
 #include "sensors/Sensor.h"
 
 namespace spqr {
+
+// Trivially-copyable mirror of everything doSerialize() sends, for the shared-memory state.
+struct CameraInfoData {
+        uint32_t height = 0;
+        uint32_t width = 0;
+        char distortionModel[16] = {};
+        double d[5] = {};
+        double k[9] = {};
+        double r[9] = {};
+        double p[12] = {};
+        uint32_t binningX = 0;
+        uint32_t binningY = 0;
+        uint32_t roiXOffset = 0;
+        uint32_t roiYOffset = 0;
+        uint32_t roiHeight = 0;
+        uint32_t roiWidth = 0;
+        uint32_t roiDoRectify = 0;
+};
 
 // Intrinsics parameters of MuJoCo camera.
 // Values are derived once from cam_fovy/cam_resolution (ideal pinhole, no distortion,
@@ -56,6 +76,20 @@ class CameraInfo : public Sensor {
             data["roi"] = msgpack::object(roi, z);
 
             return msgpack::object(data, z);
+        }
+
+        CameraInfoData toSharedState() const {
+            CameraInfoData data;
+            data.height = static_cast<uint32_t>(height_);
+            data.width = static_cast<uint32_t>(width_);
+            std::strncpy(data.distortionModel, "plumb_bob", sizeof(data.distortionModel) - 1);
+            const double k[9] = {fx_, 0.0, cx_, 0.0, fy_, cy_, 0.0, 0.0, 1.0};
+            const double r[9] = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+            const double p[12] = {fx_, 0.0, cx_, 0.0, 0.0, fy_, cy_, 0.0, 0.0, 0.0, 1.0, 0.0};
+            std::memcpy(data.k, k, sizeof(k));
+            std::memcpy(data.r, r, sizeof(r));
+            std::memcpy(data.p, p, sizeof(p));
+            return data;
         }
 
         int getWidth() const {
