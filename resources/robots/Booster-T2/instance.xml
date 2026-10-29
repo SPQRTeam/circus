@@ -27,11 +27,14 @@
                     <geom class="Booster-T2_visual" mesh="Booster-T2_head_pitch_link" material="Booster-T2_light" />
                     <geom name="head_pitch_link_collision" class="Booster-T2_collision" type="mesh" mesh="Booster-T2_head_pitch_link_collision" />
                     <!--
-                        The upstream T2 model declares no camera: this pose (front of the head mesh, looking
-                        straight ahead) and the intrinsics (copied from Booster-T1) are placeholders until
-                        the real mounting/calibration of the T2 head camera is known.
+                        The upstream T2 model declares no camera. Its pose in head_pitch_link is the
+                        camera-to-head extrinsics of the real T2 used by maximus (src/app/utils/robot/T2.h):
+                        8.7 cm forward, 3.5 cm left, 8.2 cm up, looking 34.9 degrees down. The quaternion
+                        turns the optical axes of the extrinsics (x right, y down, z forward) into those of a
+                        MuJoCo camera (x right, y up, looking along -z). The intrinsics are still copied
+                        from Booster-T1.
                     -->
-                    <body name="head_rgb_link" pos="0.095 0 0.095" quat="0.5 0.5 -0.5 -0.5">
+                    <body name="head_rgb_link" pos="0.08684 0.0349 0.08245" quat="0.626806 0.327283 -0.327283 -0.626806">
                         <!-- Cameras and sites sit at the link origin, so they inherit its pose. -->
                         <site name="head_rgb_cam_site" size="0.008" rgba="0.1 0.8 0.1 1" />
                         <camera name="rgb_cam" fovy="57.96" resolution="1280 720" />
