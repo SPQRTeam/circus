@@ -129,6 +129,8 @@ void Container::create(const std::shared_ptr<RobotBase>& robot, const std::strin
     payload["Tty"] = true;
     payload["OpenStdin"] = true;
 
+    curlClient.request(DELETE, remove_container_endpoint(name) + "?force=true", 0);
+
     std::string endpoint = create_container_endpoint(name);
     std::string resp_raw = curlClient.request(POST, endpoint, CREATE_OK_RESPONSE, &payload);
 

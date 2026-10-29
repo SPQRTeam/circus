@@ -153,6 +153,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
 
         mujContext = std::make_unique<MujocoContext>(xmlScene);
         viewport = std::make_unique<SimulationViewport>(*mujContext);
+        viewport->setCamerasEnabled(publishImages_);
 
         // Configure and bind GameController
         GameController::instance().configure(parser.getSceneInfo().simulationConfig);

@@ -48,6 +48,9 @@ void SimulationViewport::paintGL() {
     mjv_updateScene(model, data, opt, nullptr, cam, mjCAT_ALL, scene);
     mjr_render(viewport, scene, context);
 
+    if (!camerasEnabled_)
+        return;
+
     // Render cameras offscreen and save images
     for (int i = 0; i < RobotManager::instance().getRobots().size(); ++i) {
         auto robot = RobotManager::instance().getRobots()[i];

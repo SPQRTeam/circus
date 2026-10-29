@@ -119,6 +119,7 @@ std::map<std::string, std::string> GameController::availableCommands() const {
             {"pushingfreekick", "Set sub-phase to PUSHINGFREEKICK: pushingfreekick <team>"},
             {"mvr", "Move robot command: mvr <team> <robot_id> <x> <y> <theta> [m, m, deg]"},
             {"mvb", "Move ball command: mvb <x> <y> [m, m]"},
+            {"shootb", "Shoot ball command: shootb <x> <y> <speed> <direction> [m, m, m/s, deg]"},
             {"penalize", "Penalize robot command: penalize <team> <robot_id> <penalty_type>. Penalty types: LEAVING_THE_FIELD, PUSHING, FOUL, "
                          "ILLEGAL_POSITION"},
             {"unpenalize", "Unpenalize robot command: unpenalize <team> <robot_id>. Sets robot penalty to NONE_PENALTY"}};
@@ -182,6 +183,19 @@ std::string GameController::handleCommand(std::string command) {
         double x, y;
         iss >> cmd >> x >> y;
         return handleMoveBall(x, y);
+    }
+
+    else if (command.rfind("shootb", 0) == 0) {
+        // shootb <x> <y> <speed> <direction> [m, m, m/s, deg]
+        std::istringstream iss(command);
+        std::string cmd;
+        double x, y, speed, direction;
+
+        if (!(iss >> cmd >> x >> y >> speed >> direction)) {
+            return "Invalid shootb command format. Usage: shootb <x> <y> <speed> <direction>";
+        }
+
+        return handleShootBall(x, y, speed, direction);
     }
 
     else if (command.rfind("penalize", 0) == 0) {
@@ -456,6 +470,40 @@ std::string GameController::handleMoveBall(double x, double y) {
     request_mjforward = true;
 
     return "Ball moved to (" + std::to_string(x) + ", " + std::to_string(y) + ")";
+}
+
+std::string GameController::handleShootBall(double x, double y, double speed, double direction) {
+    // Place the ball first: reuses the bounds and free joint checks, and zeroes its velocity
+    std::string result = handleMoveBall(x, y);
+    if (result.rfind("Ball moved", 0) != 0) {
+        return result;
+    }
+
+    const mjModel* model = mujContext_->model;
+    mjData* data = mujContext_->data;
+    int bodyId = mj_name2id(model, mjOBJ_BODY, "ball");
+    int jntadr = model->body_jntadr[bodyId];
+    int qposadr = model->jnt_qposadr[jntadr];
+    int qveladr = model->jnt_dofadr[jntadr];
+
+    double directionRad = direction * M_PI / 180.0;
+    double vx = speed * std::cos(directionRad);
+    double vy = speed * std::sin(directionRad);
+
+    // Linear velocity (world frame)
+    data->qvel[qveladr + 0] = vx;
+    data->qvel[qveladr + 1] = vy;
+
+    // Angular velocity for rolling without slipping (w = z x v / r), so the ball does not skid first.
+    // Free joint angular velocity is expressed in the body frame, so rotate it by the inverse ball orientation.
+    double radius = model->geom_rbound[model->body_geomadr[bodyId]];
+    mjtNum omegaWorld[3] = {-vy / radius, vx / radius, 0.0};
+    mjtNum quatInv[4];
+    mju_negQuat(quatInv, data->qpos + qposadr + 3);
+    mju_rotVecQuat(data->qvel + qveladr + 3, omegaWorld, quatInv);
+
+    return "Ball shot from (" + std::to_string(x) + ", " + std::to_string(y) + ") at " + std::to_string(speed) + " m/s, direction "
+           + std::to_string(direction) + " deg";
 }
 
 std::string GameController::handlePenalizeRobot(std::string team, int robotId, Penalty penalty) {
