@@ -112,8 +112,12 @@ class GameControllerBridge {
         bool sendControlMessage();
         void requestSend();
 
-        // Receives the status messages of the robots on GAMECONTROLLER_RETURN_PORT.
+        // Receives the status messages of the robots on GAMECONTROLLER_RETURN_PORT and the team
+        // messages they exchange, which the GameController counts.
         void receiverLoop();
+        int openReceiver(uint16_t port, const char* what);
+        void receiveStatusMessage(const uint8_t* buffer, size_t length);
+        void receiveTeamMessage(RoboCup::Side side, size_t length);
 
         void placeBallInWorld(float x, float y, float z);
         void placeRobotInWorld(const Robot& robot, float x, float y, float theta);
@@ -181,6 +185,7 @@ class GameControllerBridge {
         bool sendNow_ = false;
 
         int statusSocket_ = -1;
+        std::array<int, 2> teamSockets_{-1, -1};  // home, away
         std::thread receiver_;
         std::atomic<bool> receiverRunning_{false};
         std::mutex aliveMutex_;

@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <poll.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <yaml-cpp/yaml.h>
@@ -46,6 +47,10 @@ constexpr uint32_t kRefereeFeatures = (1u << 0)   // SWITCH_TO_SET
                                       | (1u << 16);  // PLACE_BALL: kick-off, penalty kick, shoot-out and all other set plays
 
 constexpr float kRobotRadius = 0.25f;
+
+// TEAM_MESSAGE_PORT_BASE and TEAM_MESSAGE_MAX_SIZE in game_controller_msgs.
+constexpr uint16_t kTeamMessagePortBase = 10000;
+constexpr size_t kTeamMessageMaxSize = 512;
 
 // Distance between robots placed next to each other for a penalty (as the automatic referee).
 constexpr float kPenaltyPlacementDistance = 0.5f;
@@ -729,24 +734,16 @@ void GameControllerBridge::startSender() {
         lastAlive_ = {};
     }
     if (statusSocket_ < 0) {
-        statusSocket_ = socket(AF_INET, SOCK_DGRAM, 0);
-        int reuse = 1;
-        setsockopt(statusSocket_, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
-        // A short timeout lets the receiver notice when it has to stop.
-        timeval timeout{0, 200000};
-        setsockopt(statusSocket_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-        sockaddr_in local{};
-        local.sin_family = AF_INET;
-        local.sin_port = htons(GAMECONTROLLER_RETURN_PORT);
-        local.sin_addr.s_addr = htonl(INADDR_ANY);
-        if (bind(statusSocket_, reinterpret_cast<sockaddr*>(&local), sizeof(local)) != 0) {
-            std::cerr << "GameController: cannot receive status messages, port " << GAMECONTROLLER_RETURN_PORT
-                      << " is in use (is another GameController running?)" << std::endl;
-            close(statusSocket_);
-            statusSocket_ = -1;
+        statusSocket_ = openReceiver(GAMECONTROLLER_RETURN_PORT, "status messages");
+    }
+    // Team messages are broadcast on the port of each team (TEAM_MESSAGE_PORT_BASE + team number).
+    const std::array<uint8_t, 2> teamNumbers{kHomeTeamNumber, kAwayTeamNumber};
+    for (int side = 0; side < 2; ++side) {
+        if (teamSockets_[side] < 0) {
+            teamSockets_[side] = openReceiver(kTeamMessagePortBase + teamNumbers[side], "team messages");
         }
     }
-    if (statusSocket_ >= 0) {
+    if (statusSocket_ >= 0 || teamSockets_[0] >= 0 || teamSockets_[1] >= 0) {
         receiverRunning_ = true;
         receiver_ = std::thread(&GameControllerBridge::receiverLoop, this);
     }
@@ -800,37 +797,91 @@ void GameControllerBridge::senderLoop() {
     }
 }
 
+int GameControllerBridge::openReceiver(uint16_t port, const char* what) {
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    int reuse = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+    sockaddr_in local{};
+    local.sin_family = AF_INET;
+    local.sin_port = htons(port);
+    local.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(fd, reinterpret_cast<sockaddr*>(&local), sizeof(local)) != 0) {
+        std::cerr << "GameController: cannot receive " << what << ", port " << port << " is in use (is another GameController running?)"
+                  << std::endl;
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
+void GameControllerBridge::receiverLoop() {
+    // One more byte than a team message may have, to recognize the ones that are too long.
+    std::vector<uint8_t> buffer(kTeamMessageMaxSize + 1);
+    while (receiverRunning_) {
+        std::array<pollfd, 3> fds{};
+        nfds_t count = 0;
+        for (int fd : {statusSocket_, teamSockets_[0], teamSockets_[1]}) {
+            if (fd >= 0) {
+                fds[count++] = pollfd{fd, POLLIN, 0};
+            }
+        }
+        // A short timeout lets the receiver notice when it has to stop.
+        if (poll(fds.data(), count, 200) <= 0) {
+            continue;
+        }
+        for (nfds_t i = 0; i < count; ++i) {
+            if (!(fds[i].revents & POLLIN)) {
+                continue;
+            }
+            ssize_t length = recv(fds[i].fd, buffer.data(), buffer.size(), 0);
+            if (length < 0) {
+                continue;
+            }
+            if (fds[i].fd == statusSocket_) {
+                receiveStatusMessage(buffer.data(), static_cast<size_t>(length));
+            } else {
+                receiveTeamMessage(fds[i].fd == teamSockets_[0] ? Side::home : Side::away, static_cast<size_t>(length));
+            }
+        }
+    }
+}
+
+// As the runtime of the GameController: every team message is applied as a network action, which
+// uses up the message budget of the team during Ready, Set and Playing, and a message that is too
+// long is illegal communication.
+void GameControllerBridge::receiveTeamMessage(Side side, size_t length) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (gameController_) {
+        gc_apply(gameController_, gc_action_team_message(side, length > kTeamMessageMaxSize), ActionSource::network);
+    }
+}
+
 // Accepts the status messages that the official GameController accepts (StatusMessage::try_from
 // in game_controller_msgs) and records when each player was last heard of.
-void GameControllerBridge::receiverLoop() {
-    uint8_t buffer[1024];
-    while (receiverRunning_) {
-        ssize_t length = recv(statusSocket_, buffer, sizeof(buffer), 0);
-        if (length != static_cast<ssize_t>(sizeof(RoboCupGameControlReturnData))) {
-            continue;
-        }
-        RoboCupGameControlReturnData message;
-        std::memcpy(&message, buffer, sizeof(message));
-        if (std::memcmp(message.header, GAMECONTROLLER_RETURN_STRUCT_HEADER, 4) != 0
-            || message.version != GAMECONTROLLER_RETURN_STRUCT_VERSION || message.playerNum < 1
-            || message.playerNum > MAX_NUM_PLAYERS || message.fallen > 1) {
-            continue;
-        }
-        bool finite = !std::isnan(message.ballAge);
-        for (float value : {message.pose[0], message.pose[1], message.pose[2], message.ball[0], message.ball[1]}) {
-            finite = finite && !std::isnan(value);
-        }
-        if (!finite) {
-            continue;
-        }
-        // The side is found from the team number, the home team first (Params::get_side).
-        int side = message.teamNum == kHomeTeamNumber ? 0 : message.teamNum == kAwayTeamNumber ? 1 : -1;
-        if (side < 0) {
-            continue;
-        }
-        std::lock_guard<std::mutex> lock(aliveMutex_);
-        lastAlive_[side][message.playerNum - 1] = std::chrono::steady_clock::now();
+void GameControllerBridge::receiveStatusMessage(const uint8_t* buffer, size_t length) {
+    if (length != sizeof(RoboCupGameControlReturnData)) {
+        return;
     }
+    RoboCupGameControlReturnData message;
+    std::memcpy(&message, buffer, sizeof(message));
+    if (std::memcmp(message.header, GAMECONTROLLER_RETURN_STRUCT_HEADER, 4) != 0 || message.version != GAMECONTROLLER_RETURN_STRUCT_VERSION
+        || message.playerNum < 1 || message.playerNum > MAX_NUM_PLAYERS || message.fallen > 1) {
+        return;
+    }
+    bool finite = !std::isnan(message.ballAge);
+    for (float value : {message.pose[0], message.pose[1], message.pose[2], message.ball[0], message.ball[1]}) {
+        finite = finite && !std::isnan(value);
+    }
+    if (!finite) {
+        return;
+    }
+    // The side is found from the team number, the home team first (Params::get_side).
+    int side = message.teamNum == kHomeTeamNumber ? 0 : message.teamNum == kAwayTeamNumber ? 1 : -1;
+    if (side < 0) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(aliveMutex_);
+    lastAlive_[side][message.playerNum - 1] = std::chrono::steady_clock::now();
 }
 
 std::array<std::array<int, MAX_NUM_PLAYERS>, 2> GameControllerBridge::connectionStatus() {
