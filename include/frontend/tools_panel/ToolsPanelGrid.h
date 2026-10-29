@@ -27,6 +27,7 @@
 #include "sensors/Joint.h"
 #include "sensors/Pose.h"
 #include "sensors/Sensor.h"
+#include "tools/GameControllerTool.h"
 #include "tools/Image.h"
 #include "tools/Plot.h"
 #include "tools/Terminal.h"
@@ -311,6 +312,10 @@ class GridCell : public QWidget {
                     }
                     break;
                 }
+
+                case ToolType::GAME_CONTROLLER:
+                    newTool = new GameControllerTool(this);
+                    break;
 
                 case ToolType::NONE:
                     newTool = new Tool(ToolType::NONE, this);

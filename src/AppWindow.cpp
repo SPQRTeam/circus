@@ -21,7 +21,8 @@
 
 #include "CircusNetwork.h"
 #include "Constants.h"
-#include "GameController.h"
+#include "CommandConsole.h"
+#include "GameControllerBridge.h"
 #include "MujocoContext.h"
 #include "RobotManager.h"
 #include "SceneParser.h"
@@ -72,6 +73,10 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
     contentWidget->setLayout(contentLayout);
     mainLayout->addWidget(contentWidget);
 
+    toolsPanelSpace = new QWidget(this);
+    mainLayout->addWidget(toolsPanelSpace);
+    centralWidget->installEventFilter(this);
+
     if (!scenePath) {
         viewportPlaceholder = new QLabel("Circus\nSPQR Team Simulator", this);
         viewportPlaceholder->setAlignment(Qt::AlignCenter);
@@ -90,7 +95,7 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
         toolsPanel = nullptr;
     }
     toolsPanel = new ToolsPanel(true, *mujContext, this);
-    mainLayout->addWidget(toolsPanel);
+    attachToolsPanel();
 
     // Connect ToolsPanel signals
     connect(toolsPanel, &ToolsPanel::openRequested, this, &AppWindow::openScene);
@@ -111,6 +116,35 @@ AppWindow::AppWindow(int& argc, char** argv) : QMainWindow() {
         QString fileArg = QString::fromLocal8Bit(scenePath->c_str());
         loadScene(fileArg);
     }
+}
+
+// The tools panel is not part of the layout: it lies over the bottom of the window, so opening it
+// covers the 3D view instead of shrinking it. The layout only keeps room for its collapsed header.
+void AppWindow::attachToolsPanel() {
+    toolsPanel->setParent(centralWidget());
+    // The viewport is a native window, which is drawn above every non-native sibling.
+    toolsPanel->setAttribute(Qt::WA_NativeWindow);
+    toolsPanel->installEventFilter(this);
+    toolsPanel->show();
+    placeToolsPanel();
+}
+
+void AppWindow::placeToolsPanel() {
+    if (!toolsPanel || !centralWidget()) {
+        return;
+    }
+    QWidget* central = centralWidget();
+    toolsPanelSpace->setFixedHeight(toolsPanel->collapsedHeight());
+    int height = toolsPanel->height();
+    toolsPanel->setGeometry(0, central->height() - height, central->width(), height);
+    toolsPanel->raise();
+}
+
+bool AppWindow::eventFilter(QObject* watched, QEvent* event) {
+    if ((watched == centralWidget() || watched == toolsPanel) && event->type() == QEvent::Resize) {
+        placeToolsPanel();
+    }
+    return QMainWindow::eventFilter(watched, event);
 }
 
 void AppWindow::openScene() {
@@ -155,9 +189,11 @@ void AppWindow::loadScene(const QString& yaml_file) {
         viewport = std::make_unique<SimulationViewport>(*mujContext);
         viewport->setCamerasEnabled(publishImages_);
 
-        // Configure and bind GameController
-        GameController::instance().configure(parser.getSceneInfo().simulationConfig);
-        GameController::instance().bindMujoco(mujContext.get());
+        // Configure and bind the official GameController and the sidebar console
+        GameControllerBridge::instance().configure(parser.getSceneInfo().simulationConfig);
+        GameControllerBridge::instance().bindMujoco(mujContext.get());
+        CommandConsole::instance().configure(parser.getSceneInfo().simulationConfig);
+        CommandConsole::instance().bindMujoco(mujContext.get());
 
         // Recreate GameControllerPanelHeaderContainer
         if (gameControllerPanelHeaderContainer) {
@@ -167,7 +203,7 @@ void AppWindow::loadScene(const QString& yaml_file) {
         gameControllerPanelHeaderContainer = new GameControllerPanelHeaderContainer(this);
         mainLayout->insertWidget(0, gameControllerPanelHeaderContainer);
 
-        // Recreate GameControllerPanelColumnContainer with updated GameController
+        // Recreate GameControllerPanelColumnContainer with the updated console
         if (gameControllerPanelColumnContainer) {
             contentLayout->removeWidget(gameControllerPanelColumnContainer);
             gameControllerPanelColumnContainer->deleteLater();
@@ -191,9 +227,9 @@ void AppWindow::loadScene(const QString& yaml_file) {
         contentLayout->setSpacing(5);  // Space between GameControllerPanelColumnContainer and viewport
 
         toolsPanel = new ToolsPanel(false, *mujContext, this);
-        mainLayout->addWidget(toolsPanel);
+        attachToolsPanel();
 
-        mainLayout->setSpacing(5);  // Space between viewport area and toolsPanel
+        mainLayout->setSpacing(5);  // Space between viewport area and the room of the toolsPanel
 
         // Reconnect ToolsPanel signals
         connect(toolsPanel, &ToolsPanel::openRequested, this, &AppWindow::openScene);

@@ -8,8 +8,14 @@
 #include <QTimer>
 #include <QWidget>
 #include <iostream>
+#include <map>
+#include <optional>
 
-#include "GameController.h"
+#include <GameController.h>
+#include <RoboCupGameControlData.h>
+
+#include "CommandConsole.h"
+#include "GameControllerActions.h"
 
 namespace spqr {
 
@@ -167,158 +173,131 @@ class GameControllerPanelHeader : public QWidget {
 
     private slots:
         void updateDisplay() {
-            GameController& gc = GameController::instance();
+            simTimeLabel_->setText(formatTime(static_cast<int>(GameControllerBridge::instance().simTime())));
 
-            // Update sim time
-            double simTime = gc.getSimTime();
-            int simTimeMinutes = static_cast<int>(simTime) / 60;
-            int simTimeSeconds = static_cast<int>(simTime) % 60;
-            simTimeLabel_->setText(QString("%1:%2").arg(simTimeMinutes, 2, 10, QChar('0')).arg(simTimeSeconds, 2, 10, QChar('0')));
-
-            // Update game time (countdown from playing duration to 0)
-            double gameTime = gc.getGameElapsedTime();
-            double gameRemainingTime = gc.getGameDuration() - gameTime;
-            if (gameRemainingTime < 0)
-                gameRemainingTime = 0.0;
-            int gameTimeMinutes = static_cast<int>(gameRemainingTime) / 60;
-            int gameTimeSeconds = static_cast<int>(gameRemainingTime) % 60;
-            gameTimeLabel_->setText(QString("%1:%2").arg(gameTimeMinutes, 2, 10, QChar('0')).arg(gameTimeSeconds, 2, 10, QChar('0')));
-
-            // Update current phase time (remaining time counting down)
-            GamePhase phase = gc.getCurrentPhase();
-            double phaseElapsedTime = gc.getCurrentPhaseElapsedTime();
-            double phaseRemainingTime = 0.0;
-
-            // Hide phase time during PLAYING phase
-            bool showPhaseTime = (phase != PLAYING);
-            phaseTimeSpacer_->setVisible(showPhaseTime);
-            phaseTimeTitleLabel_->setVisible(showPhaseTime);
-            gamePhaseTimeLabel_->setVisible(showPhaseTime);
-
-            if (showPhaseTime) {
-                switch (phase) {
-                    case INITIAL:
-                        phaseRemainingTime = gc.getInitialPhaseDuration() - phaseElapsedTime;
-                        break;
-                    case READY:
-                        phaseRemainingTime = gc.getReadyPhaseDuration() - phaseElapsedTime;
-                        break;
-                    case SET:
-                        phaseRemainingTime = gc.getSetPhaseDuration() - phaseElapsedTime;
-                        break;
-                    case PLAYING:
-                    case FINISH:
-                        phaseRemainingTime = 0.0;
-                        break;
-                }
-
-                // Ensure remaining time is not negative
-                if (phaseRemainingTime < 0)
-                    phaseRemainingTime = 0.0;
-
-                int phaseMinutes = static_cast<int>(phaseRemainingTime) / 60;
-                int phaseSeconds = static_cast<int>(phaseRemainingTime) % 60;
-                gamePhaseTimeLabel_->setText(QString("%1:%2").arg(phaseMinutes, 2, 10, QChar('0')).arg(phaseSeconds, 2, 10, QChar('0')));
+            RoboCupGameControlData data{};
+            if (!GameControllerBridge::instance().readControlData(data, true)) {
+                gameTimeLabel_->setText("--:--");
+                gamePhaseLabel_->setText("NOT RUNNING");
+                updatePhaseButton(STATE_INITIAL, false, false);
+                return;
             }
 
-            // Update sub-phase display (only visible when not BALLFREE)
-            GameSubPhase subPhase = gc.getCurrentSubPhase();
-            bool showSubPhase = (subPhase != BALLFREE);
+            gameTimeLabel_->setText(formatTime(data.secsRemaining));
+            gamePhaseTimeLabel_->setText(formatTime(data.secondaryTime));
 
-            subPhaseTitleLabel_->setVisible(showSubPhase);
-            subPhaseLabel_->setVisible(showSubPhase);
-            subPhaseTimeTitleLabel_->setVisible(showSubPhase);
-            subPhaseTimeLabel_->setVisible(showSubPhase);
+            bool shootout = data.gamePhase == GAME_PHASE_PENALTY_SHOOT_OUT;
+            gamePhaseLabel_->setText(QString::fromStdString(stateName(data.state)) + (shootout ? " (SHOOTOUT)" : ""));
 
-            if (showSubPhase) {
-                subPhaseLabel_->setText(QString::fromStdString(gameSubPhaseToString(subPhase)));
+            subPhaseLabel_->setText(QString::fromStdString(setPlayName(data.setPlay)));
+            subPhaseTimeLabel_->setText(kickingTeamName(data));
 
-                // Set color based on team
-                std::string subPhaseTeam = gc.getCurrentSubPhaseTeam();
-                QString color = "#ffffff";  // White by default
-                if (subPhaseTeam == "red") {
-                    color = "#993546";
-                } else if (subPhaseTeam == "blue") {
-                    color = "#108296";
-                }
-                subPhaseLabel_->setStyleSheet(getLabelValueStyle(color));
+            redScoreLabel_->setText(QString::number(data.teams[0].score));
+            blueScoreLabel_->setText(QString::number(data.teams[1].score));
 
-                // Calculate sub-phase remaining time (KICKOFF has different duration)
-                double subPhaseElapsedTime = gc.getCurrentSubPhaseElapsedTime();
-                double subPhaseDuration = (subPhase == KICKOFF) ? gc.getKickOffSubPhaseDuration() : gc.getSubPhaseDuration();
-                double subPhaseRemainingTime = subPhaseDuration - subPhaseElapsedTime;
-                if (subPhaseRemainingTime < 0)
-                    subPhaseRemainingTime = 0.0;
-
-                int subPhaseMinutes = static_cast<int>(subPhaseRemainingTime) / 60;
-                int subPhaseSeconds = static_cast<int>(subPhaseRemainingTime) % 60;
-                subPhaseTimeLabel_->setText(QString("%1:%2").arg(subPhaseMinutes, 2, 10, QChar('0')).arg(subPhaseSeconds, 2, 10, QChar('0')));
-            }
-
-            // Update score
-            auto [redScore, blueScore] = gc.getScore();
-            redScoreLabel_->setText(QString::number(redScore));
-            blueScoreLabel_->setText(QString::number(blueScore));
-
-            // Update game phase label and button (phase already fetched above)
-            gamePhaseLabel_->setText(QString::fromStdString(gamePhaseToString(phase)));
-            updatePhaseButton(phase);
+            updatePhaseButton(data.state, shootout, true);
         }
 
         void onPhaseButtonClicked() {
-            GameController& gc = GameController::instance();
-            GamePhase currentPhase = gc.getCurrentPhase();
-
-            // Advance to next phase: Initial -> Ready -> Set -> Playing
-            switch (currentPhase) {
-                case INITIAL:
-                    gc.handleCommand("ready");
-                    break;
-                case READY:
-                    gc.handleCommand("set");
-                    break;
-                case SET:
-                    gc.handleCommand("playing");
-                    break;
-                case PLAYING:
-                    gc.handleCommand("finish");
-                    break;
-                case FINISH:
-                    // Do nothing
-                    break;
+            RoboCupGameControlData data{};
+            if (!GameControllerBridge::instance().readControlData(data, true)) {
+                return;
+            }
+            std::optional<GameControllerAction> action = phaseAction(data.state, data.gamePhase == GAME_PHASE_PENALTY_SHOOT_OUT);
+            if (action) {
+                action->apply();
             }
         }
 
     private:
-        void updatePhaseButton(GamePhase phase) {
-            // Update button label based on current phase
-            // Button shows the NEXT phase to transition to
-            switch (phase) {
-                case INITIAL:
-                    phaseButton_->setText("Ready");
-                    phaseButton_->setEnabled(true);
-                    phaseButton_->setStyleSheet(getButtonStyle(true));
-                    break;
-                case READY:
-                    phaseButton_->setText("Set");
-                    phaseButton_->setEnabled(true);
-                    phaseButton_->setStyleSheet(getButtonStyle(true));
-                    break;
-                case SET:
-                    phaseButton_->setText("Playing");
-                    phaseButton_->setEnabled(true);
-                    phaseButton_->setStyleSheet(getButtonStyle(true));
-                    break;
-                case PLAYING:
-                    phaseButton_->setText("Finish");
-                    phaseButton_->setEnabled(true);
-                    phaseButton_->setStyleSheet(getButtonStyle(true));
-                    break;
-                case FINISH:
-                    phaseButton_->setText("Finished");
-                    phaseButton_->setEnabled(false);
-                    phaseButton_->setStyleSheet(getButtonStyle(false));
+        static QString formatTime(int seconds) {
+            if (seconds < 0) {
+                seconds = 0;
             }
+            return QString("%1:%2").arg(seconds / 60, 2, 10, QChar('0')).arg(seconds % 60, 2, 10, QChar('0'));
+        }
+
+        static std::string stateName(uint8_t state) {
+            switch (state) {
+                case STATE_INITIAL:
+                    return "INITIAL";
+                case STATE_READY:
+                    return "READY";
+                case STATE_SET:
+                    return "SET";
+                case STATE_PLAYING:
+                    return "PLAYING";
+                case STATE_FINISHED:
+                    return "FINISHED";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
+        static std::string setPlayName(uint8_t setPlay) {
+            switch (setPlay) {
+                case SET_PLAY_DIRECT_FREE_KICK:
+                    return "Direct free kick";
+                case SET_PLAY_INDIRECT_FREE_KICK:
+                    return "Indirect free kick";
+                case SET_PLAY_PENALTY_KICK:
+                    return "Penalty kick";
+                case SET_PLAY_THROW_IN:
+                    return "Throw-in";
+                case SET_PLAY_GOAL_KICK:
+                    return "Goal kick";
+                case SET_PLAY_CORNER_KICK:
+                    return "Corner kick";
+                default:
+                    return "-";
+            }
+        }
+
+        static QString kickingTeamName(const RoboCupGameControlData& data) {
+            if (data.kickingTeam == KICKING_TEAM_NONE) {
+                return "-";
+            }
+            return data.teams[0].teamNumber == data.kickingTeam ? "SPQR" : "Opponent";
+        }
+
+        // The action that moves the game on from the given state, if any.
+        static std::optional<GameControllerAction> phaseAction(uint8_t state, bool shootout) {
+            switch (state) {
+                case STATE_INITIAL:
+                    return gcaction::startSetPlay(std::nullopt, RoboCup::SetPlay::kickOff);
+                case STATE_READY:
+                    return shootout ? gcaction::waitForPenaltyShot() : gcaction::waitForSetPlay();
+                case STATE_SET:
+                    return shootout ? gcaction::freePenaltyShot() : gcaction::freeSetPlay();
+                case STATE_PLAYING:
+                    return shootout ? gcaction::finishPenaltyShot() : gcaction::finishHalf();
+                default:
+                    return std::nullopt;
+            }
+        }
+
+        // The button shows the next state to move to, and is enabled only if that action is legal.
+        void updatePhaseButton(uint8_t state, bool shootout, bool connected) {
+            static const std::map<uint8_t, std::string> labels = {
+                {STATE_INITIAL, "Ready"},
+                {STATE_READY, "Set"},
+                {STATE_SET, "Playing"},
+                {STATE_PLAYING, "Finish"},
+            };
+            auto label = labels.find(state);
+            if (!connected || label == labels.end()) {
+                phaseButton_->setText("Finished");
+                phaseButton_->setEnabled(false);
+                phaseButton_->setStyleSheet(getButtonStyle(false));
+                return;
+            }
+
+            std::optional<GameControllerAction> action = phaseAction(state, shootout);
+            bool legal = action && action->isLegal();
+
+            phaseButton_->setText(QString::fromStdString(label->second));
+            phaseButton_->setEnabled(legal);
+            phaseButton_->setStyleSheet(getButtonStyle(legal));
         }
 
         QString getLabelTitleStyle() {
