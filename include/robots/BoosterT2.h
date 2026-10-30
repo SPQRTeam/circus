@@ -130,8 +130,10 @@ class BoosterT2 : public Robot {
 
         void bindMujoco(MujocoContext* mujCtx, std::string connectMode_) override {
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
-            headPose = new GroundRelativePosition(mujCtx->model, mujCtx->data, (name + "_head_rgb_cam_site").c_str(),
-                                                  GroundRelativePosition::TargetType::Site, pose);
+            // The head pose is that of the head link, as on the real T2 (booster-motion publishes
+            // head_pitch_link): maximus adds the camera-to-head extrinsics on top of it.
+            headPose = new GroundRelativePosition(mujCtx->model, mujCtx->data, (name + "_head_pitch_link").c_str(),
+                                                  GroundRelativePosition::TargetType::Body, pose);
             imu = new Imu(mujCtx->model, mujCtx->data, (name + "_linear-acceleration").c_str(), (name + "_angular-velocity").c_str());
             joints = new Joints(mujCtx->model, mujCtx->data, joint_map);
 
