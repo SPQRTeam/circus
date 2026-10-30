@@ -247,8 +247,8 @@ string SceneParser::buildMuJoCoXml() {
     xml_node texture = asset.append_child("texture");
     texture.append_attribute("type") = "skybox";
     texture.append_attribute("builtin") = "gradient";
-    texture.append_attribute("rgb1") = "0.3 0.5 0.7";
-    texture.append_attribute("rgb2") = "0 0 0";
+    texture.append_attribute("rgb1") = "1 1 1";
+    texture.append_attribute("rgb2") = "1 1 1";
     texture.append_attribute("width") = "512";
     texture.append_attribute("height") = "512";
 

@@ -58,10 +58,10 @@ void FieldGenerator::addFieldAssets(pugi::xml_node& assetNode, const FieldConfig
     gridTex.append_attribute("name") = "grid_tex";
     gridTex.append_attribute("type") = "2d";
     gridTex.append_attribute("builtin") = "checker";
-    gridTex.append_attribute("rgb1") = "0.2 0.2 0.2";
-    gridTex.append_attribute("rgb2") = "0.25 0.25 0.25";
-    gridTex.append_attribute("width") = "512";
-    gridTex.append_attribute("height") = "512";
+    gridTex.append_attribute("rgb1") = "0.8 0.8 0.8";
+    gridTex.append_attribute("rgb2") = "0.9 0.9 0.9";
+    gridTex.append_attribute("width") = "1000";
+    gridTex.append_attribute("height") = "1000";
 
     pugi::xml_node gridMat = assetNode.append_child("material");
     gridMat.append_attribute("name") = "grid_mat";
