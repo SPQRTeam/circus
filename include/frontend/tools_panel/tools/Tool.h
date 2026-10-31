@@ -22,6 +22,7 @@ enum ToolType {
     PLOT,
     IMAGE,
     TERMINAL,
+    GAME_CONTROLLER,
 };
 
 class Tool : public QWidget {

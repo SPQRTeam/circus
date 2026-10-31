@@ -23,7 +23,7 @@
     </default>
 
     <asset>
-        <material name="Booster-T2_light" rgba="0.847 0.847 0.847 1"/>
+        <material name="Booster-T2_semi_dark" rgba="0.4 0.4 0.4 1"/>
         <material name="Booster-T2_dark" rgba="0.2078 0.2078 0.2078 1"/>
         <material name="Booster-T2_white" rgba="1 1 1 1"/>
         <material name="Booster-T2_transparent" rgba="0.5 0.5 0.5 1"/>

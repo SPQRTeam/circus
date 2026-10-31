@@ -141,6 +141,39 @@ else()
   endif()
 endif()
 
+# -------------------- GameController (official C API, built from the external/GameController submodule)
+set(GC_ROOT "${CMAKE_SOURCE_DIR}/../GameController")
+if(APPLE)
+  set(GC_API_LIBRARY "${GC_ROOT}/target/release/libgame_controller_api.dylib")
+else()
+  set(GC_API_LIBRARY "${GC_ROOT}/target/release/libgame_controller_api.so")
+endif()
+
+find_program(CARGO_EXECUTABLE cargo REQUIRED)
+file(GLOB_RECURSE GC_API_SOURCES CONFIGURE_DEPENDS
+  "${GC_ROOT}/game_controller_api/src/*.rs"
+  "${GC_ROOT}/game_controller_core/src/*.rs"
+  "${GC_ROOT}/game_controller_msgs/src/*.rs"
+  "${GC_ROOT}/game_controller_autoreferee/src/*.rs"
+)
+add_custom_command(
+  OUTPUT "${GC_API_LIBRARY}"
+  COMMAND ${CARGO_EXECUTABLE} build --release --package game_controller_api
+  WORKING_DIRECTORY "${GC_ROOT}"
+  DEPENDS ${GC_API_SOURCES}
+  COMMENT "Building GameController C API"
+  VERBATIM
+)
+add_custom_target(game_controller_api_build DEPENDS "${GC_API_LIBRARY}")
+
+add_library(game_controller_api SHARED IMPORTED GLOBAL)
+set_target_properties(game_controller_api PROPERTIES
+  IMPORTED_LOCATION "${GC_API_LIBRARY}"
+  INTERFACE_INCLUDE_DIRECTORIES "${GC_ROOT}/game_controller_api/headers;${GC_ROOT}/game_controller_msgs/headers"
+)
+add_dependencies(game_controller_api game_controller_api_build)
+add_compile_definitions(GC_CONFIG_DIR="${GC_ROOT}/config")
+
 # ======================= CIRCUS LIBRARY ============================================================
 
 # -------------------- Collect sources and split into: core, main, bindings
@@ -193,6 +226,7 @@ set(_EXTRA_LIBS
   ${_PUGI_TGT}
   CURL::libcurl
   nlohmann_json::nlohmann_json
+  game_controller_api
 )
 
 # Add util library for PTY support on Linux
