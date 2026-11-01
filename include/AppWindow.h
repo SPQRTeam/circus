@@ -38,6 +38,9 @@ class AppWindow : public QMainWindow {
 
     private:
         void loadScene(const QString& yaml_file);
+        void attachToolsPanel();
+        void placeToolsPanel();
+        bool eventFilter(QObject* watched, QEvent* event) override;
         static void signalHandler(int signal);
 
         static void cleanupSharedMemory();
@@ -49,7 +52,9 @@ class AppWindow : public QMainWindow {
 
         GameControllerPanelColumnContainer* gameControllerPanelColumnContainer = nullptr;
         GameControllerPanelHeaderContainer* gameControllerPanelHeaderContainer = nullptr;
+
         ToolsPanel* toolsPanel = nullptr;
+        QWidget* toolsPanelSpace = nullptr;  // room kept in the layout for the collapsed tools panel
 
         std::unique_ptr<MujocoContext> mujContext;
         std::unique_ptr<SimulationViewport> viewport;

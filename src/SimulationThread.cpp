@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "GameController.h"
+#include "GameControllerBridge.h"
 #include "RobotManager.h"
 
 namespace spqr {
@@ -87,7 +87,7 @@ void SimulationThread::run() {
                 RobotManager::instance().applyCommands();
                 mj_step2(model_, data_);
                 RobotManager::instance().update();
-                GameController::instance().update();
+                GameControllerBridge::instance().update();
 
                 std::memset(data_->xfrc_applied, 0, model_->nbody * 6 * sizeof(mjtNum));
 

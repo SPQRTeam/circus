@@ -18,6 +18,8 @@ libmujoco = "==3.3.3"
 msgpack-cxx = "==7.0.0"
 libboost-devel = "==1.88.0"
 cmake = ">=3.27,<4"
+rust = "*"
+libclang = "*"
 
 [target.linux-64.dependencies]
 gcc_linux-64 = ">=14.3.0,<15"

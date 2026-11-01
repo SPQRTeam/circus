@@ -7,7 +7,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "GameController.h"
+#include "CommandConsole.h"
 
 namespace spqr {
 
@@ -159,8 +159,8 @@ class ConsoleWidget : public QWidget {
             }
 
             std::string cmdStr = command.toStdString();
-            if (GameController::instance().isCommandValid(cmdStr)) {
-                std::string res = GameController::instance().handleCommand(cmdStr);
+            if (CommandConsole::instance().isCommandValid(cmdStr)) {
+                std::string res = CommandConsole::instance().handleCommand(cmdStr);
                 outputArea_->append(QString("%1").arg(QString::fromStdString(res)));
             } else {
                 outputArea_->append(QString("Unknown command: %1").arg(command));
@@ -173,7 +173,7 @@ class ConsoleWidget : public QWidget {
                                   "  clear   - Clear the console output\n"
                                   "  help    - Show this help message\n";
 
-            auto commands = GameController::instance().availableCommands();
+            auto commands = CommandConsole::instance().availableCommands();
             for (const auto& [cmd, desc] : commands) {
                 helpMsg += "  " + cmd + " - " + desc + "\n";
             }

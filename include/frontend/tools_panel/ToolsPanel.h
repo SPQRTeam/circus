@@ -92,6 +92,11 @@ class ToolsPanel : public QWidget {
             header_->setSimulationPlaying(playing);
         }
 
+        // Height of the panel when only its header is shown.
+        int collapsedHeight() const {
+            return header_->height() + 5;
+        }
+
     protected:
         void moveEvent(QMoveEvent* event) override {
             QWidget::moveEvent(event);
@@ -218,6 +223,7 @@ class ToolsPanel : public QWidget {
 
             QMap<QString, ToolType> streams;
             streams.insert("Select stream", ToolType::NONE);
+            streams.insert("Game Controller", ToolType::GAME_CONTROLLER);
             for (std::shared_ptr<Team> team : TeamManager::instance().getTeams()) {
                 std::string team_name = team->name;
                 for (std::shared_ptr<Robot> robot : team->robots) {
