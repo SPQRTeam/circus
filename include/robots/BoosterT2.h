@@ -51,6 +51,7 @@ struct BoosterT2SharedState {
         OracleData oracle;
         GroundRelativePositionData headPose;
         CameraInfoData cameraInfo;
+        double simTime;
 };
 
 // Identifies this exact state layout. Shared memory carries no schema, so a
@@ -129,6 +130,7 @@ class BoosterT2 : public Robot {
                         {JointValue::ANKLE_RIGHT_ROLL, name + "_right_ankle_roll_joint"}} {}
 
         void bindMujoco(MujocoContext* mujCtx, std::string connectMode_) override {
+            mujData_ = mujCtx->data;
             pose = new Pose(mujCtx->model, mujCtx->data, (name + "_position").c_str(), (name + "_orientation").c_str());
             // The head pose is that of the head link, as on the real T2 (booster-motion publishes
             // head_pitch_link): maximus adds the camera-to-head extrinsics on top of it.
@@ -245,7 +247,7 @@ class BoosterT2 : public Robot {
 
         void sendMessageSHM(bool publishImages) override {
             const BoosterT2SharedState state{pose->toSharedState(),   imu->toSharedState(),      joints->toSharedState<kBoosterT2JointCount>(),
-                                             oracle->toSharedState(), headPose->toSharedState(), rgbCameraInfo->toSharedState()};
+                                             oracle->toSharedState(), headPose->toSharedState(), rgbCameraInfo->toSharedState(), mujData_->time};
             state_writer_.write(&state, sizeof(state));
 
             // Camera frames don't change between physics substeps -- rendering
@@ -292,6 +294,7 @@ class BoosterT2 : public Robot {
         ~BoosterT2() = default;
 
     private:
+        const mjData* mujData_ = nullptr;
         std::map<JointValue, std::string> joint_map;
         std::unordered_map<JointValue, mjtNum> latestTorques;
 
