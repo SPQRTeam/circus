@@ -166,8 +166,14 @@ void GameControllerBridge::createGameController() {
 
     Side kickOffSide = config_->game.first_kickoff_team == homeTeam->name ? Side::home : Side::away;
 
-    params_ = gc_params_new(reinterpret_cast<const uint8_t*>(yaml.data()), yaml.size(), &home, &away, kickOffSide, SideMapping::homeDefendsLeftGoal,
-                            test);
+    CompetitionParams* competitionParams = gc_competition_params_new(reinterpret_cast<const uint8_t*>(yaml.data()), yaml.size());
+    if (!competitionParams) {
+        std::cerr << "GameController: " << gc_last_error() << std::endl;
+        return;
+    }
+
+    params_ = gc_params_new(competitionParams, &home, &away, kickOffSide, SideMapping::homeDefendsLeftGoal, test);
+    gc_competition_params_destroy(competitionParams);  // gc_params_new copies them
     if (!params_) {
         std::cerr << "GameController: " << gc_last_error() << std::endl;
         return;
