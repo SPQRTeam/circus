@@ -24,8 +24,9 @@
 
     <asset>
         <!-- The real T2's colors. The visor, hands, neck, trunk bottom, back buttons and port, knee plates and calf
-             pads are pieces of their link's mesh, 1.5 mm out from it (the buttons and port 0.3 mm, inside their gaps),
-             so they can have their own color. The torso is the shell's material in pearl white, as on the real T2,
+             pads are cut out of their link's mesh into meshes of their own, so they can have their own color. The neck
+             and the trunk bottom are the parts they are on the real T2, cut through the wall along their seams, and the
+             rest of Booster's meshes is as it was. The torso is the shell's material in pearl white, as on the real T2,
              wherever SceneParser doesn't paint it with the team color. -->
         <material name="Booster-T2_light" rgba="0.25 0.24 0.235 1" specular="0.4" shininess="0.4"/>
         <material name="Booster-T2_pearl" rgba="0.85 0.85 0.86 1" specular="0.4" shininess="0.4"/>
