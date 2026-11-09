@@ -13,10 +13,16 @@
             <inertial pos="0.0500099 -0.000462952 0.0745613" quat="0.999961 0.00554327 -0.00557878 -0.00399809" mass="9.7147" diaginertia="0.0916871 0.066081 0.044497" />
             <freejoint />
             <site name="imu" pos="0 0 0" />
-            <geom class="Booster-T2_visual" mesh="Booster-T2_trunk" material="Booster-T2_light" />
+            <geom class="Booster-T2_visual" mesh="Booster-T2_trunk" material="Booster-T2_pearl" />
             <geom name="trunk_collision" class="Booster-T2_collision" type="box" size="0.08 0.1 0.125" pos="0.06 0 0.09" />
-            <!-- Same attributes as the visual class, spelled out so SceneParser doesn't paint the logo with the team color -->
+            <!-- Same attributes as the visual class, spelled out so SceneParser doesn't paint them with the team color:
+                 the logo, and the parts that are shell-colored on the real T2: the neck with the plate round it on the
+                 shoulders, the trunk below the shell's seam down to the waist joint, and the buttons and Ethernet port
+                 on the back. -->
             <geom type="mesh" contype="0" conaffinity="0" group="2" density="0" mesh="Booster-T2_logo" material="Booster-T2_dark" />
+            <geom type="mesh" contype="0" conaffinity="0" group="2" density="0" mesh="Booster-T2_neck" material="Booster-T2_light" />
+            <geom type="mesh" contype="0" conaffinity="0" group="2" density="0" mesh="Booster-T2_trunk_bottom" material="Booster-T2_light" />
+            <geom type="mesh" contype="0" conaffinity="0" group="2" density="0" mesh="Booster-T2_back_buttons" material="Booster-T2_light" />
             <body name="head_yaw_link" pos="0.0537 0 0.2174">
                 <inertial pos="-2.7e-05 -0.002413 0.075111" quat="0.999513 -0.0174248 0.00101744 -0.0258577" mass="0.57676" diaginertia="0.000682053 0.000663354 0.000329593" />
                 <joint name="aa_head_yaw_joint" pos="0 0 0" axis="0 0 1" range="-1.09956 1.09956" actuatorfrcrange="-22 22" armature="0.007209" />
@@ -24,7 +30,8 @@
                 <body name="head_pitch_link" pos="0 0 0.08506">
                     <inertial pos="0.030031 0.000746 0.054589" quat="0.279159 0.704336 0.55384 0.345314" mass="0.98608" diaginertia="0.0050744 0.00459833 0.00443126" />
                     <joint name="head_pitch_joint" pos="0 0 0" axis="0 1 0" range="-0.314159 0.401426" actuatorfrcrange="-22 22" armature="0.007209" />
-                    <geom class="Booster-T2_visual" mesh="Booster-T2_head_pitch_link" material="Booster-T2_light" />
+                    <geom class="Booster-T2_visual" mesh="Booster-T2_head_pitch_link" material="Booster-T2_head" />
+                    <geom class="Booster-T2_visual" mesh="Booster-T2_head_visor" material="Booster-T2_visor" />
                     <geom name="head_pitch_link_collision" class="Booster-T2_collision" type="mesh" mesh="Booster-T2_head_pitch_link_collision" />
                     <!--
                         The upstream T2 model declares no camera. Its pose in head_pitch_link is the
@@ -74,6 +81,7 @@
                                         <inertial pos="0.004576 0.075222 -0.003233" quat="0.490032 0.483338 -0.552255 0.47039" mass="0.42548" diaginertia="0.00101755 0.000904256 0.000294195" />
                                         <joint name="left_wrist_roll_joint" pos="0 0 0" axis="1 0 0" range="-1.36136 0.925025" actuatorfrcrange="-22 22" armature="0.007209" />
                                         <geom class="Booster-T2_visual" mesh="Booster-T2_left_wrist_roll_link_with_hand" material="Booster-T2_light" />
+                                        <geom class="Booster-T2_visual" mesh="Booster-T2_left_hand" material="Booster-T2_dark" />
                                         <geom name="left_wrist_roll_link_collision" class="Booster-T2_collision" type="mesh" mesh="Booster-T2_left_wrist_roll_link_collision" />
                                     </body>
                                 </body>
@@ -113,6 +121,7 @@
                                         <inertial pos="0.004576 -0.075222 -0.003233" quat="0.483338 0.490032 -0.47039 0.552255" mass="0.42548" diaginertia="0.00101755 0.000904256 0.000294195" />
                                         <joint name="right_wrist_roll_joint" pos="0 0 0" axis="1 0 0" range="-0.925025 1.36136" actuatorfrcrange="-22 22" armature="0.007209" />
                                         <geom class="Booster-T2_visual" mesh="Booster-T2_right_wrist_roll_link_with_hand" material="Booster-T2_light" />
+                                        <geom class="Booster-T2_visual" mesh="Booster-T2_right_hand" material="Booster-T2_dark" />
                                         <geom name="right_wrist_roll_link_collision" class="Booster-T2_collision" type="mesh" mesh="Booster-T2_right_wrist_roll_link_collision" />
                                     </body>
                                 </body>
@@ -148,11 +157,13 @@
                                     <inertial pos="-0.012074 -0.0088744 -0.120867" quat="0.912874 0.018891 -0.0933464 0.396976" mass="3.0381" diaginertia="0.0243295 0.0227178 0.00294469" />
                                     <joint name="left_hip_yaw_joint" pos="0 0 0" axis="0 0 1" range="-2.75762 2.75762" actuatorfrcrange="-135 135" armature="0.0281" />
                                     <geom class="Booster-T2_visual" mesh="Booster-T2_left_hip_yaw_link" material="Booster-T2_light" />
+                                    <geom class="Booster-T2_visual" mesh="Booster-T2_left_knee_plate" material="Booster-T2_dark" />
                                     <geom name="left_knee_collision" class="Booster-T2_collision" type="cylinder" size="0.05 0.055" pos="-0.025 -0.013 -0.205" quat="0.707107 0.707107 0 0" />
                                     <body name="left_knee_pitch_link" pos="-0.0283 0 -0.20868">
                                         <inertial pos="0.026976 0.001486 -0.136575" quat="0.445975 0.0474902 0.00458236 0.893773" mass="2.7266" diaginertia="0.016834 0.0165034 0.00216458" />
                                         <joint name="left_knee_pitch_joint" pos="0 0 0" axis="0 1 0" range="0.0 2.58309" actuatorfrcrange="-135 135" armature="0.0281" />
                                         <geom class="Booster-T2_visual" mesh="Booster-T2_left_knee_pitch_link" material="Booster-T2_light" />
+                                        <geom class="Booster-T2_visual" mesh="Booster-T2_left_calf_pad" material="Booster-T2_dark" />
                                         <geom name="left_calf_collision" class="Booster-T2_collision" type="box" size="0.0525 0.045 0.085" pos="0.026 0 -0.17" />
                                         <body name="left_ankle_pitch_link" pos="0.029576 0 -0.33515">
                                             <inertial pos="-0.000276 0 -0.003164" quat="0.5 0.5 -0.5 0.5" mass="0.1274" diaginertia="2.7e-05 1.9e-05 1.8e-05" />
@@ -183,11 +194,13 @@
                                     <inertial pos="-0.012074 0.0088744 -0.120867" quat="0.396976 -0.0933464 0.018891 0.912874" mass="3.0381" diaginertia="0.0243295 0.0227178 0.00294469" />
                                     <joint name="right_hip_yaw_joint" pos="0 0 0" axis="0 0 1" range="-2.75762 2.75762" actuatorfrcrange="-135 135" armature="0.0281" />
                                     <geom class="Booster-T2_visual" mesh="Booster-T2_right_hip_yaw_link" material="Booster-T2_light" />
+                                    <geom class="Booster-T2_visual" mesh="Booster-T2_right_knee_plate" material="Booster-T2_dark" />
                                     <geom name="right_knee_collision" class="Booster-T2_collision" type="cylinder" size="0.05 0.055" pos="-0.025 0.013 -0.205" quat="0.707107 0.707107 0 0" />
                                     <body name="right_knee_pitch_link" pos="-0.0283 0 -0.20868">
                                         <inertial pos="0.026976 -0.001486 -0.136575" quat="0.893773 0.00458236 0.0474902 0.445975" mass="2.7266" diaginertia="0.016834 0.0165034 0.00216458" />
                                         <joint name="right_knee_pitch_joint" pos="0 0 0" axis="0 1 0" range="0.0 2.58309" actuatorfrcrange="-135 135" armature="0.0281" />
                                         <geom class="Booster-T2_visual" mesh="Booster-T2_right_knee_pitch_link" material="Booster-T2_light" />
+                                        <geom class="Booster-T2_visual" mesh="Booster-T2_right_calf_pad" material="Booster-T2_dark" />
                                         <geom name="right_calf_collision" class="Booster-T2_collision" type="box" size="0.0525 0.045 0.085" pos="0.026 0 -0.17" />
                                         <body name="right_ankle_pitch_link" pos="0.029576 0 -0.33515">
                                             <inertial pos="-0.000276 0 -0.003164" quat="0.5 0.5 -0.5 0.5" mass="0.1274" diaginertia="2.7e-05 1.9e-05 1.8e-05" />
