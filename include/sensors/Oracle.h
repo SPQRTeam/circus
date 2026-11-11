@@ -50,11 +50,13 @@ class Oracle : public Sensor {
             size_t pos = robotName.find('_');
             teamName = robotName.substr(0, pos);
 
+            // Scenes without a ball (e.g. a general environment) leave the ball fields at -1.
             ballId = mj_name2id(mujModel, mjOBJ_BODY, "ball");
-            ballAdr = mujModel->body_jntadr[ballId];
-
-            ballPosAdr = mujModel->jnt_qposadr[ballAdr];
-            ballVelAdr = mujModel->jnt_dofadr[ballAdr];
+            if (ballId >= 0) {
+                ballAdr = mujModel->body_jntadr[ballId];
+                ballPosAdr = mujModel->jnt_qposadr[ballAdr];
+                ballVelAdr = mujModel->jnt_dofadr[ballAdr];
+            }
 
             // AGGIUNGERE TUTTI I CAMPI CHE CI INTERESSANO SAPERE COME ORACLE
             discoverOtherRobotSensors();
@@ -224,6 +226,10 @@ class Oracle : public Sensor {
         }
 
         void updateBallPosition() {
+            if (ballId < 0) {
+                ballPosition = Eigen::Vector3d::Zero();
+                return;
+            }
             Eigen::Vector3d ballPosGlobal = Eigen::Vector3d(Eigen::Map<const Eigen::Vector3d>(mujData->qpos + ballPosAdr));
             ballPosition = globalToLocalPosition(ballPosGlobal, robotPose->getTransformationMatrix());
         }
@@ -286,7 +292,7 @@ class Oracle : public Sensor {
         }
 
         Eigen::Vector3d ballPosition;
-        int ballId, ballAdr, ballPosAdr, ballVelAdr;
+        int ballId = -1, ballAdr = -1, ballPosAdr = -1, ballVelAdr = -1;
 
         mjModel* mujModel;
         mjData* mujData;
