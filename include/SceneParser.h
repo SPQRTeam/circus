@@ -29,27 +29,6 @@ struct ObstacleSpec {
         std::string name = "";  // Optional name for the obstacle
 };
 
-// A static object placed in a general (non-soccer) environment, loaded from a mesh file.
-struct EnvironmentObjectSpec {
-        std::string name;
-        std::string mesh;                                  // path to an .obj/.stl, see SceneParser::resolveMeshPath
-        Vector3d position = Vector3d::Zero();              // [x, y, z]
-        Vector3d orientation = Vector3d::Zero();           // [roll, pitch, yaw] in radians
-        Vector3d scale = Vector3d::Ones();                 // per-axis mesh scale
-        Vector4d rgba = Vector4d(0.55, 0.38, 0.22, 1.0);   // default: wood brown
-        bool collision = true;                             // false = visual only
-};
-
-// A general environment that replaces the soccer field: a checkerboard floor plus static mesh objects.
-struct EnvironmentSpec {
-        bool enabled = false;
-        Vector2d floorSize = Vector2d(10.0, 10.0);  // [m] visible floor extent (collision plane is infinite)
-        double squareSize = 0.5;                    // [m] side of one checkerboard square
-        Vector3d rgb1 = Vector3d(0.85, 0.85, 0.85);
-        Vector3d rgb2 = Vector3d(0.15, 0.15, 0.15);
-        std::vector<EnvironmentObjectSpec> objects;
-};
-
 struct FieldConfig {
         float width = 14.0f;
         float height = 9.0f;
@@ -108,7 +87,6 @@ struct SceneSpec {
         SimulationConfig simulationConfig;
         std::vector<std::shared_ptr<Team>> teams;
         std::vector<ObstacleSpec> obstacles;
-        EnvironmentSpec environment;
         GuiConfig guiConfig;
 };
 
@@ -125,9 +103,6 @@ class SceneParser {
         void buildRobotInstance(const shared_ptr<Robot>& robotSpec, xml_node& worldbody, xml_node& actuator, xml_node& sensor);
         void prefixSubtree(xml_node& root, const std::string& robotName);
         void addObstaclesToMuJoCo(xml_node& worldbody);
-        void parseEnvironment(const YAML::Node& environmentNode);
-        void addEnvironmentToMuJoCo(xml_node& mujoco);
-        static string resolveMeshPath(const string& mesh);
 
         unordered_set<string> robotTypes;
         YAML::Node sceneRoot;

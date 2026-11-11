@@ -72,39 +72,36 @@ SceneParser::SceneParser(const string& yamlPath) {
         scene.simulationConfig.game.penalty_duration = gameNode["penalty_duration"].as<int>(45);
     }
 
-    // A general environment has no field: only soccer scenes need a field config.
-    if (!sceneRoot["environment"]) {
-        // Field configs are owned by maximus (src/app/config/fields). Resolve them from the
-        // framework tree (FRAMEWORK_PATH / PIXI_PROJECT_ROOT) so circus and maximus stay in sync,
-        // falling back to circus' own resources for standalone use.
-        const string fieldFileName = scene.simulationConfig.game.field + ".yaml";
-        filesystem::path fieldPath;
-        if (fwkRoot) {
-            filesystem::path maximusFieldPath = filesystem::path(fwkRoot) / "src" / "app" / "config" / "fields" / fieldFileName;
-            if (filesystem::exists(maximusFieldPath))
-                fieldPath = maximusFieldPath;
-        }
-        if (fieldPath.empty())
-            fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "fields" / fieldFileName;
-        if (!filesystem::exists(fieldPath))
-            throw runtime_error("Field config file does not exist: " + fieldPath.string());
-
-        YAML::Node fieldConfigRoot = YAML::LoadFile(fieldPath.string());
-
-        scene.simulationConfig.field.width = fieldConfigRoot["width"].as<float>();
-        scene.simulationConfig.field.height = fieldConfigRoot["height"].as<float>();
-        scene.simulationConfig.field.center_radius = fieldConfigRoot["centerRadius"].as<float>();
-        scene.simulationConfig.field.goal_area_width = fieldConfigRoot["goalAreaWidth"].as<float>();
-        scene.simulationConfig.field.goal_area_height = fieldConfigRoot["goalAreaHeight"].as<float>();
-        scene.simulationConfig.field.penalty_area_width = fieldConfigRoot["penaltyAreaWidth"].as<float>();
-        scene.simulationConfig.field.penalty_area_height = fieldConfigRoot["penaltyAreaHeight"].as<float>();
-        scene.simulationConfig.field.penalty_mark_distance = fieldConfigRoot["penaltyMarkDistance"].as<float>();
-        scene.simulationConfig.field.goal_width = fieldConfigRoot["goalWidth"].as<float>();
-        scene.simulationConfig.field.goal_height = fieldConfigRoot["goalHeight"].as<float>();
-        scene.simulationConfig.field.goal_depth = fieldConfigRoot["goalDepth"].as<float>();
-        scene.simulationConfig.field.line_width = fieldConfigRoot["lineWidth"].as<float>();
-        scene.simulationConfig.field.ball_radius = fieldConfigRoot["ballRadius"].as<float>();
+    // Field configs are owned by maximus (src/app/config/fields). Resolve them from the
+    // framework tree (FRAMEWORK_PATH / PIXI_PROJECT_ROOT) so circus and maximus stay in sync,
+    // falling back to circus' own resources for standalone use.
+    const string fieldFileName = scene.simulationConfig.game.field + ".yaml";
+    filesystem::path fieldPath;
+    if (fwkRoot) {
+        filesystem::path maximusFieldPath = filesystem::path(fwkRoot) / "src" / "app" / "config" / "fields" / fieldFileName;
+        if (filesystem::exists(maximusFieldPath))
+            fieldPath = maximusFieldPath;
     }
+    if (fieldPath.empty())
+        fieldPath = filesystem::path(PROJECT_ROOT) / "resources" / "config" / "fields" / fieldFileName;
+    if (!filesystem::exists(fieldPath))
+        throw runtime_error("Field config file does not exist: " + fieldPath.string());
+
+    YAML::Node fieldConfigRoot = YAML::LoadFile(fieldPath.string());
+
+    scene.simulationConfig.field.width = fieldConfigRoot["width"].as<float>();
+    scene.simulationConfig.field.height = fieldConfigRoot["height"].as<float>();
+    scene.simulationConfig.field.center_radius = fieldConfigRoot["centerRadius"].as<float>();
+    scene.simulationConfig.field.goal_area_width = fieldConfigRoot["goalAreaWidth"].as<float>();
+    scene.simulationConfig.field.goal_area_height = fieldConfigRoot["goalAreaHeight"].as<float>();
+    scene.simulationConfig.field.penalty_area_width = fieldConfigRoot["penaltyAreaWidth"].as<float>();
+    scene.simulationConfig.field.penalty_area_height = fieldConfigRoot["penaltyAreaHeight"].as<float>();
+    scene.simulationConfig.field.penalty_mark_distance = fieldConfigRoot["penaltyMarkDistance"].as<float>();
+    scene.simulationConfig.field.goal_width = fieldConfigRoot["goalWidth"].as<float>();
+    scene.simulationConfig.field.goal_height = fieldConfigRoot["goalHeight"].as<float>();
+    scene.simulationConfig.field.goal_depth = fieldConfigRoot["goalDepth"].as<float>();
+    scene.simulationConfig.field.line_width = fieldConfigRoot["lineWidth"].as<float>();
+    scene.simulationConfig.field.ball_radius = fieldConfigRoot["ballRadius"].as<float>();
 
     ballSpec.position = Eigen::Vector3d(0.0, 0.0, 0.12);
 
@@ -162,10 +159,6 @@ SceneParser::SceneParser(const string& yamlPath) {
         scene.teams.push_back(teamSpec);
         TeamManager::instance().registerTeam(teamSpec);
     }
-
-    // A general environment replaces the soccer field (and the ball)
-    if (sceneRoot["environment"])
-        parseEnvironment(sceneRoot["environment"]);
 
     // Parse obstacles if present
     if (sceneRoot["obstacles"]) {
@@ -232,14 +225,9 @@ string SceneParser::buildMuJoCoXml() {
     compiler.append_attribute("angle") = "radian";
     compiler.append_attribute("meshdir") = "resources/meshes/";
 
-    if (scene.environment.enabled) {
-        // General environment: checkerboard floor and static mesh objects, no field and no ball
-        addEnvironmentToMuJoCo(mujoco);
-    } else {
-        // Generate field dynamically using FieldGenerator (includes ball)
-        std::string meshDir = (filesystem::path(PROJECT_ROOT) / "resources" / "meshes").string();
-        FieldGenerator::appendFieldToMuJoCo(mujoco, scene.simulationConfig.field, meshDir);
-    }
+    // Generate field dynamically using FieldGenerator (includes ball)
+    std::string meshDir = (filesystem::path(PROJECT_ROOT) / "resources" / "meshes").string();
+    FieldGenerator::appendFieldToMuJoCo(mujoco, scene.simulationConfig.field, meshDir);
 
     xml_node visual = mujoco.append_child("visual");
     xml_node map = visual.append_child("quality");
@@ -506,157 +494,6 @@ void SceneParser::addObstaclesToMuJoCo(xml_node& worldbody) {
             sizeStream << obstacle.size.x() << " " << obstacle.size.y() / 2.0;
             geom.append_attribute("size") = sizeStream.str().c_str();
             geom.append_attribute("rgba") = "0.5 0.5 0.5 1.0";
-        }
-    }
-}
-
-namespace {
-
-Vector3d readVector3(const YAML::Node& node, const Vector3d& fallback) {
-    if (!node)
-        return fallback;
-    if (!node.IsSequence() || node.size() != 3)
-        throw runtime_error("Expected a sequence of 3 numbers.");
-    return Vector3d(node[0].as<double>(), node[1].as<double>(), node[2].as<double>());
-}
-
-string joinNumbers(std::initializer_list<double> values) {
-    ostringstream oss;
-    bool first = true;
-    for (double v : values) {
-        if (!first)
-            oss << " ";
-        oss << v;
-        first = false;
-    }
-    return oss.str();
-}
-
-}  // namespace
-
-void SceneParser::parseEnvironment(const YAML::Node& environmentNode) {
-    EnvironmentSpec& env = scene.environment;
-    env.enabled = true;
-
-    if (const YAML::Node& floorNode = environmentNode["floor"]) {
-        if (floorNode["size"]) {
-            if (!floorNode["size"].IsSequence() || floorNode["size"].size() != 2)
-                throw runtime_error("environment.floor.size must be [width, length].");
-            env.floorSize = Vector2d(floorNode["size"][0].as<double>(), floorNode["size"][1].as<double>());
-        }
-        env.squareSize = floorNode["square"].as<double>(env.squareSize);
-        env.rgb1 = readVector3(floorNode["rgb1"], env.rgb1);
-        env.rgb2 = readVector3(floorNode["rgb2"], env.rgb2);
-        if (env.squareSize <= 0.0 || env.floorSize.x() <= 0.0 || env.floorSize.y() <= 0.0)
-            throw runtime_error("environment.floor size and square must be positive.");
-    }
-
-    if (const YAML::Node& objectsNode = environmentNode["objects"]) {
-        if (!objectsNode.IsSequence())
-            throw runtime_error("environment.objects must be a sequence.");
-        int index = 0;
-        for (const YAML::Node& objectNode : objectsNode) {
-            if (!objectNode["mesh"])
-                throw runtime_error("environment object missing 'mesh' field.");
-            EnvironmentObjectSpec object;
-            object.name = objectNode["name"] ? objectNode["name"].as<string>() : ("object_" + to_string(index));
-            object.mesh = resolveMeshPath(objectNode["mesh"].as<string>());
-            object.position = readVector3(objectNode["position"], object.position);
-            object.orientation = readVector3(objectNode["orientation"], object.orientation);
-            if (objectNode["scale"] && objectNode["scale"].IsScalar()) {
-                object.scale = Vector3d::Constant(objectNode["scale"].as<double>());
-            } else {
-                object.scale = readVector3(objectNode["scale"], object.scale);
-            }
-            if (const YAML::Node& rgbaNode = objectNode["rgba"]) {
-                if (!rgbaNode.IsSequence() || rgbaNode.size() != 4)
-                    throw runtime_error("environment object rgba must be [r, g, b, a].");
-                object.rgba = Vector4d(rgbaNode[0].as<double>(), rgbaNode[1].as<double>(), rgbaNode[2].as<double>(), rgbaNode[3].as<double>());
-            }
-            object.collision = objectNode["collision"].as<bool>(true);
-            env.objects.push_back(object);
-            ++index;
-        }
-    }
-}
-
-// Mesh paths are looked up, in order: as given if absolute; in the framework's sim meshes
-// (FRAMEWORK_PATH / PIXI_PROJECT_ROOT + src/app/sim/meshes), so scenes and their assets can live in
-// maximus; in circus' own resources/meshes.
-string SceneParser::resolveMeshPath(const string& mesh) {
-    const filesystem::path meshPath(mesh);
-    if (meshPath.is_absolute()) {
-        if (!filesystem::exists(meshPath))
-            throw runtime_error("Mesh file does not exist: " + mesh);
-        return meshPath.string();
-    }
-
-    const char* fwkRoot = std::getenv("FRAMEWORK_PATH") ? std::getenv("FRAMEWORK_PATH") : std::getenv("PIXI_PROJECT_ROOT");
-    if (fwkRoot) {
-        const filesystem::path frameworkMesh = filesystem::path(fwkRoot) / "src" / "app" / "sim" / "meshes" / meshPath;
-        if (filesystem::exists(frameworkMesh))
-            return frameworkMesh.string();
-    }
-
-    const filesystem::path circusMesh = filesystem::path(PROJECT_ROOT) / "resources" / "meshes" / meshPath;
-    if (filesystem::exists(circusMesh))
-        return circusMesh.string();
-
-    throw runtime_error("Mesh file not found: " + mesh + " (looked in the framework's src/app/sim/meshes and circus' resources/meshes)");
-}
-
-void SceneParser::addEnvironmentToMuJoCo(xml_node& mujoco) {
-    const EnvironmentSpec& env = scene.environment;
-
-    xml_node asset = mujoco.append_child("asset");
-
-    // One period of MuJoCo's builtin checker texture holds 2x2 squares.
-    xml_node floorTex = asset.append_child("texture");
-    floorTex.append_attribute("name") = "env_floor_tex";
-    floorTex.append_attribute("type") = "2d";
-    floorTex.append_attribute("builtin") = "checker";
-    floorTex.append_attribute("rgb1") = joinNumbers({env.rgb1.x(), env.rgb1.y(), env.rgb1.z()}).c_str();
-    floorTex.append_attribute("rgb2") = joinNumbers({env.rgb2.x(), env.rgb2.y(), env.rgb2.z()}).c_str();
-    floorTex.append_attribute("width") = "512";
-    floorTex.append_attribute("height") = "512";
-
-    xml_node floorMat = asset.append_child("material");
-    floorMat.append_attribute("name") = "env_floor_mat";
-    floorMat.append_attribute("texture") = "env_floor_tex";
-    floorMat.append_attribute("texrepeat") = joinNumbers({env.floorSize.x() / (2.0 * env.squareSize), env.floorSize.y() / (2.0 * env.squareSize)}).c_str();
-    floorMat.append_attribute("reflectance") = "0.1";
-
-    for (const EnvironmentObjectSpec& object : env.objects) {
-        xml_node meshAsset = asset.append_child("mesh");
-        meshAsset.append_attribute("name") = (object.name + "_mesh").c_str();
-        meshAsset.append_attribute("file") = object.mesh.c_str();
-        meshAsset.append_attribute("scale") = joinNumbers({object.scale.x(), object.scale.y(), object.scale.z()}).c_str();
-    }
-
-    xml_node worldbody = mujoco.append_child("worldbody");
-
-    xml_node floor = worldbody.append_child("geom");
-    floor.append_attribute("name") = "env_floor";
-    floor.append_attribute("type") = "plane";
-    floor.append_attribute("size") = joinNumbers({env.floorSize.x() / 2.0, env.floorSize.y() / 2.0, 0.05}).c_str();
-    floor.append_attribute("material") = "env_floor_mat";
-    floor.append_attribute("friction") = "1 0.005 0.0001";
-
-    // Objects are bodies without joints, i.e. welded to the world.
-    for (const EnvironmentObjectSpec& object : env.objects) {
-        xml_node body = worldbody.append_child("body");
-        body.append_attribute("name") = object.name.c_str();
-        body.append_attribute("pos") = joinNumbers({object.position.x(), object.position.y(), object.position.z()}).c_str();
-        body.append_attribute("euler") = joinNumbers({object.orientation.x(), object.orientation.y(), object.orientation.z()}).c_str();
-
-        xml_node geom = body.append_child("geom");
-        geom.append_attribute("name") = (object.name + "_geom").c_str();
-        geom.append_attribute("type") = "mesh";
-        geom.append_attribute("mesh") = (object.name + "_mesh").c_str();
-        geom.append_attribute("rgba") = joinNumbers({object.rgba[0], object.rgba[1], object.rgba[2], object.rgba[3]}).c_str();
-        if (!object.collision) {
-            geom.append_attribute("contype") = "0";
-            geom.append_attribute("conaffinity") = "0";
         }
     }
 }
