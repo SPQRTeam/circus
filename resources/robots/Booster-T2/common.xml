@@ -23,15 +23,27 @@
     </default>
 
     <asset>
-        <material name="Booster-T2_light" rgba="0.847 0.847 0.847 1"/>
-        <material name="Booster-T2_dark" rgba="0.2078 0.2078 0.2078 1"/>
+        <!-- The real T2's colors. The visor, hands, neck, trunk bottom, back buttons and port, knee plates and calf
+             pads are cut out of their link's mesh into meshes of their own, so they can have their own color. The neck
+             and the trunk bottom are the parts they are on the real T2, cut through the wall along their seams, and the
+             rest of Booster's meshes is as it was. The torso is the shell's material in pearl white, as on the real T2,
+             wherever SceneParser doesn't paint it with the team color. -->
+        <material name="Booster-T2_light" rgba="0.25 0.24 0.235 1" specular="0.4" shininess="0.4"/>
+        <material name="Booster-T2_pearl" rgba="0.85 0.85 0.86 1" specular="0.4" shininess="0.4"/>
+        <material name="Booster-T2_head" rgba="0.2 0.19 0.185 1" specular="0.4" shininess="0.4"/>
+        <material name="Booster-T2_visor" rgba="0.03 0.03 0.035 1" specular="1" shininess="0.9"/>
+        <material name="Booster-T2_dark" rgba="0.1 0.1 0.1 1" specular="0.05" shininess="0.2"/>
         <material name="Booster-T2_white" rgba="1 1 1 1"/>
         <material name="Booster-T2_transparent" rgba="0.5 0.5 0.5 1"/>
 
         <mesh name="Booster-T2_trunk" file="Booster-T2/trunk.STL" />
+        <mesh name="Booster-T2_neck" file="Booster-T2/neck.STL" />
+        <mesh name="Booster-T2_trunk_bottom" file="Booster-T2/trunk_bottom.STL" />
+        <mesh name="Booster-T2_back_buttons" file="Booster-T2/back_buttons.STL" />
         <mesh name="Booster-T2_logo" file="Booster-T2/logo.STL" />
         <mesh name="Booster-T2_head_yaw_link" file="Booster-T2/head_yaw_link.STL" />
         <mesh name="Booster-T2_head_pitch_link" file="Booster-T2/head_pitch_link.STL" />
+        <mesh name="Booster-T2_head_visor" file="Booster-T2/head_visor.STL" />
         <mesh name="Booster-T2_head_pitch_link_collision" file="Booster-T2/head_pitch_link_collision.STL" />
         <mesh name="Booster-T2_left_shoulder_pitch_link" file="Booster-T2/left_shoulder_pitch_link.STL" />
         <mesh name="Booster-T2_left_shoulder_roll_link" file="Booster-T2/left_shoulder_roll_link.STL" />
@@ -40,6 +52,7 @@
         <mesh name="Booster-T2_left_wrist_pitch_link" file="Booster-T2/left_wrist_pitch_link.STL" />
         <mesh name="Booster-T2_left_wrist_yaw_link" file="Booster-T2/left_wrist_yaw_link.STL" />
         <mesh name="Booster-T2_left_wrist_roll_link_with_hand" file="Booster-T2/left_wrist_roll_link_with_hand.STL" />
+        <mesh name="Booster-T2_left_hand" file="Booster-T2/left_hand.STL" />
         <mesh name="Booster-T2_left_wrist_roll_link_collision" file="Booster-T2/left_wrist_roll_link_collision.STL" />
         <mesh name="Booster-T2_right_shoulder_pitch_link" file="Booster-T2/right_shoulder_pitch_link.STL" />
         <mesh name="Booster-T2_right_shoulder_roll_link" file="Booster-T2/right_shoulder_roll_link.STL" />
@@ -48,6 +61,7 @@
         <mesh name="Booster-T2_right_wrist_pitch_link" file="Booster-T2/right_wrist_pitch_link.STL" />
         <mesh name="Booster-T2_right_wrist_yaw_link" file="Booster-T2/right_wrist_yaw_link.STL" />
         <mesh name="Booster-T2_right_wrist_roll_link_with_hand" file="Booster-T2/right_wrist_roll_link_with_hand.STL" />
+        <mesh name="Booster-T2_right_hand" file="Booster-T2/right_hand.STL" />
         <mesh name="Booster-T2_right_wrist_roll_link_collision" file="Booster-T2/right_wrist_roll_link_collision.STL" />
         <mesh name="Booster-T2_waist_pitch_link" file="Booster-T2/waist_pitch_link.STL" />
         <mesh name="Booster-T2_waist_roll_link" file="Booster-T2/waist_roll_link.STL" />
@@ -56,13 +70,17 @@
         <mesh name="Booster-T2_left_hip_pitch_link" file="Booster-T2/left_hip_pitch_link.STL" />
         <mesh name="Booster-T2_left_hip_roll_link" file="Booster-T2/left_hip_roll_link.STL" />
         <mesh name="Booster-T2_left_hip_yaw_link" file="Booster-T2/left_hip_yaw_link.STL" />
+        <mesh name="Booster-T2_left_knee_plate" file="Booster-T2/left_knee_plate.STL" />
         <mesh name="Booster-T2_left_knee_pitch_link" file="Booster-T2/left_knee_pitch_link.STL" />
+        <mesh name="Booster-T2_left_calf_pad" file="Booster-T2/left_calf_pad.STL" />
         <mesh name="Booster-T2_left_ankle_pitch_link" file="Booster-T2/left_ankle_pitch_link.STL" />
         <mesh name="Booster-T2_left_ankle_roll_link" file="Booster-T2/left_ankle_roll_link.STL" />
         <mesh name="Booster-T2_right_hip_pitch_link" file="Booster-T2/right_hip_pitch_link.STL" />
         <mesh name="Booster-T2_right_hip_roll_link" file="Booster-T2/right_hip_roll_link.STL" />
         <mesh name="Booster-T2_right_hip_yaw_link" file="Booster-T2/right_hip_yaw_link.STL" />
+        <mesh name="Booster-T2_right_knee_plate" file="Booster-T2/right_knee_plate.STL" />
         <mesh name="Booster-T2_right_knee_pitch_link" file="Booster-T2/right_knee_pitch_link.STL" />
+        <mesh name="Booster-T2_right_calf_pad" file="Booster-T2/right_calf_pad.STL" />
         <mesh name="Booster-T2_right_ankle_pitch_link" file="Booster-T2/right_ankle_pitch_link.STL" />
         <mesh name="Booster-T2_right_ankle_roll_link" file="Booster-T2/right_ankle_roll_link.STL" />
 
