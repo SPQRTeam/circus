@@ -79,7 +79,7 @@ const std::map<uint8_t, const char*> kPenaltyKeys = {
 // simulator always gets the home team first. The messages sent to the robots keep the original
 // order.
 bool readGame(RoboCup::GameController* gameController, bool trueData, RoboCupGameControlData& data) {
-    if (!gc_read(gameController, 0, trueData, reinterpret_cast<uint8_t*>(&data), sizeof(data))) {
+    if (!gc_control_message(gameController, 0, trueData, reinterpret_cast<uint8_t*>(&data), sizeof(data))) {
         return false;
     }
     if (data.teams[0].teamNumber != kHomeTeamNumber) {
@@ -916,7 +916,7 @@ bool GameControllerBridge::sendControlMessage() {
             return false;
         }
         // The players receive the possibly delayed state, not the true one.
-        if (!gc_read(gameController_, packetNumber_++, false, reinterpret_cast<uint8_t*>(&data), sizeof(data))) {
+        if (!gc_control_message(gameController_, packetNumber_++, false, reinterpret_cast<uint8_t*>(&data), sizeof(data))) {
             return false;
         }
         addresses = robotAddresses_;

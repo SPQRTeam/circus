@@ -19,7 +19,8 @@ msgpack-cxx = "==7.0.0"
 libboost-devel = "==1.88.0"
 cmake = ">=3.27,<4"
 rust = "*"
-libclang = "*"
+libclang = "22.*"
+clang = "22.*"
 
 [target.linux-64.dependencies]
 gcc_linux-64 = ">=14.3.0,<15"
@@ -40,4 +41,4 @@ circus = { cmd = "$PIXI_PROJECT_ROOT/build/circus", depends-on = ["compile"] }
 libc = "2.35"
 
 [activation]
-env = {DYLD_LIBRARY_PATH = "$DYLD_LIBRARY_PATH:$CONDA_PREFIX/lib", LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib", PATH = "$CONDA_PREFIX/bin:$PATH"}
+env = {LIBCLANG_PATH = "$CONDA_PREFIX/lib", DYLD_LIBRARY_PATH = "$DYLD_LIBRARY_PATH:$CONDA_PREFIX/lib", LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib", PATH = "$CONDA_PREFIX/bin:$PATH"}
